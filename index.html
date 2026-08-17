@@ -14,9 +14,17 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js">
     </script>
     <script>
-        // Khi triển khai trên GitHub Pages, có thể thay null bằng Firebase Web Config
-        // để mọi thiết bị tự kết nối cùng một nhóm. Firebase Hosting sẽ tự nhận cấu hình.
-        window.TEACHER_NOTEBOOK_FIREBASE_CONFIG = window.TEACHER_NOTEBOOK_FIREBASE_CONFIG || null;
+        // Firebase Web Config của nhóm giáo viên. Đây là mã định danh ứng dụng Web,
+        // không phải khóa Gemini và vẫn cần Firestore Rules để bảo vệ dữ liệu.
+        window.TEACHER_NOTEBOOK_FIREBASE_CONFIG = window.TEACHER_NOTEBOOK_FIREBASE_CONFIG || {
+            apiKey: "AIzaSyAPcaScN-HrCcxiUz_J1QrrREF9sxCfvD8",
+            authDomain: "mathhubvn.firebaseapp.com",
+            projectId: "mathhubvn",
+            storageBucket: "mathhubvn.firebasestorage.app",
+            messagingSenderId: "1001364433767",
+            appId: "1:1001364433767:web:ae1547dc7d1524a6319dc2",
+            measurementId: "G-2YNQZ48JVK"
+        };
     </script>
     <style>
         /* ---------- Reset & Base ---------- */
@@ -230,6 +238,28 @@
         .account-role-badge.admin { background: #dbeafe; color: #1d4ed8; }
         .account-role-badge.teacher { background: #dcfce7; color: #166534; }
         .account-role-badge.personal { background: #e2e8f0; color: #475569; }
+        .cloud-sync-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 26px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .cloud-sync-badge.syncing { background: #fef3c7; color: #a16207; }
+        .cloud-sync-badge.synced { background: #dcfce7; color: #166534; }
+        .cloud-sync-badge.error { background: #fee2e2; color: #b91c1c; }
+        .upload-zone.read-only {
+            cursor: not-allowed;
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            opacity: 0.72;
+        }
         .account-actions {
             display: flex;
             align-items: center;
@@ -352,12 +382,80 @@
             flex-wrap: wrap;
             margin-top: 4px;
         }
-        .account-setup-steps {
-            margin: 0 0 14px 20px;
+        .account-health-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 9px;
+            margin-bottom: 14px;
+        }
+        .account-health-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            min-height: 78px;
+            padding: 11px;
+            border: 1px solid #e2e8f0;
+            border-radius: 13px;
+            background: #f8fafc;
+        }
+        .account-health-item.done { border-color: #86efac; background: #f0fdf4; }
+        .account-health-item.active { border-color: #93c5fd; background: #eff6ff; }
+        .account-health-item.warning { border-color: #fcd34d; background: #fffbeb; }
+        .account-health-item.error { border-color: #fca5a5; background: #fef2f2; }
+        .account-health-icon {
+            display: grid;
+            place-items: center;
+            flex: 0 0 30px;
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.88);
+            box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08);
+            font-size: 15px;
+        }
+        .account-health-copy { min-width: 0; }
+        .account-health-copy strong,
+        .account-health-copy span { display: block; }
+        .account-health-copy strong { color: #1e293b; font-size: 12px; }
+        .account-health-copy span {
+            margin-top: 3px;
+            color: #64748b;
+            font-size: 10px;
+            line-height: 1.35;
+        }
+        .account-setup-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 0 0 14px;
+        }
+        .account-simple-guide {
+            margin-bottom: 14px;
+            padding: 12px 13px;
+            border-left: 4px solid #2563eb;
+            border-radius: 0 12px 12px 0;
+            background: #f8fafc;
             color: #475569;
             font-size: 12px;
             line-height: 1.55;
         }
+        .account-simple-guide strong { color: #1e3a5f; }
+        .account-advanced-config {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #fff;
+        }
+        .account-advanced-config summary {
+            padding: 11px 13px;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .account-advanced-config[open] summary { border-bottom: 1px solid #e2e8f0; }
+        .account-advanced-config-body { padding: 13px; }
         .team-summary-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -832,10 +930,6 @@
             overflow-x: auto;
             margin-top: 12px;
         }
-        .timetable-scroll {
-            overflow-x: auto;
-            padding-bottom: 4px;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -881,50 +975,6 @@
         .status-badge.empty {
             background: #f1f5f9;
             color: #94a3b8;
-        }
-
-        /* Timetable grid */
-        .timetable-grid {
-            display: grid;
-            grid-template-columns: minmax(76px, 100px) repeat(var(--tt-columns, 1), minmax(130px, 1fr));
-            gap: 1px;
-            background: #e2e8f0;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-top: 12px;
-            min-width: max-content;
-        }
-        .timetable-grid .cell {
-            background: #fff;
-            padding: 12px 10px;
-            text-align: center;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 52px;
-        }
-        .timetable-grid .cell.header {
-            background: #f1f5f9;
-            font-weight: 700;
-            color: #1e293b;
-            font-size: 13px;
-        }
-        .timetable-grid .cell.time {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #475569;
-            font-size: 12px;
-        }
-        .timetable-grid .cell.subject {
-            background: #f0f7ff;
-            color: #1e3a5f;
-            font-weight: 500;
-        }
-        .timetable-grid .cell.empty {
-            background: #fafcff;
-            color: #94a3b8;
-            font-size: 12px;
         }
 
         /* ---------- Curriculum by grade / class ---------- */
@@ -1086,18 +1136,6 @@
             background: #1e3a5f;
             color: #fff;
             white-space: nowrap;
-        }
-        .schedule-table .class-header {
-            background: #2d6a9f;
-            color: #fff;
-            font-weight: 700;
-            text-align: center;
-        }
-        .schedule-table .period-label {
-            font-weight: 600;
-            color: #475569;
-            background: #f8fafc;
-            text-align: center;
         }
         .schedule-table .lesson-cell {
             background: #f0f7ff;
@@ -1329,8 +1367,7 @@
             color: #334155;
             line-height: 1.4;
         }
-        .plan-sync-empty,
-        .plan-sync-success {
+        .plan-sync-empty {
             margin-top: 12px;
             padding: 13px 14px;
             border-radius: 10px;
@@ -1338,7 +1375,6 @@
             line-height: 1.5;
         }
         .plan-sync-empty { background: #fff; color: #64748b; border: 1px dashed #cbd5e1; }
-        .plan-sync-success { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
         .plan-sync-footer {
             justify-content: flex-end;
         }
@@ -2063,18 +2099,6 @@
             box-shadow: inset 0 0 0 2px #60a5fa;
             outline: none;
         }
-        .weekly-table .tt-change-added {
-            background: #ecfdf5;
-            box-shadow: inset 0 0 0 2px #22c55e;
-        }
-        .weekly-table .tt-change-modified {
-            background: #fffbeb;
-            box-shadow: inset 0 0 0 2px #f59e0b;
-        }
-        .weekly-table .tt-change-removed {
-            background: #fef2f2;
-            box-shadow: inset 0 0 0 2px #ef4444;
-        }
         .removed-lesson-hint {
             display: block;
             color: #b91c1c;
@@ -2091,24 +2115,12 @@
             gap: 12px;
             flex-wrap: wrap;
         }
-        .gap-8 {
-            gap: 8px;
-        }
         .mt-12 {
             margin-top: 12px;
-        }
-        .mt-20 {
-            margin-top: 20px;
         }
         .text-muted {
             color: #94a3b8;
             font-size: 14px;
-        }
-        .text-success {
-            color: #16a34a;
-        }
-        .text-danger {
-            color: #dc2626;
         }
         .text-center {
             text-align: center;
@@ -2243,15 +2255,6 @@
             }
             .card {
                 padding: 18px 16px;
-            }
-            .timetable-grid {
-                grid-template-columns: 70px repeat(var(--tt-columns, 1), minmax(92px, 1fr));
-                font-size: 11px;
-            }
-            .timetable-grid .cell {
-                padding: 8px 4px;
-                min-height: 40px;
-                font-size: 11px;
             }
             table th,
             table td {
@@ -2462,7 +2465,7 @@
             <div class="brand">
                 <div>
                     <h1>📚 Sổ Tay Giáo Viên</h1>
-                    <span>Teacher's Notebook v24 — cá nhân và nhóm giáo viên</span>
+                    <span>Teacher's Notebook v29 — mã nguồn gọn và ổn định</span>
                 </div>
             </div>
             <div class="api-section">
@@ -2474,11 +2477,11 @@
                     <input type="checkbox" id="rememberApiKey" />
                     Lưu key trên máy này
                 </label>
-                <span class="model-badge" title="Mô hình Gemini đang sử dụng">Gemini 3.7 Flash</span>
+                <span class="model-badge" title="Mô hình Gemini ổn định đang sử dụng">Gemini 3.5 Flash</span>
                 <span class="status-dot" id="apiStatus" role="status" aria-label="API chưa được kiểm tra" title="API chưa được kiểm tra"></span>
                 <button class="btn btn-primary btn-sm" id="saveApiBtn">Kiểm tra &amp; dùng</button>
                 <button class="btn btn-outline btn-sm" id="forgetApiBtn" type="button">Quên key</button>
-                <div class="api-note" id="apiKeyNote">Trang chỉ dùng Gemini 3.7 Flash mới nhất. Mặc định key chỉ được giữ trong phiên; có thể chọn lưu trên máy tính cá nhân.</div>
+                <div class="api-note" id="apiKeyNote">Mỗi giáo viên dùng API key riêng trên thiết bị của mình; khi Gemini không dùng được, trang tự chuyển sang OCR.</div>
             </div>
         </header>
 
@@ -2490,6 +2493,7 @@
                     <span id="accountStatusText">Dữ liệu đang được lưu riêng trên máy tính này.</span>
                 </div>
                 <span class="account-role-badge personal" id="accountRoleBadge">Cá nhân</span>
+                <span class="cloud-sync-badge" id="cloudSyncBadge" hidden>☁️ Chưa đồng bộ</span>
             </div>
             <div class="account-actions">
                 <button class="btn btn-primary btn-sm" id="accountPrimaryBtn" type="button">👥 Dùng cùng nhóm</button>
@@ -2539,6 +2543,8 @@
                     style="color:#166534;border-color:#86efac;">⬆️ Khôi phục</button>
             <button class="btn btn-outline btn-sm" id="undoRestoreBtn" type="button" hidden
                     style="color:#92400e;border-color:#fcd34d;">↶ Hoàn tác khôi phục</button>
+            <button class="btn btn-outline btn-sm" id="exportPreCloudBackupBtn" type="button" hidden
+                    style="color:#0369a1;border-color:#7dd3fc;">⬇️ Bản trước đồng bộ</button>
             <input type="file" id="restoreBackupInput" accept="application/json,.json" hidden
                    aria-label="Chọn file sao lưu dữ liệu" />
         </section>
@@ -2583,7 +2589,7 @@
             <div class="card">
                 <div class="card-header">
                     <h2>📋 Kế hoạch của nhà trường <small>theo tuần</small></h2>
-                    <span class="sub">Gemini đọc hai lượt, tự xếp hàng để không vượt giới hạn API</span>
+                    <span class="sub" id="sharedPlanModeNote">Gemini đọc hai lượt, tự xếp hàng để không vượt giới hạn API</span>
                 </div>
                 <div class="upload-zone" id="planUploadZone">
                     <span class="icon-big">🖼️</span>
@@ -3103,7 +3109,7 @@
             sessionStorage.setItem(API_KEY_SESSION_STORAGE, savedApiKey);
         }
 
-        const GEMINI_MODEL = 'gemini-3.7-flash';
+        const GEMINI_MODEL = 'gemini-3.5-flash';
         const GEMINI_SAFE_REQUESTS_PER_MINUTE = 4;
         const GEMINI_REQUEST_INTERVAL_MS = 15500;
         const GEMINI_RATE_NEXT_STORAGE = 'gemini_next_safe_request_at';
@@ -3121,6 +3127,7 @@
         const BACKUP_FORMAT = 'teacher-notebook-backup';
         const BACKUP_VERSION = 3;
         const PRE_RESTORE_BACKUP_KEY = 'teacher_pre_restore_backup_v1';
+        const PRE_CLOUD_SYNC_BACKUP_KEY = 'teacher_pre_cloud_sync_backup_v1';
         const FIREBASE_SDK_VERSION = '12.17.1';
         const ACCOUNT_CONFIG_STORAGE = 'teacher_notebook_firebase_config_v1';
         const ACCOUNT_ACCESS_MODE_STORAGE = 'teacher_notebook_access_mode_v1';
@@ -3741,10 +3748,26 @@
                 group: null,
                 members: [],
                 authView: 'signin',
+                modalView: '',
                 busy: false,
                 profileUnsubscribe: null,
                 groupUnsubscribe: null,
                 membersUnsubscribe: null,
+                sharedYearUnsubscribe: null,
+                personalYearUnsubscribe: null,
+                syncYear: '',
+                syncApplyingRemote: false,
+                syncTimer: null,
+                sharedYearLoaded: false,
+                personalYearLoaded: false,
+                sharedYearExists: false,
+                personalYearExists: false,
+                lastSharedHash: '',
+                lastPersonalHash: '',
+                cloudStatus: 'idle',
+                cloudStatusMessage: 'Chưa đồng bộ',
+                setupCheckBusy: false,
+                setupCheckMessage: '',
                 initialized: false,
             },
         };
@@ -3850,6 +3873,7 @@
         const restoreBackupBtn = $('#restoreBackupBtn');
         const restoreBackupInput = $('#restoreBackupInput');
         const undoRestoreBtn = $('#undoRestoreBtn');
+        const exportPreCloudBackupBtn = $('#exportPreCloudBackupBtn');
         const schoolYearSelect = $('#schoolYearSelect');
         const week1StartDateInput = $('#week1StartDateInput');
         const saveWeek1StartBtn = $('#saveWeek1StartBtn');
@@ -3860,6 +3884,7 @@
         const accountDisplayName = $('#accountDisplayName');
         const accountStatusText = $('#accountStatusText');
         const accountRoleBadge = $('#accountRoleBadge');
+        const cloudSyncBadge = $('#cloudSyncBadge');
         const accountPrimaryBtn = $('#accountPrimaryBtn');
         const accountProfileBtn = $('#accountProfileBtn');
         const teamAdminBtn = $('#teamAdminBtn');
@@ -3883,6 +3908,7 @@
         const planFileInput = $('#planFileInput');
         const planUploadZone = $('#planUploadZone');
         const planStatus = $('#planStatus');
+        const sharedPlanModeNote = $('#sharedPlanModeNote');
         const planTableBody = $('#planTableBody');
         const clearPlanBtn = $('#clearPlanBtn');
         const addAuxiliaryPlanWeekBtn = $('#addAuxiliaryPlanWeekBtn');
@@ -4067,7 +4093,7 @@
         }
 
         // ================================================================
-        //  ACCOUNTS & TEACHER GROUP — PHASE 1
+        //  ACCOUNTS, TEACHER GROUP & FIRESTORE SYNC — PHASE 2
         // ================================================================
         const FIRESTORE_RULES_TEMPLATE = `rules_version = '2';
 service cloud.firestore {
@@ -4087,6 +4113,11 @@ service cloud.firestore {
         && get(memberPath(groupId, request.auth.uid)).data.role == 'admin'
         && get(memberPath(groupId, request.auth.uid)).data.status == 'active';
     }
+    function isActiveMember(groupId) {
+      return signedIn()
+        && exists(memberPath(groupId, request.auth.uid))
+        && get(memberPath(groupId, request.auth.uid)).data.status == 'active';
+    }
 
     match /teacherNotebookGroups/{groupId} {
       allow read: if signedIn();
@@ -4095,6 +4126,14 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isAdmin(groupId);
       allow delete: if false;
+
+      // Kế hoạch tuần và mốc Tuần 1 dùng chung; chỉ admin được chỉnh sửa.
+      match /sharedYears/{academicYear} {
+        allow read: if isActiveMember(groupId);
+        allow create, update: if isAdmin(groupId)
+          && request.resource.data.academicYear == academicYear;
+        allow delete: if false;
+      }
 
       match /members/{uid} {
         allow read: if signedIn() && (request.auth.uid == uid || isAdmin(groupId));
@@ -4125,6 +4164,18 @@ service cloud.firestore {
             ])
           );
         allow delete: if false;
+
+        // TKB, phân phối chương trình và lịch báo giảng thuộc riêng từng giáo viên.
+        match /yearWorkspaces/{academicYear} {
+          allow read: if signedIn()
+            && request.auth.uid == uid
+            && isActiveMember(groupId);
+          allow create, update: if signedIn()
+            && request.auth.uid == uid
+            && isActiveMember(groupId)
+            && request.resource.data.academicYear == academicYear;
+          allow delete: if false;
+        }
       }
     }
   }
@@ -4207,6 +4258,11 @@ service cloud.firestore {
         function setAccountAccessMode(mode, notify = true) {
             state.account.accessMode = mode === 'group' ? 'group' : 'personal';
             localStorage.setItem(ACCOUNT_ACCESS_MODE_STORAGE, state.account.accessMode);
+            if (state.account.accessMode === 'group' && accountCanUseGroup()) {
+                activateCloudDataSync();
+            } else {
+                stopCloudWorkspaceSync();
+            }
             updateAccountPresentation();
             if (notify) showToast(state.account.accessMode === 'group'
                 ? 'Đã chuyển sang chế độ nhóm giáo viên'
@@ -4219,6 +4275,7 @@ service cloud.firestore {
         }
 
         function stopAllAccountSubscriptions() {
+            stopCloudWorkspaceSync();
             ['profileUnsubscribe', 'groupUnsubscribe', 'membersUnsubscribe'].forEach(stopAccountSubscription);
         }
 
@@ -4243,7 +4300,10 @@ service cloud.firestore {
             accountPersonalModeBtn.hidden = true;
             accountSignOutBtn.hidden = true;
             accountSetupBtn.hidden = false;
+            accountSetupBtn.textContent = configured ? '🩺 Kiểm tra nhóm' : '⚙️ Thiết lập';
             accountPrimaryBtn.hidden = false;
+            cloudSyncBadge.hidden = true;
+            updateSharedPlanEditingControls();
 
             if (personal) {
                 account.status = 'personal';
@@ -4255,7 +4315,7 @@ service cloud.firestore {
                 accountRoleBadge.textContent = 'Cá nhân';
                 accountRoleBadge.className = 'account-role-badge personal';
                 accountPrimaryBtn.textContent = account.user ? '👥 Vào nhóm giáo viên' : '👥 Dùng cùng nhóm';
-                accountSetupBtn.textContent = configured ? '⚙️ Kết nối nhóm' : '⚙️ Thiết lập';
+                accountSetupBtn.textContent = configured ? '🩺 Kiểm tra nhóm' : '⚙️ Thiết lập';
                 document.body.dataset.accountMode = 'personal';
                 document.body.dataset.accountRole = 'personal';
                 return;
@@ -4381,42 +4441,188 @@ service cloud.firestore {
                 accountBar.classList.add('group-active');
                 accountStatusText.textContent = `${account.group?.name || 'Nhóm giáo viên'} · ${account.user.email}`;
                 teamAdminBtn.hidden = role !== 'admin';
+                cloudSyncBadge.hidden = false;
+                setCloudSyncStatus(account.cloudStatus || 'syncing', account.cloudStatusMessage || 'Đang kết nối dữ liệu');
             }
         }
 
+        function getAccountSetupHealth() {
+            const account = state.account;
+            const configured = isValidFirebaseConfig(account.config);
+            const connected = Boolean(account.firebaseReady);
+            const signedIn = Boolean(account.user);
+            const profileStatus = cleanText(account.profile?.status);
+            const activeMember = signedIn && profileStatus === 'active';
+            const groupMode = account.accessMode === 'group';
+            const syncDone = groupMode && activeMember && account.cloudStatus === 'synced';
+            const connectionError = account.status === 'error';
+            const syncError = groupMode && account.cloudStatus === 'error';
+            const steps = [
+                {
+                    title: '1. Dự án Firebase',
+                    description: configured ? `Đã nhận cấu hình ${account.config.projectId}` : 'Chưa có cấu hình dự án',
+                    state: configured ? 'done' : 'active',
+                    icon: configured ? '✓' : '1',
+                },
+                {
+                    title: '2. Kết nối',
+                    description: connectionError ? (account.errorMessage || 'Kết nối đang gặp lỗi')
+                        : connected ? 'Firebase đã sẵn sàng' : configured ? 'Đang chờ kiểm tra kết nối' : 'Chờ bước 1',
+                    state: connectionError ? 'error' : connected ? 'done' : configured ? 'active' : 'warning',
+                    icon: connectionError ? '!' : connected ? '✓' : '2',
+                },
+                {
+                    title: '3. Tài khoản',
+                    description: activeMember ? `${account.user.email} · đang hoạt động`
+                        : profileStatus === 'pending' ? 'Đã đăng ký · chờ admin duyệt'
+                            : profileStatus === 'disabled' ? 'Tài khoản đang bị khóa'
+                                : signedIn ? 'Đang tải hồ sơ thành viên' : connected ? 'Sẵn sàng đăng nhập hoặc đăng ký' : 'Chờ kết nối',
+                    state: activeMember ? 'done'
+                        : profileStatus === 'disabled' ? 'error'
+                            : (signedIn || connected) ? 'active' : 'warning',
+                    icon: activeMember ? '✓' : profileStatus === 'disabled' ? '!' : '3',
+                },
+                {
+                    title: '4. Đồng bộ dữ liệu',
+                    description: syncError ? (account.cloudStatusMessage || 'Đồng bộ đang gặp lỗi')
+                        : syncDone ? 'Kế hoạch chung và dữ liệu riêng đã đồng bộ'
+                            : activeMember && !groupMode ? 'Tài khoản sẵn sàng · đang ở chế độ cá nhân'
+                                : activeMember ? (account.cloudStatusMessage || 'Đang chuẩn bị đồng bộ') : 'Chờ tài khoản hoạt động',
+                    state: syncError ? 'error' : syncDone ? 'done' : activeMember ? 'active' : 'warning',
+                    icon: syncError ? '!' : syncDone ? '✓' : '4',
+                },
+            ];
+
+            let recommendation;
+            if (!configured) {
+                recommendation = { action: 'save-config', label: 'Lưu cấu hình Firebase', text: 'Dán cấu hình dự án ở phần nâng cao rồi nhấn Lưu.', tone: 'warning' };
+            } else if (connectionError || !connected) {
+                recommendation = { action: 'retry-connection', label: 'Kiểm tra lại kết nối', text: 'Trang sẽ tự kiểm tra cấu hình và kết nối lại, không làm mất dữ liệu.', tone: connectionError ? 'error' : '' };
+            } else if (!signedIn) {
+                recommendation = { action: 'show-signin', label: 'Đăng nhập / Tạo tài khoản', text: 'Firebase đã kết nối. Bước tiếp theo chỉ cần đăng nhập hoặc tạo tài khoản giáo viên.', tone: '' };
+            } else if (!account.profile) {
+                recommendation = { action: 'retry-connection', label: 'Tải lại hồ sơ', text: 'Tài khoản đã đăng nhập; hệ thống đang hoàn tất hồ sơ thành viên.', tone: 'warning' };
+            } else if (profileStatus === 'pending') {
+                recommendation = { action: 'show-profile', label: 'Xem hồ sơ', text: 'Tài khoản đã tạo thành công và đang chờ admin duyệt.', tone: 'warning' };
+            } else if (profileStatus === 'disabled') {
+                recommendation = { action: 'show-profile', label: 'Xem hồ sơ', text: 'Tài khoản đang bị khóa; cần liên hệ admin để mở lại.', tone: 'error' };
+            } else if (!groupMode) {
+                recommendation = { action: 'activate-group', label: 'Bật chế độ nhóm', text: 'Tài khoản đã sẵn sàng. Bật chế độ nhóm để nhận kế hoạch tuần dùng chung.', tone: '' };
+            } else if (!syncDone) {
+                recommendation = { action: 'retry-sync', label: 'Đồng bộ lại', text: syncError ? 'Hệ thống sẽ kết nối lại dữ liệu nhóm.' : 'Dữ liệu đang được tải; có thể nhấn đồng bộ lại nếu chờ lâu.', tone: syncError ? 'error' : '' };
+            } else {
+                recommendation = { action: 'close-account', label: 'Hoàn tất', text: 'Nhóm giáo viên đã sẵn sàng. Không cần cài thêm Firebase Functions.', tone: '' };
+            }
+            return { configured, steps, recommendation };
+        }
+
+        function renderAccountHealthItem(item) {
+            return `<div class="account-health-item ${escapeHTML(item.state)}">
+                <span class="account-health-icon" aria-hidden="true">${escapeHTML(item.icon)}</span>
+                <div class="account-health-copy"><strong>${escapeHTML(item.title)}</strong><span>${escapeHTML(item.description)}</span></div>
+            </div>`;
+        }
+
         function renderAccountSetupView() {
+            state.account.modalView = 'setup';
             const config = state.account.config;
-            accountModalTitle.textContent = 'Thiết lập nhóm giáo viên';
-            accountModalSubtitle.textContent = 'Kết nối Firebase Authentication và Firestore.';
+            const health = getAccountSetupHealth();
+            const recommendation = health.recommendation;
+            accountModalTitle.textContent = 'Kiểm tra nhóm giáo viên';
+            accountModalSubtitle.textContent = config?.projectId
+                ? `Dự án ${config.projectId} · trang tự chỉ ra bước cần làm tiếp theo.`
+                : 'Thiết lập Firebase Authentication và Firestore theo từng bước.';
             const configText = config ? JSON.stringify(config, null, 2) : '';
             accountModalBody.innerHTML = `
-                <div class="account-modal-alert">
-                    Firebase Web Config chỉ dùng để xác định dự án và có thể đặt trong trang web. Đây không phải Gemini API key.
+                <div class="account-health-grid">
+                    ${health.steps.map(renderAccountHealthItem).join('')}
                 </div>
-                <ol class="account-setup-steps">
-                    <li>Tạo hoặc mở dự án Firebase và đăng ký một ứng dụng Web.</li>
-                    <li>Bật Authentication → Email/Password và tạo Cloud Firestore.</li>
-                    <li>Sao chép Rules bên dưới vào Firestore Rules rồi Publish.</li>
-                    <li>Dán đối tượng <b>firebaseConfig</b> của ứng dụng Web vào ô cấu hình.</li>
-                    <li>Tạo ngay tài khoản admin đầu tiên trước khi gửi đường dẫn trang cho giáo viên khác.</li>
-                </ol>
-                <div class="account-form-stack">
-                    <div>
-                        <label for="accountFirebaseConfigInput">Firebase Web Config</label>
-                        <textarea id="accountFirebaseConfigInput" spellcheck="false"
-                            placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..." }'>${escapeHTML(configText)}</textarea>
+                <div class="account-modal-alert ${escapeHTML(recommendation.tone)}">
+                    <b>Việc cần làm tiếp:</b> ${escapeHTML(recommendation.text)}
+                    ${state.account.setupCheckMessage ? `<div style="margin-top:5px;">${escapeHTML(state.account.setupCheckMessage)}</div>` : ''}
+                </div>
+                <div class="account-setup-actions">
+                    <button class="btn btn-outline" type="button" data-account-action="open-firebase"
+                            style="color:#1d4ed8;border-color:#93c5fd;">Mở Firebase Console</button>
+                    <button class="btn btn-outline" type="button" data-account-action="copy-rules"
+                            style="color:#1d4ed8;border-color:#93c5fd;">📋 Sao chép Firestore Rules</button>
+                    <button class="btn btn-success" type="button" data-account-action="${escapeHTML(recommendation.action)}"
+                            ${state.account.setupCheckBusy ? 'disabled' : ''}>${state.account.setupCheckBusy ? 'Đang kiểm tra…' : escapeHTML(recommendation.label)}</button>
+                </div>
+                <div class="account-simple-guide">
+                    <strong>Thiết lập lần đầu chỉ gồm 3 việc:</strong><br>
+                    1) Trong Firebase, bật đăng nhập <b>Email/Password</b> và tạo <b>Cloud Firestore</b>.<br>
+                    2) Nhấn “Sao chép Firestore Rules”, dán vào mục Rules rồi Publish.<br>
+                    3) Quay lại trang, nhấn “Kiểm tra lại kết nối”, sau đó tạo tài khoản admin đầu tiên.<br>
+                    Gemini API là key riêng của từng giáo viên; không cần cài kho API hay Firebase Functions.
+                </div>
+                <details class="account-advanced-config" ${health.configured ? '' : 'open'}>
+                    <summary>Cấu hình nâng cao ${health.configured ? '· đã gắn sẵn, thường không cần sửa' : '· cần nhập cấu hình'}</summary>
+                    <div class="account-advanced-config-body account-form-stack">
+                        <div>
+                            <label for="accountFirebaseConfigInput">Firebase Web Config</label>
+                            <textarea id="accountFirebaseConfigInput" spellcheck="false"
+                                placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..." }'>${escapeHTML(configText)}</textarea>
+                        </div>
+                        <div class="account-modal-alert">Đây là cấu hình nhận diện dự án, không phải Gemini API key.</div>
+                        <div class="account-form-actions">
+                            ${localStorage.getItem(ACCOUNT_CONFIG_STORAGE) ? `<button class="btn btn-outline" type="button" data-account-action="clear-config"
+                                    style="color:#b91c1c;border-color:#fca5a5;">Bỏ cấu hình tùy chỉnh</button>` : ''}
+                            <button class="btn btn-success" type="button" data-account-action="save-config">✓ Lưu cấu hình và kết nối</button>
+                        </div>
                     </div>
-                    <div class="account-form-actions">
-                        <button class="btn btn-outline" type="button" data-account-action="copy-rules"
-                                style="color:#1d4ed8;border-color:#93c5fd;">📋 Sao chép Firestore Rules</button>
-                        ${localStorage.getItem(ACCOUNT_CONFIG_STORAGE) ? `<button class="btn btn-outline" type="button" data-account-action="clear-config"
-                                style="color:#b91c1c;border-color:#fca5a5;">Xóa cấu hình trên máy</button>` : ''}
-                        <button class="btn btn-success" type="button" data-account-action="save-config">✓ Lưu và kết nối</button>
-                    </div>
-                </div>`;
+                </details>`;
+        }
+
+        async function retryAccountSetupConnection() {
+            if (state.account.setupCheckBusy) return;
+            state.account.setupCheckBusy = true;
+            state.account.setupCheckMessage = '';
+            renderAccountSetupView();
+            try {
+                if (!isValidFirebaseConfig(state.account.config)) throw new Error('Chưa có cấu hình Firebase hợp lệ');
+                if (!state.account.firebaseReady) {
+                    state.account.initialized = false;
+                    state.account.status = 'connecting';
+                    state.account.errorMessage = '';
+                    await initializeAccountSystem();
+                } else if (state.account.user && state.account.modules?.firestoreModule) {
+                    const snapshot = await state.account.modules.firestoreModule.getDoc(getAccountMemberRef(state.account.user.uid));
+                    if (!snapshot.exists()) throw new Error('Chưa tìm thấy hồ sơ thành viên trong Firestore');
+                    state.account.profile = { id: snapshot.id, ...snapshot.data() };
+                    state.account.status = 'ready';
+                }
+                state.account.setupCheckMessage = state.account.firebaseReady
+                    ? '✅ Kết nối Firebase hoạt động bình thường.'
+                    : 'Đang hoàn tất kết nối; vui lòng chờ vài giây.';
+                updateAccountPresentation();
+            } catch (error) {
+                state.account.status = 'error';
+                state.account.errorMessage = translateAccountError(error);
+                state.account.setupCheckMessage = '❌ ' + state.account.errorMessage;
+                updateAccountPresentation();
+            } finally {
+                state.account.setupCheckBusy = false;
+                if (!accountModal.hidden) renderAccountSetupView();
+            }
+        }
+
+        function retryAccountCloudSync() {
+            if (!accountCanUseGroup()) {
+                showToast('Cần tài khoản đã được duyệt trước khi đồng bộ', 'info');
+                renderAccountSetupView();
+                return;
+            }
+            state.account.setupCheckMessage = '↻ Đang kết nối lại kế hoạch chung và dữ liệu riêng…';
+            setAccountAccessMode('group', false);
+            activateCloudDataSync();
+            queueCloudWorkspaceSync();
+            renderAccountSetupView();
+            showToast('Đang đồng bộ lại dữ liệu nhóm', 'info');
         }
 
         function renderAccountAuthView(view = 'signin') {
+            state.account.modalView = 'auth';
             state.account.authView = view === 'register' ? 'register' : 'signin';
             const register = state.account.authView === 'register';
             accountModalTitle.textContent = register ? 'Tạo tài khoản giáo viên' : 'Đăng nhập nhóm giáo viên';
@@ -4449,6 +4655,7 @@ service cloud.firestore {
         }
 
         function renderAccountProfileView() {
+            state.account.modalView = 'profile';
             const profile = state.account.profile || {};
             const user = state.account.user;
             accountModalTitle.textContent = 'Hồ sơ tài khoản';
@@ -4592,6 +4799,361 @@ service cloud.firestore {
             return groupRef && uid ? firestoreModule.doc(groupRef, 'members', uid) : null;
         }
 
+        function getSharedYearRef(academicYear = state.selectedAcademicYear) {
+            const { firestoreModule } = state.account.modules || {};
+            const groupRef = getAccountGroupRef();
+            const normalizedYear = normalizeAcademicYear(academicYear);
+            return groupRef && normalizedYear ? firestoreModule.doc(groupRef, 'sharedYears', normalizedYear) : null;
+        }
+
+        function getPersonalYearRef(uid = state.account.user?.uid, academicYear = state.selectedAcademicYear) {
+            const { firestoreModule } = state.account.modules || {};
+            const memberRef = getAccountMemberRef(uid);
+            const normalizedYear = normalizeAcademicYear(academicYear);
+            return memberRef && normalizedYear ? firestoreModule.doc(memberRef, 'yearWorkspaces', normalizedYear) : null;
+        }
+
+        function cloudPayloadHash(value) {
+            try { return JSON.stringify(value); } catch (error) { return ''; }
+        }
+
+        function buildSharedYearPayload(academicYear = state.selectedAcademicYear) {
+            const workspace = state.yearWorkspaces[academicYear] || getActiveYearWorkspace();
+            return {
+                schemaVersion: 2,
+                academicYear,
+                week1Start: alignISODateToMonday(workspace?.week1Start),
+                planData: Array.isArray(workspace?.planData)
+                    ? workspace.planData.map(normalizePlanWeek).filter(Boolean).sort((a, b) => a.week - b.week)
+                    : [],
+            };
+        }
+
+        function buildPersonalYearPayload(academicYear = state.selectedAcademicYear) {
+            const workspace = state.yearWorkspaces[academicYear] || getActiveYearWorkspace();
+            const normalized = normalizeYearWorkspace(workspace);
+            return {
+                schemaVersion: 2,
+                academicYear,
+                timetablesByWeek: normalized.timetablesByWeek,
+                curriculumText: normalized.curriculumText,
+                curriculumProfiles: normalized.curriculumProfiles,
+                teachingSchedule: normalized.teachingSchedule,
+                scheduleMeta: normalized.scheduleMeta,
+                selectedTimetableWeek: normalized.selectedTimetableWeek,
+                selectedTeachingWeek: normalized.selectedTeachingWeek,
+            };
+        }
+
+        function accountCloudSyncEnabled() {
+            return Boolean(state.account.accessMode === 'group'
+                && state.account.firebaseReady
+                && state.account.db
+                && state.account.user
+                && state.account.profile?.status === 'active');
+        }
+
+        function canEditSharedPlan() {
+            if (state.account.accessMode !== 'group') return true;
+            return Boolean(state.account.profile?.status === 'active'
+                && state.account.profile?.role === 'admin');
+        }
+
+        function showSharedPlanReadOnlyNotice() {
+            showToast('🔒 Kế hoạch tuần dùng chung chỉ quản trị viên được chỉnh sửa', 'info');
+        }
+
+        function updateSharedPlanEditingControls() {
+            const editable = canEditSharedPlan();
+            if (planFileInput) planFileInput.disabled = !editable || state.busy.plan;
+            if (planUploadZone) {
+                planUploadZone.classList.toggle('read-only', !editable);
+                planUploadZone.setAttribute('aria-disabled', String(!editable));
+                planUploadZone.title = editable
+                    ? 'Tải ảnh kế hoạch tuần'
+                    : 'Kế hoạch dùng chung chỉ admin được chỉnh sửa';
+            }
+            if (clearPlanBtn) clearPlanBtn.disabled = !editable;
+            if (week1StartDateInput) week1StartDateInput.disabled = !editable;
+            if (saveWeek1StartBtn) saveWeek1StartBtn.disabled = !editable;
+            if (sharedPlanModeNote) {
+                sharedPlanModeNote.textContent = state.account.accessMode === 'group'
+                    ? editable
+                        ? 'Kế hoạch dùng chung · admin đang có quyền cập nhật'
+                        : 'Kế hoạch dùng chung · giáo viên chỉ xem'
+                    : 'Dữ liệu cá nhân đang lưu trên máy này';
+            }
+        }
+
+        function setCloudSyncStatus(status, message) {
+            state.account.cloudStatus = status;
+            state.account.cloudStatusMessage = message;
+            if (!cloudSyncBadge) return;
+            cloudSyncBadge.className = `cloud-sync-badge ${status}`;
+            cloudSyncBadge.textContent = status === 'syncing' ? `↻ ${message}`
+                : status === 'error' ? `⚠ ${message}` : `☁️ ${message}`;
+            cloudSyncBadge.title = message;
+            if (!accountModal.hidden && state.account.modalView === 'setup' && !state.account.setupCheckBusy) {
+                renderAccountSetupView();
+            }
+        }
+
+        function savePreCloudSyncBackupOnce() {
+            if (localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY)) return true;
+            const saved = writeStoredJSON(PRE_CLOUD_SYNC_BACKUP_KEY, createBackupPayload());
+            if (saved && exportPreCloudBackupBtn) {
+                exportPreCloudBackupBtn.hidden = false;
+            }
+            if (!saved) {
+                showToast('⚠️ Chưa thể đồng bộ vì trình duyệt không tạo được bản sao dữ liệu an toàn', 'error');
+            }
+            return saved;
+        }
+
+        function stopCloudWorkspaceSync() {
+            if (state.account.syncTimer) clearTimeout(state.account.syncTimer);
+            state.account.syncTimer = null;
+            stopAccountSubscription('sharedYearUnsubscribe');
+            stopAccountSubscription('personalYearUnsubscribe');
+            state.account.syncYear = '';
+            state.account.syncApplyingRemote = false;
+            state.account.sharedYearLoaded = false;
+            state.account.personalYearLoaded = false;
+            state.account.sharedYearExists = false;
+            state.account.personalYearExists = false;
+            state.account.lastSharedHash = '';
+            state.account.lastPersonalHash = '';
+        }
+
+        function refreshViewsAfterCloudWorkspace(sharedChanged = false, personalChanged = false) {
+            if (sharedChanged) {
+                updateSchoolYearWeekInfo();
+                renderPlanTable();
+            }
+            if (personalChanged) {
+                populateTimetableWeekSelect();
+                activateTimetableWeek(state.selectedTimetableWeek || 1, false);
+                renderCurriculumProfiles();
+                populateWeekSelect();
+                const workspace = getActiveYearWorkspace();
+                const selectedTeachingWeek = workspace?.selectedTeachingWeek;
+                if (selectedTeachingWeek
+                    && scheduleWeekSelect.querySelector(`option[value="${selectedTeachingWeek}"]`)) {
+                    scheduleWeekSelect.value = String(selectedTeachingWeek);
+                    localStorage.setItem('teacher_selected_week', String(selectedTeachingWeek));
+                    if (state.teachingSchedule[selectedTeachingWeek]?.length) {
+                        renderTeachingSchedule(selectedTeachingWeek);
+                    } else {
+                        updateScheduleToolbar(selectedTeachingWeek);
+                    }
+                } else {
+                    scheduleWeekSelect.value = '';
+                    localStorage.removeItem('teacher_selected_week');
+                    scheduleDisplay.innerHTML = '<p class="text-muted text-center" style="padding:32px 0;">Chọn tuần và nhấn “Tạo lịch báo giảng”</p>';
+                    updateScheduleToolbar(null);
+                }
+                initializeProgressDashboardControls();
+                renderProgressDashboard();
+            }
+            updateDataSafetySummary();
+        }
+
+        function applySharedYearSnapshot(data, academicYear) {
+            if (state.account.syncYear !== academicYear || state.selectedAcademicYear !== academicYear) return;
+            const previousPayload = buildSharedYearPayload(academicYear);
+            const workspace = ensureYearWorkspace(academicYear);
+            const normalizedPlan = Array.isArray(data?.planData)
+                ? data.planData.map(normalizePlanWeek).filter(Boolean).sort((a, b) => a.week - b.week)
+                : [];
+            const nextPayload = {
+                schemaVersion: 2,
+                academicYear,
+                week1Start: alignISODateToMonday(data?.week1Start),
+                planData: normalizedPlan,
+            };
+            const changed = cloudPayloadHash(previousPayload) !== cloudPayloadHash(nextPayload);
+            if (!savePreCloudSyncBackupOnce()) return;
+            state.account.syncApplyingRemote = true;
+            workspace.week1Start = nextPayload.week1Start;
+            workspace.planData = normalizedPlan;
+            state.planData = workspace.planData;
+            syncPlanDatesForActiveYear();
+            persistActiveYearWorkspace();
+            persistLegacyActiveYear();
+            refreshViewsAfterCloudWorkspace(true, false);
+            state.account.syncApplyingRemote = false;
+            state.account.lastSharedHash = cloudPayloadHash(buildSharedYearPayload(academicYear));
+            if (changed && Object.keys(state.teachingSchedule || {}).length > 0) {
+                invalidateTeachingSchedules('Kế hoạch tuần dùng chung đã được cập nhật');
+            }
+        }
+
+        function applyPersonalYearSnapshot(data, academicYear) {
+            if (state.account.syncYear !== academicYear || state.selectedAcademicYear !== academicYear) return;
+            if (!savePreCloudSyncBackupOnce()) return;
+            const workspace = ensureYearWorkspace(academicYear);
+            const normalized = normalizeYearWorkspace({
+                ...data,
+                week1Start: workspace.week1Start,
+                planData: workspace.planData,
+            });
+            state.account.syncApplyingRemote = true;
+            workspace.timetablesByWeek = normalized.timetablesByWeek;
+            workspace.curriculumText = normalized.curriculumText;
+            workspace.curriculumProfiles = normalized.curriculumProfiles;
+            workspace.teachingSchedule = normalized.teachingSchedule;
+            workspace.scheduleMeta = normalized.scheduleMeta;
+            workspace.selectedTimetableWeek = normalized.selectedTimetableWeek;
+            workspace.selectedTeachingWeek = normalized.selectedTeachingWeek;
+            state.timetablesByWeek = workspace.timetablesByWeek;
+            state.curriculumText = workspace.curriculumText;
+            state.curriculumProfiles = workspace.curriculumProfiles;
+            state.teachingSchedule = workspace.teachingSchedule;
+            state.scheduleMeta = workspace.scheduleMeta;
+            state.selectedTimetableWeek = workspace.selectedTimetableWeek || 1;
+            state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
+            persistActiveYearWorkspace();
+            persistLegacyActiveYear();
+            refreshViewsAfterCloudWorkspace(false, true);
+            state.account.syncApplyingRemote = false;
+            state.account.lastPersonalHash = cloudPayloadHash(buildPersonalYearPayload(academicYear));
+        }
+
+        async function syncActiveYearToCloud() {
+            if (!accountCloudSyncEnabled()) return;
+            const academicYear = state.account.syncYear;
+            if (!academicYear || academicYear !== state.selectedAcademicYear
+                || !state.account.sharedYearLoaded || !state.account.personalYearLoaded) return;
+            const { firestoreModule } = state.account.modules;
+            const sharedRef = getSharedYearRef(academicYear);
+            const personalRef = getPersonalYearRef(state.account.user.uid, academicYear);
+            const sharedPayload = buildSharedYearPayload(academicYear);
+            const personalPayload = buildPersonalYearPayload(academicYear);
+            const sharedHash = cloudPayloadHash(sharedPayload);
+            const personalHash = cloudPayloadHash(personalPayload);
+            let wrote = false;
+            let failure = null;
+            setCloudSyncStatus('syncing', `Đang đồng bộ ${academicYear}`);
+
+            if (state.account.profile?.role === 'admin' && sharedHash !== state.account.lastSharedHash) {
+                try {
+                    await firestoreModule.setDoc(sharedRef, {
+                        ...sharedPayload,
+                        updatedAt: firestoreModule.serverTimestamp(),
+                        updatedBy: state.account.user.uid,
+                    }, { merge: true });
+                    if (state.account.syncYear === academicYear) {
+                        state.account.lastSharedHash = sharedHash;
+                        state.account.sharedYearExists = true;
+                    }
+                    wrote = true;
+                } catch (error) {
+                    failure = error;
+                    console.error('Không thể đồng bộ kế hoạch tuần dùng chung:', error);
+                }
+            }
+
+            if (personalHash !== state.account.lastPersonalHash) {
+                try {
+                    await firestoreModule.setDoc(personalRef, {
+                        ...personalPayload,
+                        updatedAt: firestoreModule.serverTimestamp(),
+                        updatedBy: state.account.user.uid,
+                    }, { merge: true });
+                    if (state.account.syncYear === academicYear) {
+                        state.account.lastPersonalHash = personalHash;
+                        state.account.personalYearExists = true;
+                    }
+                    wrote = true;
+                } catch (error) {
+                    failure = failure || error;
+                    console.error('Không thể đồng bộ dữ liệu riêng của giáo viên:', error);
+                }
+            }
+
+            if (state.account.syncYear !== academicYear) return;
+            if (failure) {
+                setCloudSyncStatus('error', translateAccountError(failure));
+                return;
+            }
+            setCloudSyncStatus('synced', wrote ? 'Đã lưu lên đám mây' : 'Dữ liệu đã đồng bộ');
+        }
+
+        function queueCloudWorkspaceSync() {
+            if (!accountCloudSyncEnabled() || state.account.syncApplyingRemote) return;
+            if (!state.account.sharedYearLoaded || !state.account.personalYearLoaded) return;
+            if (state.account.syncTimer) clearTimeout(state.account.syncTimer);
+            setCloudSyncStatus('syncing', 'Đang chờ lưu thay đổi');
+            state.account.syncTimer = setTimeout(() => {
+                state.account.syncTimer = null;
+                syncActiveYearToCloud();
+            }, 700);
+        }
+
+        function flushCloudWorkspaceSync() {
+            if (state.account.syncTimer) clearTimeout(state.account.syncTimer);
+            state.account.syncTimer = null;
+            return syncActiveYearToCloud();
+        }
+
+        function activateCloudDataSync() {
+            if (!accountCloudSyncEnabled()) {
+                stopCloudWorkspaceSync();
+                return;
+            }
+            const academicYear = normalizeAcademicYear(state.selectedAcademicYear);
+            if (!academicYear) return;
+            if (state.account.syncYear === academicYear
+                && state.account.sharedYearUnsubscribe
+                && state.account.personalYearUnsubscribe) return;
+
+            stopCloudWorkspaceSync();
+            state.account.syncYear = academicYear;
+            if (!savePreCloudSyncBackupOnce()) {
+                setCloudSyncStatus('error', 'Không tạo được bản sao trước đồng bộ');
+                return;
+            }
+            setCloudSyncStatus('syncing', `Đang mở dữ liệu ${academicYear}`);
+            const { firestoreModule } = state.account.modules;
+            const sharedRef = getSharedYearRef(academicYear);
+            const personalRef = getPersonalYearRef(state.account.user.uid, academicYear);
+
+            state.account.sharedYearUnsubscribe = firestoreModule.onSnapshot(sharedRef, snapshot => {
+                if (state.account.syncYear !== academicYear) return;
+                state.account.sharedYearLoaded = true;
+                state.account.sharedYearExists = snapshot.exists();
+                if (snapshot.exists()) {
+                    applySharedYearSnapshot(snapshot.data(), academicYear);
+                } else {
+                    state.account.lastSharedHash = '';
+                }
+                if (state.account.personalYearLoaded) {
+                    queueCloudWorkspaceSync();
+                    if (state.account.profile?.role !== 'admin' && !snapshot.exists()) {
+                        setCloudSyncStatus('synced', 'Đang chờ admin tạo kế hoạch chung');
+                    }
+                }
+            }, error => {
+                console.error('Không thể nhận kế hoạch tuần dùng chung:', error);
+                setCloudSyncStatus('error', translateAccountError(error));
+            });
+
+            state.account.personalYearUnsubscribe = firestoreModule.onSnapshot(personalRef, snapshot => {
+                if (state.account.syncYear !== academicYear) return;
+                state.account.personalYearLoaded = true;
+                state.account.personalYearExists = snapshot.exists();
+                if (snapshot.exists()) {
+                    applyPersonalYearSnapshot(snapshot.data(), academicYear);
+                } else {
+                    state.account.lastPersonalHash = '';
+                }
+                if (state.account.sharedYearLoaded) queueCloudWorkspaceSync();
+            }, error => {
+                console.error('Không thể nhận dữ liệu riêng của giáo viên:', error);
+                setCloudSyncStatus('error', translateAccountError(error));
+            });
+        }
+
         async function ensureAccountMembership(user, preferredName = '') {
             if (!user || !state.account.db || !state.account.modules) return null;
             const { firestoreModule } = state.account.modules;
@@ -4696,6 +5258,8 @@ service cloud.firestore {
                 if (state.account.profile) syncAccountProfileToTeacherProfile(state.account.profile);
                 subscribeAdminMembers();
                 updateAccountPresentation();
+                if (accountCloudSyncEnabled()) activateCloudDataSync();
+                else stopCloudWorkspaceSync();
                 if (!accountModal.hidden && state.account.user) renderAccountProfileView();
             }, error => {
                 console.error('Không thể đồng bộ hồ sơ tài khoản:', error);
@@ -4980,8 +5544,20 @@ service cloud.firestore {
             if (!action) return;
             if (action === 'show-signin') renderAccountAuthView('signin');
             if (action === 'show-register') renderAccountAuthView('register');
+            if (action === 'show-profile') renderAccountProfileView();
             if (action === 'reset-password') sendAccountPasswordReset();
             if (action === 'copy-rules') copyTextForAccount(FIRESTORE_RULES_TEMPLATE, '✅ Đã sao chép Firestore Rules');
+            if (action === 'open-firebase') {
+                const firebaseWindow = window.open('https://console.firebase.google.com/', '_blank', 'noopener,noreferrer');
+                if (firebaseWindow) firebaseWindow.opener = null;
+            }
+            if (action === 'retry-connection') retryAccountSetupConnection();
+            if (action === 'activate-group') {
+                setAccountAccessMode('group', false);
+                state.account.setupCheckMessage = '✅ Đã bật chế độ nhóm; hệ thống đang tải dữ liệu.';
+                renderAccountSetupView();
+            }
+            if (action === 'retry-sync') retryAccountCloudSync();
             if (action === 'save-config') saveFirebaseConfigFromModal();
             if (action === 'clear-config') {
                 if (!confirm('Xóa cấu hình Firebase đã lưu trên máy này và quay về chế độ cá nhân?')) return;
@@ -5045,6 +5621,7 @@ service cloud.firestore {
         function persistActiveYearWorkspace() {
             captureActiveYearWorkspace();
             writeStoredJSON(YEAR_WORKSPACES_STORAGE, state.yearWorkspaces);
+            queueCloudWorkspaceSync();
         }
 
         function persistLegacyActiveYear() {
@@ -5130,6 +5707,7 @@ service cloud.firestore {
             if (!normalizedYear) return false;
             if (planSyncContext) closePlanSyncPanel();
             if (scheduleValidationContext) closeScheduleValidationPanel();
+            flushCloudWorkspaceSync();
             persistActiveYearWorkspace();
             const workspace = ensureYearWorkspace(normalizedYear);
             state.selectedAcademicYear = normalizedYear;
@@ -5173,6 +5751,7 @@ service cloud.firestore {
             initializeProgressDashboardControls();
             renderProgressDashboard();
             updateDataSafetySummary();
+            activateCloudDataSync();
             if (notify) showToast(`✅ Đã chuyển sang năm học ${normalizedYear}`, 'success');
             return true;
         }
@@ -5362,6 +5941,7 @@ service cloud.firestore {
             const counts = backupDataCounts();
             dataSafetySummary.textContent = `${counts.years} năm học · ${counts.plans} tuần kế hoạch · ${counts.timetables} tuần TKB · ${counts.schedules} tuần lịch báo giảng${counts.curriculum ? ` · ${counts.curriculum} bộ phân phối` : ''}. File sao lưu không chứa API key.`;
             undoRestoreBtn.hidden = !localStorage.getItem(PRE_RESTORE_BACKUP_KEY);
+            exportPreCloudBackupBtn.hidden = !localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY);
         }
 
         function persistCoreState() {
@@ -5482,6 +6062,26 @@ service cloud.firestore {
             }
         });
 
+        exportPreCloudBackupBtn.addEventListener('click', () => {
+            try {
+                const raw = localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY);
+                if (!raw) throw new Error('Không còn bản sao trước đồng bộ');
+                const payload = normalizeBackupPayload(JSON.parse(raw));
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'so-tay-giao-vien-truoc-dong-bo-firebase.json';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                showToast('✅ Đã tải bản sao dữ liệu trước lần đồng bộ Firebase đầu tiên', 'success');
+            } catch (error) {
+                showToast('❌ ' + error.message, 'error');
+            }
+        });
+
         restoreBackupBtn.addEventListener('click', () => restoreBackupInput.click());
 
         restoreBackupInput.addEventListener('change', async () => {
@@ -5560,6 +6160,10 @@ service cloud.firestore {
         function hasUsableGeminiKey() {
             const key = apiKeyInput.value.trim() || state.apiKey;
             return key.length >= 20;
+        }
+
+        function isGeminiDailyBlocked() {
+            return state.dailyQuotaBlocked;
         }
 
         async function hashImageFile(file) {
@@ -5645,7 +6249,11 @@ service cloud.firestore {
 
         function updateApiKeyNote() {
             const isRemembered = Boolean(localStorage.getItem(API_KEY_PERSISTENT_STORAGE));
-            if (rememberApiKey.checked) {
+            if (state.account.accessMode === 'group' && state.account.profile?.status === 'active') {
+                apiKeyNote.textContent = rememberApiKey.checked
+                    ? 'Đây là API key riêng của tài khoản này và đang được lưu trên máy hiện tại. Không dùng chung key với các giáo viên khác.'
+                    : 'Mỗi giáo viên dùng API key riêng; key này chỉ giữ trong phiên trên thiết bị hiện tại. Khi hết hạn mức, trang tự chuyển sang OCR.';
+            } else if (rememberApiKey.checked) {
                 apiKeyNote.textContent = isRemembered
                     ? 'API key đang được lưu trên máy này và sẽ tự điền ở lần mở sau. Chỉ nên dùng trên máy tính cá nhân.'
                     : 'API key sẽ được lưu trên máy này sau khi kiểm tra thành công. Chỉ nên bật trên máy tính cá nhân.';
@@ -5918,13 +6526,57 @@ service cloud.firestore {
                 || /gemini|api key|network|fetch|kết nối|phản hồi quá lâu|không trả về|lược đồ|nhận dạng/i.test(error?.message || '');
         }
 
+        function getGeminiInteractionText(payload) {
+            const interaction = payload?.interaction || payload || {};
+            if (interaction.status === 'failed') {
+                throw new Error(interaction.error?.message || 'Gemini không hoàn thành yêu cầu');
+            }
+            const text = cleanText(interaction.output_text || (interaction.steps || [])
+                .filter(step => step?.type === 'model_output')
+                .flatMap(step => step.content || [])
+                .map(content => content.text || '')
+                .join('')
+            );
+            if (!text) throw new Error('Gemini không trả về nội dung');
+            return text;
+        }
+
         async function geminiGenerate(parts, options = {}) {
-            const { key, model } = getGeminiCredentials();
+            const credentials = getGeminiCredentials();
             const json = options.json !== false;
             const timeoutMs = options.timeoutMs || 90000;
             const retries = Number.isInteger(options.retries) ? options.retries : 3;
             const onRateLimit = options.onRateLimit;
             const endpoint = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+            const input = parts.map(part => {
+                if (typeof part === 'string') return { type: 'text', text: part };
+                if (part?.text !== undefined) return { type: 'text', text: String(part.text) };
+                if (part?.inlineData) {
+                    return {
+                        type: 'image',
+                        data: part.inlineData.data,
+                        mime_type: part.inlineData.mimeType,
+                        resolution: options.mediaResolution || 'high',
+                    };
+                }
+                return part;
+            });
+            const body = {
+                model: credentials.model,
+                input,
+                store: false,
+                generation_config: {
+                    thinking_level: options.thinkingLevel || (json ? 'medium' : 'low'),
+                },
+            };
+            if (options.systemInstruction) body.system_instruction = options.systemInstruction;
+            if (json) {
+                body.response_format = {
+                    type: 'text',
+                    mime_type: 'application/json',
+                    ...(options.schema ? { schema: options.schema } : {}),
+                };
+            }
 
             for (let attempt = 0; attempt <= retries; attempt++) {
                 const finishRateSlot = await acquireGeminiRequestSlot(onRateLimit);
@@ -5932,41 +6584,11 @@ service cloud.firestore {
                 const timer = setTimeout(() => controller.abort(), timeoutMs);
                 let retryPlan = null;
                 try {
-                    const input = parts.map(part => {
-                        if (typeof part === 'string') return { type: 'text', text: part };
-                        if (part?.text !== undefined) return { type: 'text', text: String(part.text) };
-                        if (part?.inlineData) {
-                            return {
-                                type: 'image',
-                                data: part.inlineData.data,
-                                mime_type: part.inlineData.mimeType,
-                                resolution: options.mediaResolution || 'high',
-                            };
-                        }
-                        return part;
-                    });
-                    const body = {
-                        model,
-                        input,
-                        store: false,
-                        generation_config: {
-                            thinking_level: options.thinkingLevel || (json ? 'medium' : 'low'),
-                        },
-                    };
-                    if (options.systemInstruction) body.system_instruction = options.systemInstruction;
-                    if (json) {
-                        body.response_format = {
-                            type: 'text',
-                            mime_type: 'application/json',
-                            ...(options.schema ? { schema: options.schema } : {}),
-                        };
-                    }
-
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'x-goog-api-key': key,
+                            'x-goog-api-key': credentials.key,
                         },
                         body: JSON.stringify(body),
                         signal: controller.signal,
@@ -5979,30 +6601,18 @@ service cloud.firestore {
                             && !geminiError.isDailyQuota
                             && attempt < retries;
                         if (canRetry) {
-                            const retryAfter = getRetryAfterMilliseconds(response);
                             const defaultBackoff = response.status === 429
                                 ? GEMINI_429_RETRY_DELAYS[Math.min(attempt, GEMINI_429_RETRY_DELAYS.length - 1)]
                                 : Math.min(2000 * (2 ** attempt), 15000);
                             retryPlan = {
-                                waitMs: Math.max(defaultBackoff, retryAfter),
+                                waitMs: Math.max(defaultBackoff, getRetryAfterMilliseconds(response)),
                                 isRateLimit: response.status === 429,
                             };
                         } else {
                             throw geminiError;
                         }
                     } else {
-                        const interaction = payload.interaction || payload;
-                        if (interaction.status === 'failed') {
-                            throw new Error(interaction.error?.message || 'Gemini không hoàn thành yêu cầu');
-                        }
-                        const text = cleanText(interaction.output_text || (interaction.steps || [])
-                            .filter(step => step?.type === 'model_output')
-                            .flatMap(step => step.content || [])
-                            .map(content => content.text || '')
-                            .join('')
-                        );
-                        if (!text) throw new Error('Gemini không trả về nội dung');
-                        return text;
+                        return getGeminiInteractionText(payload);
                     }
                 } catch (error) {
                     if (error.name === 'AbortError') throw makeGeminiError('Gemini phản hồi quá lâu, đã chuyển sang OCR trên máy', 408);
@@ -6029,20 +6639,6 @@ service cloud.firestore {
                 }
             }
             throw new Error('Không thể kết nối Gemini');
-        }
-
-        async function geminiImageToText(imageFile, prompt) {
-            const reader = new FileReader();
-            const dataUrl = await new Promise((resolve, reject) => {
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(imageFile);
-            });
-            const base64 = dataUrl.split(',')[1];
-            return geminiGenerate([
-                { text: prompt },
-                { inlineData: { mimeType: imageFile.type, data: base64 } },
-            ], { thinkingLevel: 'high', mediaResolution: 'high' });
         }
 
         async function imageFileToPart(imageFile) {
@@ -6496,7 +7092,7 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
 
             const mode = state.recognitionMode;
             let geminiError = null;
-            if (mode !== 'offline' && hasUsableGeminiKey() && !state.dailyQuotaBlocked) {
+            if (mode !== 'offline' && hasUsableGeminiKey() && !isGeminiDailyBlocked()) {
                 try {
                     const verifySecondPass = mode !== 'economy';
                     let json = await geminiExtractVerified(file, prompt, schema, onStage, verifySecondPass);
@@ -6536,12 +7132,12 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
                 }
             } else if (mode !== 'offline') {
                 geminiError = makeGeminiError(
-                    state.dailyQuotaBlocked ? 'Hạn mức Gemini theo ngày đã hết trong phiên này' : 'Chưa có API key Gemini hợp lệ',
-                    state.dailyQuotaBlocked ? 429 : 0
+                    isGeminiDailyBlocked() ? 'Hạn mức Gemini theo ngày đã hết trong phiên này' : 'Chưa có API key Gemini hợp lệ',
+                    isGeminiDailyBlocked() ? 429 : 0
                 );
-                geminiError.isQuota = state.dailyQuotaBlocked;
-                geminiError.isDailyQuota = state.dailyQuotaBlocked;
-                if (onStage) onStage(state.dailyQuotaBlocked
+                geminiError.isQuota = isGeminiDailyBlocked();
+                geminiError.isDailyQuota = isGeminiDailyBlocked();
+                if (onStage) onStage(isGeminiDailyBlocked()
                     ? 'Hạn mức ngày đã hết, bỏ qua Gemini và dùng OCR trên máy...'
                     : 'Chưa có API key, đang dùng OCR trên máy...');
             }
@@ -6906,6 +7502,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
 
         async function handlePlanFiles(files) {
             if (!files || files.length === 0) return;
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             if (state.busy.plan) {
                 showToast('Kế hoạch đang được xử lý, vui lòng chờ', 'info');
                 return;
@@ -6961,7 +7561,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 }
             } finally {
                 state.busy.plan = false;
-                planFileInput.disabled = false;
+                updateSharedPlanEditingControls();
                 planStatus.innerHTML = '';
             }
         }
@@ -7017,7 +7617,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                   <button class="btn btn-outline btn-sm" style="color:#1e3a5f;border-color:#cbd5e1;" 
                           data-action="view" data-week="${week}" aria-label="Xem kế hoạch ${escapeHTML(weekLabel)}">👁️ Xem</button>
                   <button class="btn btn-danger btn-sm" data-action="delete" data-week="${week}"
-                          aria-label="Xóa kế hoạch ${escapeHTML(weekLabel)}">🗑️</button>
+                          aria-label="Xóa kế hoạch ${escapeHTML(weekLabel)}" ${canEditSharedPlan() ? '' : 'disabled'}>🗑️</button>
                 </td>
               </tr>
             `;
@@ -7033,7 +7633,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
             const auxiliaryCount = state.planData.filter(item => isAuxiliaryPlanWeek(item.week)).length;
             planWeekListSummary.textContent = `Đã có ${mainCount}/${MAX_SCHOOL_WEEKS} tuần chính · ${auxiliaryCount}/2 tuần phụ trước khai giảng`;
             const nextAuxiliaryWeek = AUXILIARY_PLAN_WEEKS.find(week => !state.planData.some(item => item.week === week));
-            addAuxiliaryPlanWeekBtn.disabled = typeof nextAuxiliaryWeek === 'undefined';
+            addAuxiliaryPlanWeekBtn.disabled = !canEditSharedPlan() || typeof nextAuxiliaryWeek === 'undefined';
             addAuxiliaryPlanWeekBtn.textContent = typeof nextAuxiliaryWeek === 'undefined'
                 ? '✓ Đủ 2 tuần phụ'
                 : `＋ Thêm ${getPlanWeekLabel(nextAuxiliaryWeek)}`;
@@ -7089,6 +7689,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 planDetailDisplay.innerHTML = '<p class="text-muted text-center" style="padding:28px 0;">Chọn một tuần để xem bảng kế hoạch chi tiết.</p>';
                 return;
             }
+            const planEditDisabled = canEditSharedPlan() ? '' : 'disabled';
 
             const rows = plan.days.map((day, index) => ({ day, index }))
                 .sort((a, b) => planDayOrder(a.day.day) - planDayOrder(b.day.day))
@@ -7103,7 +7704,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                     <td class="plan-business">${escapeHTML(normalizePlanCellText(day.businessTrip))}</td>
                     <td class="plan-cell-actions">
                         <button class="btn btn-outline btn-sm" style="color:#1e3a5f;border-color:#93c5fd;"
-                                data-plan-action="edit-day" data-week="${plan.week}" data-day-index="${index}">✏️ Sửa</button>
+                                data-plan-action="edit-day" data-week="${plan.week}" data-day-index="${index}" ${planEditDisabled}>✏️ Sửa</button>
                     </td>
                 </tr>
             `).join('');
@@ -7117,14 +7718,14 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 ? state.recentRecognitionFiles[`plan:${plan.cacheHash}`] : null;
             const needsRecovery = plan.warnings.length > 0
                 || ['offline-spatial', 'offline-ocr', 'manual'].includes(plan.sourceMode);
-            const geminiUnavailable = !recentFile || !hasUsableGeminiKey() || state.dailyQuotaBlocked;
+            const geminiUnavailable = !recentFile || !hasUsableGeminiKey() || isGeminiDailyBlocked();
             const recoveryActions = needsRecovery ? `
                 <span class="plan-recovery-actions">
                     <button class="btn btn-outline btn-sm" type="button" style="color:#1d4ed8;border-color:#93c5fd;"
-                            data-plan-action="retry-gemini" data-week="${plan.week}" ${geminiUnavailable ? 'disabled' : ''}
+                            data-plan-action="retry-gemini" data-week="${plan.week}" ${geminiUnavailable || !canEditSharedPlan() ? 'disabled' : ''}
                             title="${geminiUnavailable ? 'Cần ảnh gốc trong phiên hiện tại và API Gemini khả dụng' : 'Đọc lại ảnh qua hàng đợi Gemini an toàn'}">🔄 Phân tích lại bằng Gemini</button>
                     <button class="btn btn-outline btn-sm" type="button" style="color:#166534;border-color:#86efac;"
-                            data-plan-action="rebuild-spatial-ocr" data-week="${plan.week}" ${recentFile ? '' : 'disabled'}
+                            data-plan-action="rebuild-spatial-ocr" data-week="${plan.week}" ${recentFile && canEditSharedPlan() ? '' : 'disabled'}
                             title="${recentFile ? 'Dùng tọa độ chữ để ghép lại từng cột' : 'Cần tải lại ảnh gốc để ghép bảng'}">🧩 Ghép lại từ OCR</button>
                 </span>
                 ${recentFile ? '' : '<span class="plan-recovery-hint">Ảnh gốc không được lưu lâu dài. Hãy tải lại đúng ảnh kế hoạch một lần để bật hai công cụ phục hồi.</span>'}
@@ -7142,7 +7743,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                     <span>${sourceInfo.icon}</span>
                     <div><strong>${escapeHTML(sourceInfo.title)}</strong> ${escapeHTML(sourceInfo.text)}
                     <button class="btn btn-outline btn-sm" style="color:#1e3a5f;border-color:#93c5fd;margin-left:8px;"
-                            data-plan-action="edit-meta" data-week="${plan.week}">✏️ Sửa thông tin tuần</button>
+                            data-plan-action="edit-meta" data-week="${plan.week}" ${planEditDisabled}>✏️ Sửa thông tin tuần</button>
                     ${recoveryActions}</div>
                 </div>
                 <div class="plan-review-workspace ${sourcePreviewHtml ? 'with-preview' : ''}">
@@ -7170,6 +7771,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         }
 
         async function reprocessPlanWeek(week, strategy) {
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             const currentPlan = state.planData.find(item => item.week === week);
             const file = currentPlan?.cacheHash
                 ? state.recentRecognitionFiles[`plan:${currentPlan.cacheHash}`] : null;
@@ -7181,7 +7786,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 showToast('Kế hoạch đang được xử lý, vui lòng chờ', 'info');
                 return;
             }
-            if (strategy === 'gemini' && (!hasUsableGeminiKey() || state.dailyQuotaBlocked)) {
+            if (strategy === 'gemini' && (!hasUsableGeminiKey() || isGeminiDailyBlocked())) {
                 showToast('⚠️ Gemini chưa khả dụng; thầy có thể chọn “Ghép lại từ OCR”', 'info');
                 return;
             }
@@ -7246,12 +7851,16 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 showToast('❌ Không thể phân tích lại: ' + error.message, 'error');
             } finally {
                 state.busy.plan = false;
-                planFileInput.disabled = false;
+                updateSharedPlanEditingControls();
                 planStatus.innerHTML = '';
             }
         }
 
         function editPlanMeta(week) {
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             const plan = state.planData.find(item => item.week === week);
             if (!plan) return;
             const weekInput = prompt(`Số tuần (1–${MAX_SCHOOL_WEEKS}; nhập -1 cho Tuần phụ 1, -2 cho Tuần phụ 2):`, String(plan.week));
@@ -7287,6 +7896,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         }
 
         function editPlanDay(week, dayIndex) {
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             const plan = state.planData.find(item => item.week === week);
             const day = plan?.days?.[dayIndex];
             if (!day) return;
@@ -7323,6 +7936,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         }
 
         function saveEditedPlan(plan, message) {
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             plan.warnings = [];
             plan.updatedAt = new Date().toISOString();
             applyAutomaticDatesToPlan(plan);
@@ -7336,6 +7953,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         }
 
         function deletePlan(week) {
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             const weekLabel = getPlanWeekLabel(week);
             if (!confirm(`Xóa kế hoạch ${weekLabel}?`)) return;
             state.planData = state.planData.filter(p => p.week !== week);
@@ -7364,6 +7985,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         });
 
         addAuxiliaryPlanWeekBtn.addEventListener('click', () => {
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             const auxiliaryWeek = AUXILIARY_PLAN_WEEKS.find(week => !state.planData.some(item => item.week === week));
             if (typeof auxiliaryWeek === 'undefined') {
                 showToast('Đã đủ tối đa 2 tuần phụ trước khai giảng', 'info');
@@ -7405,6 +8030,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         });
 
         clearPlanBtn.addEventListener('click', () => {
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             if (!confirm('Xóa toàn bộ kế hoạch?')) return;
             state.planData = [];
             getActiveYearWorkspace().planData = state.planData;
@@ -7554,18 +8183,6 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 }
             }
             return Math.max(previousActualCount + 1, previousScheduleMax + 1, 1);
-        }
-
-        function getNextPpctPeriodForClass(week, className, subject) {
-            let currentWeekMax = 0;
-            (state.teachingSchedule[week] || []).forEach(item => {
-                if (item.notTeaching) return;
-                if (normalizeClassKey(item.class) !== normalizeClassKey(className)
-                    || !curriculumSubjectMatches(subject, item.subject)) return;
-                const value = Number.parseInt(item.ppctPeriod, 10);
-                if (value > currentWeekMax) currentWeekMax = value;
-            });
-            return Math.max(getAutomaticPpctStart(week, className, subject), currentWeekMax + 1);
         }
 
         function scheduleClassSubjectKey(item) {
@@ -8835,7 +9452,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
               `;
                 const extractedContent = await extractDocumentText(file);
                 let weeks = [];
-                let usedLocalParser = state.recognitionMode === 'offline' || !hasUsableGeminiKey() || state.dailyQuotaBlocked;
+                let usedLocalParser = state.recognitionMode === 'offline' || !hasUsableGeminiKey() || isGeminiDailyBlocked();
                 if (!usedLocalParser) {
                     try {
                         const text = await geminiTextFromFile(file, prompt, extractedContent, stage => {
@@ -9005,6 +9622,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         });
 
         saveWeek1StartBtn.addEventListener('click', () => {
+            if (!canEditSharedPlan()) {
+                showSharedPlanReadOnlyNotice();
+                return;
+            }
             const value = normalizeISODate(week1StartDateInput.value);
             if (!value) {
                 showToast('⚠️ Vui lòng nhập ngày hợp lệ theo định dạng ngày/tháng/năm', 'error');
@@ -10292,7 +10913,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 const plan = state.planData.find(p => p.week === week);
                 const planContent = plan ? JSON.stringify(plan, null, 2) : '';
 
-                if (state.recognitionMode === 'offline' || !hasUsableGeminiKey() || state.dailyQuotaBlocked) {
+                if (state.recognitionMode === 'offline' || !hasUsableGeminiKey() || isGeminiDailyBlocked()) {
                     const fallbackSchedule = generateFallbackSchedule(week, tt, curriculumMap);
                     if (fallbackSchedule.length === 0) throw new Error('Không có tiết học phù hợp để tạo lịch');
                     persistTeachingSchedule(week, fallbackSchedule, 'local');
@@ -10543,8 +11164,8 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         //  INIT
         // ================================================================
         function init() {
-            // Giai đoạn 1: tài khoản cá nhân/nhóm được khởi tạo độc lập,
-            // không chặn dữ liệu cũ khi Firebase chưa được thiết lập.
+            // Kế hoạch cơ bản: tài khoản và dữ liệu nhóm đồng bộ qua Firestore;
+            // Gemini dùng API key riêng của từng giáo viên, không cần cổng máy chủ.
             updateAccountPresentation();
             initializeAccountSystem();
             // Tự sửa dữ liệu cũ: chỉ các tiết còn tồn tại mới được tính vào dãy PPCT.
@@ -10597,7 +11218,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
             writeStoredJSON('teacher_profile', state.teacherProfile);
         });
 
-        console.log('📚 Sổ Tay Giáo Viên v24 đã sẵn sàng!');
+        console.log('📚 Sổ Tay Giáo Viên v29 · Mã nguồn gọn + Firebase Sync đã sẵn sàng!');
         console.log('💡 Hãy nhập Gemini API key và tải ảnh lên để bắt đầu.');
     </script>
 
