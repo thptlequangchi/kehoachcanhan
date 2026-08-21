@@ -379,8 +379,9 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             let worker = null;
             try {
                 const oem = window.Tesseract.OEM?.LSTM_ONLY ?? 1;
-                // Dùng chuỗi ngôn ngữ chuẩn của Tesseract để tương thích ổn định với bản CDN.
-                worker = await window.Tesseract.createWorker('vie+eng', oem, {
+                // Tesseract.js hỗ trợ nhiều ngôn ngữ ổn định hơn khi truyền mảng mã ngôn ngữ.
+                // Tránh chuỗi "vie+eng" vì một số build CDN có thể xử lý không nhất quán.
+                worker = await window.Tesseract.createWorker(['vie', 'eng'], oem, {
                     logger: message => {
                         if (!onStage) return;
                         const label = progressLabels[message?.status] || cleanText(message?.status) || 'đang xử lý';
@@ -573,12 +574,16 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             const [dayBoundary, morningBoundary, afternoonBoundary] = layout.boundaries;
             const bodyWords = words.filter(word => word.cy > layout.headerBottom);
             const dayColumnLines = groupOcrWordsIntoLines(bodyWords.filter(word => word.cx < dayBoundary));
-            const anchorsByDay = new Map();
+            const anchors = [];
             dayColumnLines.forEach(line => {
                 const day = detectPlanDayFromOcrLookup(line.text);
-                if (day && !anchorsByDay.has(day)) anchorsByDay.set(day, { day, cy: line.cy });
+                if (!day) return;
+                // Không dùng Map theo tên thứ: một số lịch công tác có CN của tuần trước ở đầu
+                // và CN của tuần hiện tại ở cuối (hai dòng "Chủ nhật" trong cùng một ảnh).
+                const tooClose = anchors.some(item => item.day === day && Math.abs(item.cy - line.cy) < 18);
+                if (!tooClose) anchors.push({ day, cy: line.cy });
             });
-            const anchors = [...anchorsByDay.values()].sort((a, b) => a.cy - b.cy);
+            anchors.sort((a, b) => a.cy - b.cy);
             if (anchors.length < 4) return null;
 
             const medianHeight = medianOcrValue(words.map(word => word.height), 12);
@@ -589,13 +594,13 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
                 bottom: index === anchors.length - 1 ? maxY + medianHeight : (anchor.cy + anchors[index + 1].cy) / 2,
             }));
 
-            const mappedDays = new Map();
+            const mappedRows = [];
             rows.forEach(row => {
                 const rowWords = bodyWords.filter(word => word.cy >= row.top && word.cy < row.bottom);
                 const dayWords = rowWords.filter(word => word.cx < dayBoundary);
                 const date = ocrWordsToMultilineText(dayWords)
                     .match(/\b\d{1,2}\s*[\/.-]\s*\d{1,2}(?:\s*[\/.-]\s*\d{2,4})?\b/)?.[0]?.replace(/\s+/g, '') || '';
-                mappedDays.set(row.day, {
+                mappedRows.push({
                     day: row.day,
                     date,
                     morning: ocrWordsToMultilineText(rowWords.filter(word => word.cx >= dayBoundary && word.cx < morningBoundary)),
@@ -605,8 +610,13 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             });
 
             const base = createPlanDraftFromOcr(text, 'offline-spatial', '');
-            base.days = PLAN_DAYS.map(day => mappedDays.get(day)
-                || { day, date: '', morning: '', afternoon: '', businessTrip: '' });
+            base.days = canonicalizePlanDays(mappedRows, base.dateRange);
+            PLAN_DAYS.forEach(day => {
+                if (!base.days.some(item => item.day === day)) {
+                    base.days.push({ day, date: '', morning: '', afternoon: '', businessTrip: '' });
+                }
+            });
+            base.days.sort((a, b) => planDayOrder(a.day) - planDayOrder(b.day));
             base.sourceMode = 'offline-spatial';
             base.fallbackReason = cleanText(sourceError);
             const headerConfidence = Math.min(1, layout.headerScore / 4);

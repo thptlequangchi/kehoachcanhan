@@ -7,7 +7,8 @@ Bạn là chuyên gia OCR văn bản hành chính trường học Việt Nam. �
 - Tiêu đề: LỊCH CÔNG TÁC NĂM HỌC ...
 - Dòng Tuần, khoảng ngày và thông tin trực tuần.
 - Bảng gồm các cột: Thứ/ngày, Buổi sáng, Buổi chiều, Đi công tác.
-- Tuần luôn trình bày theo thứ tự từ Thứ 2 đến Chủ nhật; nếu ảnh có dòng “CN” thì hiểu là Chủ nhật và đặt ở cuối tuần.
+- Khoảng ngày ghi dưới tiêu đề là phạm vi chính của tuần. Một số mẫu có thể kèm CN của tuần trước ở đầu bảng; nếu ngày đó nằm ngoài khoảng 'Từ ngày ... đến ...' thì không đưa vào days của tuần chính.
+- Nếu ảnh có hai dòng CN, phải phân biệt bằng ngày/tháng; giữ dòng CN nằm trong khoảng ngày của tuần và không để hai dòng ghi đè nhau.
 
 YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
 1. Đọc đúng số tuần, khoảng ngày, năm học và người/bộ phận trực tuần.

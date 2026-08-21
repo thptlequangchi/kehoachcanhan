@@ -43,7 +43,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '36.2.0';
+        const APP_VERSION = '36.3.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -242,16 +242,85 @@
             return cleanText(value);
         }
 
+        function parsePlanDateParts(value) {
+            const match = cleanText(value).match(/(\d{1,2})\s*[\/.-]\s*(\d{1,2})(?:\s*[\/.-]\s*(\d{2,4}))?/);
+            if (!match) return null;
+            const day = Number.parseInt(match[1], 10);
+            const month = Number.parseInt(match[2], 10);
+            let year = Number.parseInt(match[3], 10);
+            if (Number.isFinite(year) && year < 100) year += 2000;
+            if (!(day >= 1 && day <= 31 && month >= 1 && month <= 12)) return null;
+            return { day, month, year: Number.isFinite(year) ? year : null };
+        }
+
+        function parsePlanDateRange(value) {
+            const text = cleanText(value);
+            const match = text.match(/(?:Từ\s*ngày\s*)?(\d{1,2})\s*[\/.-]\s*(\d{1,2})(?:\s*[\/.-]\s*(\d{2,4}))?\s*(?:đến|[-–])\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})(?:\s*[\/.-]\s*(\d{2,4}))?/i);
+            if (!match) return null;
+            let startYear = Number.parseInt(match[3], 10);
+            let endYear = Number.parseInt(match[6], 10);
+            if (Number.isFinite(startYear) && startYear < 100) startYear += 2000;
+            if (Number.isFinite(endYear) && endYear < 100) endYear += 2000;
+            if (!Number.isFinite(startYear) && Number.isFinite(endYear)) startYear = endYear;
+            if (!Number.isFinite(endYear) && Number.isFinite(startYear)) endYear = startYear;
+            if (!Number.isFinite(startYear) || !Number.isFinite(endYear)) return null;
+            const start = new Date(startYear, Number(match[2]) - 1, Number(match[1]));
+            const end = new Date(endYear, Number(match[5]) - 1, Number(match[4]));
+            if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
+            return { start, end };
+        }
+
+        function planDateToTimestamp(value, fallbackYear = null) {
+            const parts = parsePlanDateParts(value);
+            if (!parts) return null;
+            const year = parts.year || fallbackYear;
+            if (!Number.isFinite(year)) return null;
+            const date = new Date(year, parts.month - 1, parts.day);
+            return Number.isNaN(date.getTime()) ? null : date.getTime();
+        }
+
+        function canonicalizePlanDays(days, dateRange = '') {
+            const source = Array.isArray(days) ? days.filter(Boolean) : [];
+            const range = parsePlanDateRange(dateRange);
+            let filtered = source;
+            if (range) {
+                const startTime = range.start.getTime();
+                const endTime = range.end.getTime();
+                filtered = source.filter(item => {
+                    const time = planDateToTimestamp(item?.date, range.end.getFullYear());
+                    return time == null || (time >= startTime && time <= endTime);
+                });
+            }
+
+            const byDay = new Map();
+            filtered.forEach(item => {
+                const day = normalizeDayName(item?.day);
+                if (!PLAN_DAYS.includes(day)) return;
+                const candidate = { ...item, day };
+                const previous = byDay.get(day);
+                if (!previous) {
+                    byDay.set(day, candidate);
+                    return;
+                }
+                // Nếu ảnh có cùng một thứ xuất hiện hai lần (ví dụ CN 16/8 và CN 23/8),
+                // ưu tiên hàng nằm trong khoảng ngày của tuần; sau đó ưu tiên hàng có nội dung đầy đủ hơn.
+                const score = value => [value?.morning, value?.afternoon, value?.businessTrip, value?.date]
+                    .map(cleanText).join(' ').length;
+                if (score(candidate) > score(previous)) byDay.set(day, candidate);
+            });
+            return PLAN_DAYS.map(day => byDay.get(day)).filter(Boolean);
+        }
+
         function normalizePlanWeek(item) {
             if (!item || typeof item !== 'object') return null;
-            const days = Array.isArray(item.days) ? item.days.map(day => ({
+            const normalizedDays = Array.isArray(item.days) ? item.days.map(day => ({
                 day: normalizeDayName(day?.day),
                 date: cleanText(day?.date),
                 morning: normalizePlanCellText(day?.morning),
                 afternoon: normalizePlanCellText(day?.afternoon),
                 businessTrip: normalizePlanCellText(day?.businessTrip),
-            })).filter(day => day.day || day.date || day.morning || day.afternoon || day.businessTrip)
-                .sort((a, b) => planDayOrder(a.day) - planDayOrder(b.day)) : [];
+            })).filter(day => day.day || day.date || day.morning || day.afternoon || day.businessTrip) : [];
+            const days = canonicalizePlanDays(normalizedDays, cleanText(item.dateRange));
             const week = Number.parseInt(item.week, 10);
             if (!isValidPlanWeek(week)) return null;
             return {
