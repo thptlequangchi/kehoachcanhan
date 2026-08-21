@@ -25,23 +25,15 @@
             <div class="brand">
                 <div>
                     <h1>📚 Sổ Tay Giáo Viên</h1>
-                    <span>Teacher's Notebook v31 — sổ công việc cá nhân và nhóm</span>
+                    <span>Teacher's Notebook v34 — tổng quan tuần và trải nghiệm gọn hơn</span>
                 </div>
             </div>
-            <div class="api-section">
-                <label for="apiKeyInput">🔑 Gemini API</label>
-                <input type="password" id="apiKeyInput" placeholder="Nhập API key..."
-                       autocomplete="off" aria-describedby="apiKeyNote" />
-                <label class="remember-key-option" for="rememberApiKey"
-                       title="Chỉ nên bật trên máy tính cá nhân đáng tin cậy">
-                    <input type="checkbox" id="rememberApiKey" />
-                    Lưu key trên máy này
-                </label>
-                <span class="model-badge" title="Mô hình Gemini ổn định đang sử dụng">Gemini 3.5 Flash</span>
-                <span class="status-dot" id="apiStatus" role="status" aria-label="API chưa được kiểm tra" title="API chưa được kiểm tra"></span>
-                <button class="btn btn-primary btn-sm" id="saveApiBtn">Kiểm tra &amp; dùng</button>
-                <button class="btn btn-outline btn-sm" id="forgetApiBtn" type="button">Quên key</button>
-                <div class="api-note" id="apiKeyNote">Mỗi giáo viên dùng API key riêng trên thiết bị của mình; khi Gemini không dùng được, trang tự chuyển sang OCR.</div>
+            <div class="header-quick-actions" aria-label="Truy cập nhanh">
+                <div class="header-context">
+                    <span class="header-context-label">Đang làm việc</span>
+                    <strong id="headerAcademicContext">Đang tải năm học…</strong>
+                </div>
+                <button class="btn header-settings-btn" id="openSettingsHubBtn" type="button">⚙️ Cài đặt</button>
             </div>
         </header>
 
@@ -69,7 +61,29 @@
             </div>
         </section>
 
-        <section class="recognition-bar" aria-label="Cấu hình nhận dạng ảnh">
+        <details class="settings-hub" id="settingsHub">
+            <summary>
+                <span class="settings-hub-title">⚙️ Cài đặt &amp; an toàn</span>
+                <span class="settings-hub-summary">Gemini · OCR · Sao lưu dữ liệu</span>
+                <span class="settings-hub-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="settings-hub-body">
+                <div class="api-section">
+                <label for="apiKeyInput">🔑 Gemini API</label>
+                <input type="password" id="apiKeyInput" placeholder="Nhập API key..."
+                       autocomplete="off" aria-describedby="apiKeyNote" />
+                <label class="remember-key-option" for="rememberApiKey"
+                       title="Chỉ nên bật trên máy tính cá nhân đáng tin cậy">
+                    <input type="checkbox" id="rememberApiKey" />
+                    Lưu key trên máy này
+                </label>
+                <span class="model-badge" title="Mô hình Gemini ổn định đang sử dụng">Gemini 3.5 Flash</span>
+                <span class="status-dot" id="apiStatus" role="status" aria-label="API chưa được kiểm tra" title="API chưa được kiểm tra"></span>
+                <button class="btn btn-primary btn-sm" id="saveApiBtn">Kiểm tra &amp; dùng</button>
+                <button class="btn btn-outline btn-sm" id="forgetApiBtn" type="button">Quên key</button>
+                <div class="api-note" id="apiKeyNote">Mỗi giáo viên dùng API key riêng trên thiết bị của mình; khi Gemini không dùng được, trang tự chuyển sang OCR.</div>
+            </div>
+                <section class="recognition-bar" aria-label="Cấu hình nhận dạng ảnh">
             <label for="recognitionMode">⚙️ Chế độ nhận dạng</label>
             <select id="recognitionMode">
                 <option value="auto">Tự động: Gemini → OCR trên máy</option>
@@ -92,8 +106,7 @@
                 <span class="gemini-queue-count" id="geminiQueueCount">0 chờ</span>
             </div>
         </section>
-
-        <section class="data-safety-bar" aria-label="Sao lưu và khôi phục dữ liệu">
+                <section class="data-safety-bar" aria-label="Sao lưu và khôi phục dữ liệu">
             <div class="data-safety-info">
                 <strong>🛡️ An toàn dữ liệu</strong>
                 <div class="data-safety-summary" id="dataSafetySummary">Đang kiểm tra dữ liệu đã lưu...</div>
@@ -108,6 +121,8 @@
             <input type="file" id="restoreBackupInput" accept="application/json,.json" hidden
                    aria-label="Chọn file sao lưu dữ liệu" />
         </section>
+            </div>
+        </details>
 
         <section class="school-year-bar" aria-label="Thiết lập năm học và tuần học">
             <div class="school-year-field">
@@ -126,6 +141,44 @@
             <button class="btn btn-success btn-sm save-week-start-btn" id="saveWeek1StartBtn" type="button">✓ Áp dụng 37 tuần</button>
             <div class="school-year-week-info" id="schoolYearWeekInfo">
                 Nhập ngày Thứ 2 bắt đầu Tuần 1 để hệ thống tự tính đủ 37 tuần chính.
+            </div>
+        </section>
+
+        <section class="teacher-overview" id="teacherOverview" aria-label="Tổng quan tuần hiện tại">
+            <div class="overview-heading">
+                <div>
+                    <span class="overview-eyebrow">TỔNG QUAN GIÁO VIÊN</span>
+                    <h2 id="overviewTitle">Hôm nay &amp; tuần này</h2>
+                    <p id="overviewSubtitle">Đang tổng hợp dữ liệu năm học hiện tại…</p>
+                </div>
+                <div class="overview-actions">
+                    <button class="overview-action" type="button" data-overview-tab="plan">📋 Kế hoạch</button>
+                    <button class="overview-action" type="button" data-overview-tab="timetable">⏰ TKB</button>
+                    <button class="overview-action" type="button" data-overview-tab="teaching">📖 Báo giảng</button>
+                    <button class="overview-action" type="button" data-overview-tab="workspace">✅ Công việc</button>
+                </div>
+            </div>
+            <div class="overview-grid">
+                <button class="overview-card" type="button" data-overview-tab="plan">
+                    <span class="overview-card-icon">📅</span>
+                    <span class="overview-card-body"><strong id="overviewWeekValue">—</strong><small id="overviewWeekMeta">Tuần hiện tại</small></span>
+                </button>
+                <button class="overview-card" type="button" data-overview-tab="timetable">
+                    <span class="overview-card-icon">🎓</span>
+                    <span class="overview-card-body"><strong id="overviewLessonValue">—</strong><small id="overviewLessonMeta">Tiết dạy hôm nay</small></span>
+                </button>
+                <button class="overview-card" type="button" data-overview-tab="teaching">
+                    <span class="overview-card-icon">📖</span>
+                    <span class="overview-card-body"><strong id="overviewScheduleValue">—</strong><small id="overviewScheduleMeta">Lịch báo giảng</small></span>
+                </button>
+                <button class="overview-card" type="button" data-overview-tab="workspace">
+                    <span class="overview-card-icon">✅</span>
+                    <span class="overview-card-body"><strong id="overviewTaskValue">—</strong><small id="overviewTaskMeta">Việc cần xử lý</small></span>
+                </button>
+            </div>
+            <div class="overview-alert" id="overviewAlert" role="status" aria-live="polite">
+                <span id="overviewAlertIcon">✓</span>
+                <span id="overviewAlertText">Đang kiểm tra dữ liệu tuần…</span>
             </div>
         </section>
 
@@ -762,6 +815,7 @@
     <script src="assets/js/12-timetable.js"></script>
     <script src="assets/js/13-curriculum.js"></script>
     <script src="assets/js/14-teaching-schedule.js"></script>
+    <script src="assets/js/15-ux.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

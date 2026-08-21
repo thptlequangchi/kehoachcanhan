@@ -1,14 +1,14 @@
-# Sổ Tay Giáo Viên v33 — Bước 2: Tách cấu trúc code
+# Sổ Tay Giáo Viên v34 — Bước 3
 
-Bản này giữ nguyên giao diện và nghiệp vụ từ v32, nhưng tách CSS/JavaScript thành các file riêng để dễ bảo trì.
+Bản nâng cấp trải nghiệm người dùng, giữ nguyên nghiệp vụ v33.
 
-## Cấu trúc
-- `index.html`: giao diện HTML
-- `assets/css/app.css`: toàn bộ CSS chính
-- `assets/js/config.js`: Firebase Web Config
-- `assets/js/01-state.js` ... `15-init.js`: mã JavaScript tách theo đúng thứ tự thực thi của bản gốc
+## Điểm mới
+- Tổng quan Hôm nay/Tuần này ngay đầu trang.
+- Hiển thị nhanh Tuần hiện tại, tiết dạy hôm nay, trạng thái lịch báo giảng, việc chưa hoàn thành.
+- Cảnh báo nhanh khi thiếu Kế hoạch/TKB, lịch báo giảng cũ hoặc có việc quá hạn.
+- Gom Gemini, OCR và Sao lưu vào mục **Cài đặt & an toàn** có thể thu gọn.
+- Thanh chức năng chính sticky để chuyển mục nhanh.
+- Giao diện responsive gọn hơn trên laptop và điện thoại.
 
-## Lưu ý triển khai
-Upload **toàn bộ thư mục** lên GitHub Pages, không chỉ riêng `index.html`. Giữ nguyên cấu trúc `assets/`.
-
-Không chuyển sang ES Module ở bước này để tránh thay đổi scope và thứ tự khởi tạo của hệ thống hiện tại.
+## Đưa lên GitHub Pages
+Chép **toàn bộ** `index.html` và thư mục `assets/` vào thư mục repository, sau đó Commit và Push bằng GitHub Desktop.
