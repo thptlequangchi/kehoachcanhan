@@ -127,7 +127,16 @@
         <section class="school-year-bar" aria-label="Thiết lập năm học và tuần học">
             <div class="school-year-field">
                 <label for="schoolYearSelect">🎓 Năm học</label>
-                <select id="schoolYearSelect" aria-label="Chọn năm học dùng chung cho toàn bộ dữ liệu"></select>
+                <select id="schoolYearSelect" aria-label="Chọn năm học dùng chung cho toàn bộ dữ liệu">
+                    <option value="2029-2030">2029-2030</option>
+                    <option value="2028-2029">2028-2029</option>
+                    <option value="2027-2028">2027-2028</option>
+                    <option value="2026-2027" selected>2026-2027</option>
+                    <option value="2025-2026">2025-2026</option>
+                    <option value="2024-2025">2024-2025</option>
+                    <option value="2023-2024">2023-2024</option>
+                    <option value="__custom__">Năm học khác…</option>
+                </select>
             </div>
             <div class="school-year-field week-start-field">
                 <label for="week1StartDateInput">📅 Thứ 2 của Tuần 1</label>
@@ -432,7 +441,16 @@
                 <div class="progress-dashboard-filters">
                     <div class="progress-filter-field">
                         <label for="progressAcademicYearSelect">Năm học</label>
-                        <select id="progressAcademicYearSelect" aria-label="Lọc tiến độ theo năm học"></select>
+                        <select id="progressAcademicYearSelect" aria-label="Lọc tiến độ theo năm học">
+                    <option value="2029-2030">2029-2030</option>
+                    <option value="2028-2029">2028-2029</option>
+                    <option value="2027-2028">2027-2028</option>
+                    <option value="2026-2027" selected>2026-2027</option>
+                    <option value="2025-2026">2025-2026</option>
+                    <option value="2024-2025">2024-2025</option>
+                    <option value="2023-2024">2023-2024</option>
+                    <option value="__custom__">Năm học khác…</option>
+                </select>
                     </div>
                     <div class="progress-filter-field">
                         <label for="progressWeekSelect">Tính đến tuần</label>
@@ -467,7 +485,16 @@
                 </div>
                 <div class="schedule-week-selector">
                     <label for="academicYearSelect" style="font-weight:600;">Năm học:</label>
-                    <select id="academicYearSelect" aria-label="Chọn năm học"></select>
+                    <select id="academicYearSelect" aria-label="Chọn năm học">
+                    <option value="2029-2030">2029-2030</option>
+                    <option value="2028-2029">2028-2029</option>
+                    <option value="2027-2028">2027-2028</option>
+                    <option value="2026-2027" selected>2026-2027</option>
+                    <option value="2025-2026">2025-2026</option>
+                    <option value="2024-2025">2024-2025</option>
+                    <option value="2023-2024">2023-2024</option>
+                    <option value="__custom__">Năm học khác…</option>
+                </select>
                     <label for="scheduleWeekSelect" style="font-weight:600;">Chọn tuần (1–37):</label>
                     <select id="scheduleWeekSelect">
                         <option value="">-- Chọn tuần --</option>

@@ -2,10 +2,22 @@
         //  INIT
         // ================================================================
         function init() {
+            // Danh sách năm học là điều khiển lõi: luôn khởi tạo trước mọi dịch vụ khác.
+            // HTML đã có sẵn phương án dự phòng nên người dùng vẫn chọn được ngay cả khi một module khác lỗi.
+            try {
+                populateAcademicYearSelect(state.selectedAcademicYear);
+            } catch (error) {
+                console.error('Không thể làm mới danh sách năm học; dùng danh sách HTML dự phòng:', error);
+            }
+
             // Kế hoạch cơ bản: tài khoản và dữ liệu nhóm đồng bộ qua Firestore;
             // Gemini dùng API key riêng của từng giáo viên, không cần cổng máy chủ.
-            updateAccountPresentation();
-            initializeAccountSystem();
+            try {
+                updateAccountPresentation();
+                initializeAccountSystem();
+            } catch (error) {
+                console.error('Khởi tạo tài khoản/Firebase gặp lỗi, tiếp tục ở chế độ cục bộ:', error);
+            }
             // Chỉ migration dữ liệu cũ khi phiên bản schema yêu cầu; không sửa lại toàn bộ PPCT ở mỗi lần mở trang.
             syncPlanDatesForActiveYear();
             const migration = runDataMigrationsForActiveYear();
@@ -15,7 +27,6 @@
             renderPlanTable();
             populateTimetableWeekSelect();
             activateTimetableWeek(state.selectedTimetableWeek, false);
-            populateAcademicYearSelect(state.selectedAcademicYear);
             initializeProgressDashboardControls();
             updateSchoolYearWeekInfo();
             curriculumSubjectInput.value = state.teacherProfile.subject;
