@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v36.4: khởi động cô lập lỗi, không để một module làm treo toàn trang
+        //  INIT — v38: khởi động cô lập lỗi + Dashboard năm học
         // ================================================================
         function safeInitStage(name, fn) {
             try {
@@ -94,6 +94,10 @@
                 initTeacherCommandCenter();
                 renderTeacherCommandCenter();
             });
+            safeInitStage('Dashboard năm học', () => {
+                initYearDashboard();
+                renderYearDashboard();
+            });
 
             // Cập nhật lại header/tổng quan sau khi mọi dữ liệu cục bộ đã nạp.
             safeInitStage('Cập nhật tổng quan cuối', () => {
@@ -126,4 +130,4 @@
             safeInitStage('Lưu hồ sơ khi đóng', () => writeStoredJSON('teacher_profile', state.teacherProfile));
         });
 
-        console.log(`📚 Sổ Tay Giáo Viên v${APP_VERSION} · khởi động an toàn v37.0`);
+        console.log(`📚 Sổ Tay Giáo Viên v${APP_VERSION} · Dashboard năm học 37 tuần đã sẵn sàng`);

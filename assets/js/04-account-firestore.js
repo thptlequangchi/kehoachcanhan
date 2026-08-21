@@ -1047,6 +1047,7 @@ service cloud.firestore {
                 renderProgressDashboard();
             }
             updateDataSafetySummary();
+            if (typeof renderYearDashboard === 'function') renderYearDashboard();
         }
 
         function applySharedYearSnapshot(data, academicYear, options = {}) {
@@ -1945,6 +1946,13 @@ service cloud.firestore {
             captureActiveYearWorkspace();
             writeStoredJSON(YEAR_WORKSPACES_STORAGE, state.yearWorkspaces);
             queueCloudWorkspaceSync();
+            try {
+                window.dispatchEvent(new CustomEvent('teacher-data-changed', {
+                    detail: { academicYear: state.selectedAcademicYear }
+                }));
+            } catch (error) {
+                // Dashboard chỉ là lớp hiển thị; lỗi phát sự kiện không được ảnh hưởng lưu dữ liệu.
+            }
         }
 
         function persistLegacyActiveYear() {

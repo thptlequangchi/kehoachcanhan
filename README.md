@@ -1,35 +1,24 @@
-# Sổ Tay Giáo Viên v37.0.0 — bản ổn định sau kiểm thử toàn diện
+# Sổ Tay Giáo Viên v38.0.0 — Bước 6: Dashboard năm học chuyên nghiệp
 
-Bản v37 giữ nguyên nền tảng và dữ liệu của v36.4, tập trung sửa lỗi khởi tạo và gia cố các luồng nghiệp vụ chính.
+Bản v38 phát triển trực tiếp từ v37 đã được audit. Không thay đổi schema dữ liệu và không viết lại các chức năng cũ.
 
-## Sửa lỗi quan trọng
+## Nâng cấp chính
 
-- Sửa lỗi phụ thuộc chéo giữa các module: `01-state.js` trước đây gọi `normalizeScheduleMetaBackup`, `normalizeTeachingScheduleBackup` và parser PPCT trước khi các hàm đó được nạp. Đây là nguyên nhân có thể làm toàn trang dừng ngay khi khởi động.
-- Các hàm chuẩn hóa dữ liệu bắt buộc khi khởi động đã được chuyển về đúng module `01-state.js`.
-- Sửa parser PPCT dạng văn bản phổ biến: `Tuần N` rồi các dòng `Tiết X: Tên bài`.
-- Sửa OCR dự phòng của Kế hoạch tuần khi ảnh có hai dòng Chủ nhật (ví dụ CN 16/8 và CN 23/8): ưu tiên ngày thuộc đúng khoảng tuần.
-- Có thể suy ra số tuần từ khoảng ngày nếu ảnh không ghi rõ `Tuần N` và đã cấu hình ngày bắt đầu Tuần 1.
-- Gia cố validator ảnh TKB để dữ liệu AI thiếu `sessions/periods/cells` không làm phát sinh TypeError.
-- Tăng phiên bản engine nhận dạng lên 4 để không tái sử dụng cache nhận dạng cũ có cấu trúc lỗi.
-- Đồng bộ nhãn phiên bản giao diện thành v37.
+- Dashboard toàn cảnh 37 tuần ngay đầu trang.
+- 6 KPI: tuần hiện tại, tiến trình năm học, độ phủ Kế hoạch, độ phủ TKB, số tuần đã chốt, số lớp–môn đúng tiến độ.
+- Thanh tiến trình năm học theo 37 tuần.
+- Ma trận trạng thái 37 tuần: đã chốt / bản nháp / đủ nguồn / thiếu dữ liệu / cần tạo lại.
+- Danh sách tuần còn thiếu Kế hoạch, TKB, Lịch báo giảng hoặc chưa chốt.
+- Lịch dạy sắp tới lấy trực tiếp từ TKB trong 14 ngày gần nhất.
+- Danh sách lớp–môn đang chậm PPCT, thiếu PPCT hoặc có nguy cơ hoàn thành muộn.
+- Nhấn vào tuần hoặc cảnh báo để mở đúng Kế hoạch, TKB hoặc Lịch báo giảng.
+- Nút mở thẳng Dashboard tiến độ chi tiết hiện có.
+- Tự làm mới khi đổi năm học/tuần và mỗi 60 giây.
 
-## Kiểm thử đã chạy
+## Giữ nguyên
 
-- Tất cả file JavaScript qua `node --check`.
-- 228 ID HTML, không trùng ID.
-- 19 tài nguyên nội bộ CSS/JS đều tồn tại.
-- 51/51 nút và 46/46 input/select/textarea có tham chiếu trong JavaScript.
-- 365 hàm có tên, không có hàm khai báo trùng.
-- 120 listener sự kiện được rà trong mã nguồn.
-- Nạp toàn bộ 19 module theo đúng thứ tự trang: đạt.
-- Khởi tạo ứng dụng trong môi trường DOM mô phỏng: đạt, không có lỗi init nội bộ.
-- Danh sách năm học: tạo đủ và chuyển năm học thành công.
-- Dữ liệu legacy PPCT/lịch báo giảng: nạp được mà không lỗi phụ thuộc module.
-- Parser PPCT: nhận đúng tuần, Tiết PPCT và tên bài.
-- OCR kế hoạch có CN 16/8 + CN 23/8: chọn đúng CN 23/8 trong tuần 17/8–23/8.
-- Tạo lịch báo giảng dự phòng từ TKB + PPCT: ánh xạ đúng Tiết PPCT và bài dạy.
-- Backup chuẩn hóa/round-trip: giữ đúng năm học hiện hành.
+Firebase/Firestore, Gemini, OCR, backup/restore, Kế hoạch trường, TKB, PPCT, học bù, Lịch báo giảng, Sổ công việc và Trợ lý tuần đều được giữ nguyên từ v37.
 
-## Lưu ý kiểm thử
+## Cập nhật GitHub Desktop
 
-Firebase/Auth/Firestore và Gemini là dịch vụ mạng cần tài khoản/quyền/API thực tế. Các nhánh xử lý, fallback và cú pháp đã được audit; việc xác nhận end-to-end với dữ liệu đám mây thật cần chạy trên website đã deploy với tài khoản của thầy.
+Giải nén gói, chép toàn bộ `index.html`, `assets` và các file đi kèm vào thư mục repository, chọn Replace, sau đó Commit và Push origin.

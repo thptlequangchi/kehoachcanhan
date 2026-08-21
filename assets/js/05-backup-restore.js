@@ -237,6 +237,7 @@
             }
             updateDataSafetySummary();
             renderWorkWorkspace();
+            if (typeof renderYearDashboard === 'function') renderYearDashboard();
         }
 
         function applyBackupPayload(payload) {

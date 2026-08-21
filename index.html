@@ -25,7 +25,7 @@
             <div class="brand">
                 <div>
                     <h1>📚 Sổ Tay Giáo Viên</h1>
-                    <span>Teacher's Notebook v37 — bản ổn định sau kiểm thử toàn diện</span>
+                    <span>Teacher's Notebook v38 — Dashboard năm học chuyên nghiệp</span>
                 </div>
             </div>
             <div class="header-quick-actions" aria-label="Truy cập nhanh">
@@ -188,6 +188,64 @@
             <div class="overview-alert" id="overviewAlert" role="status" aria-live="polite">
                 <span id="overviewAlertIcon">✓</span>
                 <span id="overviewAlertText">Đang kiểm tra dữ liệu tuần…</span>
+            </div>
+        </section>
+
+        <section class="year-dashboard" id="yearDashboard" aria-label="Dashboard năm học">
+            <div class="year-dashboard-heading">
+                <div>
+                    <span class="overview-eyebrow">DASHBOARD NĂM HỌC</span>
+                    <h2>Toàn cảnh 37 tuần</h2>
+                    <p id="yearDashboardSubtitle">Đang tổng hợp kế hoạch, thời khóa biểu, lịch báo giảng và tiến độ PPCT…</p>
+                </div>
+                <div class="year-dashboard-actions">
+                    <button class="overview-action" id="openYearProgressBtn" type="button">📈 Tiến độ chi tiết</button>
+                    <button class="overview-action" id="refreshYearDashboardBtn" type="button">↻ Làm mới</button>
+                </div>
+            </div>
+
+            <div class="year-dashboard-kpis" id="yearDashboardKpis">
+                <div class="year-kpi-card"><span>📅</span><div><strong id="yearKpiCurrentWeek">—</strong><small>Tuần hiện tại</small></div></div>
+                <div class="year-kpi-card"><span>🧭</span><div><strong id="yearKpiSchoolProgress">—</strong><small>Tiến trình năm học</small></div></div>
+                <div class="year-kpi-card"><span>📋</span><div><strong id="yearKpiPlanCoverage">—</strong><small>Kế hoạch đã có</small></div></div>
+                <div class="year-kpi-card"><span>⏰</span><div><strong id="yearKpiTimetableCoverage">—</strong><small>TKB đã có</small></div></div>
+                <div class="year-kpi-card"><span>🔒</span><div><strong id="yearKpiFinalized">—</strong><small>Tuần đã chốt</small></div></div>
+                <div class="year-kpi-card"><span>🎯</span><div><strong id="yearKpiOnTrack">—</strong><small>Lớp–môn đúng tiến độ</small></div></div>
+            </div>
+
+            <div class="year-progress-strip" aria-label="Tiến trình năm học">
+                <div class="year-progress-copy"><strong id="yearProgressTitle">Tiến trình 37 tuần</strong><span id="yearProgressMeta">Đang tính…</span></div>
+                <div class="year-progress-track"><span id="yearProgressBar" style="width:0%"></span></div>
+            </div>
+
+            <div class="year-dashboard-layout">
+                <div class="year-dashboard-main">
+                    <article class="year-panel year-panel-timeline">
+                        <div class="year-panel-heading">
+                            <div><strong>🗓️ Trạng thái 37 tuần</strong><small>Nhấn vào một tuần để mở dữ liệu liên quan</small></div>
+                            <div class="year-week-legend" aria-label="Chú thích trạng thái tuần">
+                                <span><i class="finalized"></i>Đã chốt</span><span><i class="draft"></i>Bản nháp</span><span><i class="ready"></i>Đủ nguồn</span><span><i class="partial"></i>Thiếu dữ liệu</span><span><i class="stale"></i>Cần tạo lại</span>
+                            </div>
+                        </div>
+                        <div class="year-week-grid" id="yearWeekGrid"></div>
+                    </article>
+
+                    <article class="year-panel">
+                        <div class="year-panel-heading"><div><strong>⚠️ Tuần cần hoàn thiện</strong><small id="yearIncompleteSummary">Đang kiểm tra…</small></div></div>
+                        <div class="year-action-list" id="yearIncompleteList"></div>
+                    </article>
+                </div>
+
+                <aside class="year-dashboard-side">
+                    <article class="year-panel">
+                        <div class="year-panel-heading"><div><strong>🕘 Lịch dạy sắp tới</strong><small id="yearUpcomingSummary">Đang đọc TKB…</small></div></div>
+                        <div class="year-action-list" id="yearUpcomingList"></div>
+                    </article>
+                    <article class="year-panel">
+                        <div class="year-panel-heading"><div><strong>📉 Lớp–môn cần chú ý</strong><small id="yearCourseSummary">Đang đối chiếu PPCT…</small></div></div>
+                        <div class="year-action-list" id="yearCourseAttentionList"></div>
+                    </article>
+                </aside>
             </div>
         </section>
 
@@ -871,6 +929,7 @@
     <script src="assets/js/14-teaching-schedule.js"></script>
     <script src="assets/js/15-ux.js"></script>
     <script src="assets/js/16-command-center.js"></script>
+    <script src="assets/js/17-year-dashboard.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>
