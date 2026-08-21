@@ -1,42 +1,6 @@
         // ================================================================
         //  DATA BACKUP & RESTORE
         // ================================================================
-        function normalizeTeachingScheduleBackup(value) {
-            if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-            return Object.fromEntries(
-                Object.entries(value)
-                    .map(([week, items]) => [Number.parseInt(week, 10), items])
-                    .filter(([week, items]) => week > 0 && week <= MAX_SCHOOL_WEEKS && Array.isArray(items))
-                    .map(([week, items]) => [String(week), items
-                        .map((item, index) => normalizeScheduleItem(item, week, index))
-                        .filter(Boolean)])
-            );
-        }
-
-        function normalizeScheduleMetaBackup(value) {
-            if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-            return Object.fromEntries(
-                Object.entries(value)
-                    .map(([week, meta]) => [Number.parseInt(week, 10), meta])
-                    .filter(([week, meta]) => week > 0 && week <= MAX_SCHOOL_WEEKS && meta && typeof meta === 'object' && !Array.isArray(meta))
-                    .map(([week, meta]) => [String(week), {
-                        stale: Boolean(meta.stale),
-                        staleReason: cleanText(meta.staleReason),
-                        generatedAt: cleanText(meta.generatedAt),
-                        sourceMode: cleanText(meta.sourceMode),
-                        status: meta.status === 'final' ? 'final' : 'draft',
-                        finalizedAt: cleanText(meta.finalizedAt),
-                        removedSourceSlots: Array.isArray(meta.removedSourceSlots)
-                            ? [...new Set(meta.removedSourceSlots.map(cleanText).filter(Boolean))]
-                            : [],
-                        affectedScope: meta.affectedScope === 'slots' ? 'slots' : 'all',
-                        affectedSourceSlots: Array.isArray(meta.affectedSourceSlots)
-                            ? [...new Set(meta.affectedSourceSlots.map(cleanText).filter(Boolean))]
-                            : [],
-                    }])
-            );
-        }
-
         function createBackupPayload() {
             captureActiveYearWorkspace();
             return {

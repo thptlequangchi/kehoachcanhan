@@ -126,4 +126,4 @@
             safeInitStage('Lưu hồ sơ khi đóng', () => writeStoredJSON('teacher_profile', state.teacherProfile));
         });
 
-        console.log(`📚 Sổ Tay Giáo Viên v${APP_VERSION} · khởi động an toàn v36.4`);
+        console.log(`📚 Sổ Tay Giáo Viên v${APP_VERSION} · khởi động an toàn v37.0`);

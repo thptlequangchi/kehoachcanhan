@@ -1009,9 +1009,9 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                     prompt,
                     schema: TIMETABLE_SCHEMA,
                     normalize: normalizeTimetable,
-                    validateGemini: data => data.sessions
-                        .flatMap(session => session.periods)
-                        .some(period => period.cells.length > 0),
+                    validateGemini: data => Array.isArray(data?.sessions)
+                        && data.sessions.some(session => Array.isArray(session?.periods)
+                            && session.periods.some(period => Array.isArray(period?.cells) && period.cells.length > 0)),
                     onStage: stage => {
                         ttStatus.innerHTML = `<span class="loading-spinner"></span> ${escapeHTML(stage)}`;
                     },

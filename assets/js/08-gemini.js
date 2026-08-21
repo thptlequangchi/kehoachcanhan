@@ -654,21 +654,76 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             return plans[0].week;
         }
 
+        function inferPlanWeekFromDateRange(dateRange) {
+            try {
+                const range = parsePlanDateRange(dateRange);
+                const workspace = typeof getActiveYearWorkspace === 'function' ? getActiveYearWorkspace() : null;
+                const week1Start = normalizeISODate(workspace?.week1Start);
+                if (!range?.start || !week1Start) return null;
+                const [year, month, day] = week1Start.split('-').map(Number);
+                const base = new Date(year, month - 1, day);
+                const start = new Date(range.start);
+                const days = Math.round((start - base) / 86400000);
+                if (days % 7 !== 0) return null;
+                const week = days >= 0 ? (days / 7) + 1 : days / 7;
+                return isValidPlanWeek(week) ? week : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function selectPlanOcrDayLine(lines, day, dateRange) {
+            const number = day.slice(-1);
+            const matcher = day === 'Chủ nhật'
+                ? /^(?:CN|Chủ\s*nhật|Chu\s*nhat)\b/i
+                : new RegExp(`Th[ứu]\\s*${number}\\b`, 'i');
+            const candidates = lines.filter(item => matcher.test(item));
+            if (candidates.length <= 1) return candidates[0] || '';
+
+            const range = parsePlanDateRange(dateRange);
+            const dayIndex = PLAN_DAYS.indexOf(day);
+            if (!range?.start || dayIndex < 0) return candidates[0];
+            const expected = new Date(range.start);
+            expected.setDate(expected.getDate() + dayIndex);
+            const expectedTime = new Date(expected.getFullYear(), expected.getMonth(), expected.getDate()).getTime();
+            const startTime = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate()).getTime();
+            const endTime = new Date(range.end.getFullYear(), range.end.getMonth(), range.end.getDate()).getTime();
+
+            const ranked = candidates.map((line, order) => {
+                const rawDate = line.match(/\b\d{1,2}\s*[\/.-]\s*\d{1,2}(?:\s*[\/.-]\s*\d{2,4})?\b/)?.[0] || '';
+                const parts = parsePlanDateParts(rawDate);
+                if (!parts) return { line, order, exact: false, inRange: false, diff: Number.MAX_SAFE_INTEGER };
+                const year = parts.year || expected.getFullYear();
+                const date = new Date(year, parts.month - 1, parts.day);
+                if (Number.isNaN(date.getTime())) return { line, order, exact: false, inRange: false, diff: Number.MAX_SAFE_INTEGER };
+                const time = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+                return {
+                    line,
+                    order,
+                    exact: time === expectedTime,
+                    inRange: time >= startTime && time <= endTime,
+                    diff: Math.abs(time - expectedTime),
+                };
+            });
+            ranked.sort((a, b) => Number(b.exact) - Number(a.exact)
+                || Number(b.inRange) - Number(a.inRange)
+                || a.diff - b.diff
+                || a.order - b.order);
+            return ranked[0]?.line || candidates[0];
+        }
+
         function createPlanDraftFromOcr(ocrText, sourceMode = 'offline-ocr', sourceError = '') {
             const text = cleanText(ocrText);
             const lines = text.split('\n').map(cleanText).filter(Boolean);
             const weekMatch = text.match(/Tu[ầa]n\s*[:\-]?\s*(\d{1,2})/i);
-            let week = Number.parseInt(weekMatch?.[1], 10);
-            if (!(week > 0 && week <= MAX_SCHOOL_WEEKS)) week = getNextAvailablePlanWeek();
             const title = lines.find(line => /LỊCH\s+CÔNG\s+TÁC/i.test(line)) || 'LỊCH CÔNG TÁC';
             const schoolYear = text.match(/(?:NĂM\s+HỌC\s*)?(20\d{2}\s*[-–]\s*20\d{2})/i)?.[1] || '';
             const dateRange = lines.find(line => /Từ\s+ngày.+đến/i.test(line)) || '';
+            let week = Number.parseInt(weekMatch?.[1], 10);
+            if (!isValidPlanWeek(week)) week = inferPlanWeekFromDateRange(dateRange) || getNextAvailablePlanWeek();
             const duty = text.match(/Trực\s*:?\s*([^\n]+)/i)?.[1] || '';
             const days = PLAN_DAYS.map(day => {
-                const number = day.slice(-1);
-                const line = day === 'Chủ nhật'
-                    ? lines.find(item => /^(?:CN|Chủ\s*nhật|Chu\s*nhat)\b/i.test(item)) || ''
-                    : lines.find(item => new RegExp(`Th[ứu]\\s*${number}\\b`, 'i').test(item)) || '';
+                const line = selectPlanOcrDayLine(lines, day, dateRange);
                 const date = line.match(/\b\d{1,2}\s*[\/.-]\s*\d{1,2}(?:\s*[\/.-]\s*\d{2,4})?\b/)?.[0]?.replace(/\s+/g, '') || '';
                 return { day, date, morning: '', afternoon: '', businessTrip: '' };
             });
@@ -892,108 +947,6 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
                 onRateLimit: onStage,
             });
         }
-
-        function parseCurriculumWeeksLocally(content) {
-            const lines = cleanText(content).split('\n').map(cleanText).filter(Boolean);
-            const byWeek = new Map();
-            let currentWeek = null;
-            let tableHeader = null;
-            for (let index = 0; index < lines.length; index++) {
-                const line = lines[index];
-                if (/^===\s*SHEET:/i.test(line)) {
-                    tableHeader = null;
-                    continue;
-                }
-                const separator = line.includes('\t') ? /\t/ : line.includes('|') ? /\|/ : /[,;]/;
-                const cells = line.split(separator).map(cell => cleanText(cell).replace(/^"|"$/g, ''));
-                const lookupCells = cells.map(normalizeLookupText);
-                const headerWeekIndex = lookupCells.findIndex(cell =>
-                    cell === 'tuan' || cell.includes('tuanthu') || cell.includes('tuanppct')
-                );
-                const explicitPpctIndex = lookupCells.findIndex(cell =>
-                    cell.includes('tietppct') || cell === 'ppct' || cell.includes('sotietppct')
-                );
-                const plainPpctIndex = lookupCells.findIndex(cell => cell === 'tiet' || cell === 'sotiet');
-                // Trong file phân phối chương trình, cột "Tiết" luôn là Tiết PPCT, không phải Tiết TKB.
-                const headerPpctIndex = explicitPpctIndex >= 0 ? explicitPpctIndex : plainPpctIndex;
-                const headerTopicIndex = lookupCells.findIndex(cell =>
-                    cell.includes('tenbai') || cell.includes('baiday') || cell.includes('chude') || cell.includes('noidung')
-                );
-                if (headerPpctIndex >= 0 && headerTopicIndex >= 0) {
-                    tableHeader = {
-                        weekIndex: headerWeekIndex,
-                        ppctIndex: headerPpctIndex,
-                        topicIndex: headerTopicIndex,
-                    };
-                    continue;
-                }
-                if (tableHeader && cells.length > Math.max(tableHeader.ppctIndex, tableHeader.topicIndex)) {
-                    let week = tableHeader.weekIndex >= 0
-                        ? Number.parseInt(cells[tableHeader.weekIndex], 10)
-                        : (currentWeek || 1);
-                    if (!(week > 0 && week <= MAX_SCHOOL_WEEKS)) week = currentWeek || 1;
-                    currentWeek = week;
-                    const ppctPeriod = cleanText(cells[tableHeader.ppctIndex]);
-                    const topics = cleanText(cells[tableHeader.topicIndex]);
-                    if (ppctPeriod || topics) {
-                        const previous = byWeek.get(week) || { week, topics: '', lessons: [] };
-                        if (topics) previous.topics = [...new Set([previous.topics, topics].filter(Boolean))].join('\n');
-                        previous.lessons.push({ ppctPeriod, topic: topics });
-                        byWeek.set(week, previous);
-                    }
-                    continue;
-                }
-                const weekMatch = line.match(/(?:tu[ầa]n|week)\s*[:.\-]?\s*(\d{1,2})\b/i);
-                let week = Number.parseInt(weekMatch?.[1], 10);
-                let weekCellIndex = cells.findIndex(cell => /(?:tu[ầa]n|week)\s*[:.\-]?\s*\d{1,2}/i.test(cell));
-                if (!(week > 0 && week <= MAX_SCHOOL_WEEKS)) {
-                    const firstNumber = Number.parseInt(cells[0], 10);
-                    if (/^\d{1,2}$/.test(cells[0]) && firstNumber > 0 && firstNumber <= MAX_SCHOOL_WEEKS) {
-                        week = firstNumber;
-                        weekCellIndex = 0;
-                    } else if (!cells[0] && currentWeek) {
-                        week = currentWeek;
-                    }
-                }
-                if (!(week > 0 && week <= MAX_SCHOOL_WEEKS)) continue;
-                currentWeek = week;
-
-                const ppctMatch = line.match(/(?:ti[ếe]t\s*(?:ppct)?|ppct)\s*[:.\-]?\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?)/i);
-                let ppctPeriod = cleanText(ppctMatch?.[1]);
-                let periodCellIndex = cells.findIndex(cell => /(?:ti[ếe]t\s*(?:ppct)?|ppct)\s*[:.\-]?\s*\d/i.test(cell));
-                if (!ppctPeriod) {
-                    const candidateIndex = cells.findIndex((cell, cellIndex) =>
-                        cellIndex !== weekCellIndex && /^\d{1,3}(?:\s*[-–]\s*\d{1,3})?$/.test(cell)
-                    );
-                    if (candidateIndex >= 0) {
-                        ppctPeriod = cells[candidateIndex];
-                        periodCellIndex = candidateIndex;
-                    }
-                }
-
-                let topics = cells.filter((cell, cellIndex) => {
-                    if (!cell || cellIndex === weekCellIndex || cellIndex === periodCellIndex) return false;
-                    if (/^(?:tu[ầa]n|week|ti[ếe]t(?:\s*ppct)?|ppct)$/i.test(cell)) return false;
-                    return true;
-                }).join(' - ');
-                if (cells.length === 1 && weekMatch) {
-                    topics = cleanText(line
-                        .replace(weekMatch[0], '')
-                        .replace(ppctMatch?.[0] || '', '')
-                        .replace(/^[\s,:;|\-]+/, ''));
-                }
-                if (!topics && !ppctPeriod && lines[index + 1] && !/(?:tu[ầa]n|week)\s*\d/i.test(lines[index + 1])) {
-                    topics = lines[index + 1];
-                }
-                if (!topics && !ppctPeriod) continue;
-                const previous = byWeek.get(week) || { week, topics: '', lessons: [] };
-                if (topics) previous.topics = [...new Set([previous.topics, topics].filter(Boolean))].join('\n');
-                if (ppctPeriod || topics) previous.lessons.push({ ppctPeriod, topic: topics });
-                byWeek.set(week, previous);
-            }
-            return normalizeCurriculumWeeks(Array.from(byWeek.values()));
-        }
-
         function parseAIJson(text) {
             const cleaned = String(text || '')
                 .replace(/```json\s*/gi, '')

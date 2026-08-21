@@ -43,7 +43,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '36.4.0';
+        const APP_VERSION = '37.0.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -57,7 +57,7 @@
         const MAX_SCHOOL_WEEKS = 37;
         const AUXILIARY_PLAN_WEEKS = [-1, -2];
         const RECOGNITION_CACHE_KEY = 'teacher_recognition_cache_v1';
-        const RECOGNITION_ENGINE_VERSION = 3;
+        const RECOGNITION_ENGINE_VERSION = 4;
         const CURRICULUM_PROFILES_STORAGE = 'teacher_curriculum_profiles_v2';
         const YEAR_WORKSPACES_STORAGE = 'teacher_year_workspaces_v1';
         const SELECTED_ACADEMIC_YEAR_STORAGE = 'teacher_selected_academic_year';
@@ -564,6 +564,112 @@
             )).size;
         }
 
+
+        function parseCurriculumWeeksLocally(content) {
+            const lines = cleanText(content).split('\n').map(cleanText).filter(Boolean);
+            const byWeek = new Map();
+            let currentWeek = null;
+            let tableHeader = null;
+            for (let index = 0; index < lines.length; index++) {
+                const line = lines[index];
+                if (/^===\s*SHEET:/i.test(line)) {
+                    tableHeader = null;
+                    continue;
+                }
+                const separator = line.includes('\t') ? /\t/ : line.includes('|') ? /\|/ : /[,;]/;
+                const cells = line.split(separator).map(cell => cleanText(cell).replace(/^"|"$/g, ''));
+                const lookupCells = cells.map(normalizeLookupText);
+                const headerWeekIndex = lookupCells.findIndex(cell =>
+                    cell === 'tuan' || cell.includes('tuanthu') || cell.includes('tuanppct')
+                );
+                const explicitPpctIndex = lookupCells.findIndex(cell =>
+                    cell.includes('tietppct') || cell === 'ppct' || cell.includes('sotietppct')
+                );
+                const plainPpctIndex = lookupCells.findIndex(cell => cell === 'tiet' || cell === 'sotiet');
+                // Trong file phân phối chương trình, cột "Tiết" luôn là Tiết PPCT, không phải Tiết TKB.
+                const headerPpctIndex = explicitPpctIndex >= 0 ? explicitPpctIndex : plainPpctIndex;
+                const headerTopicIndex = lookupCells.findIndex(cell =>
+                    cell.includes('tenbai') || cell.includes('baiday') || cell.includes('chude') || cell.includes('noidung')
+                );
+                if (headerPpctIndex >= 0 && headerTopicIndex >= 0) {
+                    tableHeader = {
+                        weekIndex: headerWeekIndex,
+                        ppctIndex: headerPpctIndex,
+                        topicIndex: headerTopicIndex,
+                    };
+                    continue;
+                }
+                if (tableHeader && cells.length > Math.max(tableHeader.ppctIndex, tableHeader.topicIndex)) {
+                    let week = tableHeader.weekIndex >= 0
+                        ? Number.parseInt(cells[tableHeader.weekIndex], 10)
+                        : (currentWeek || 1);
+                    if (!(week > 0 && week <= MAX_SCHOOL_WEEKS)) week = currentWeek || 1;
+                    currentWeek = week;
+                    const ppctPeriod = cleanText(cells[tableHeader.ppctIndex]);
+                    const topics = cleanText(cells[tableHeader.topicIndex]);
+                    if (ppctPeriod || topics) {
+                        const previous = byWeek.get(week) || { week, topics: '', lessons: [] };
+                        if (topics) previous.topics = [...new Set([previous.topics, topics].filter(Boolean))].join('\n');
+                        previous.lessons.push({ ppctPeriod, topic: topics });
+                        byWeek.set(week, previous);
+                    }
+                    continue;
+                }
+                const weekMatch = line.match(/(?:tu[ầa]n|week)\s*[:.\-]?\s*(\d{1,2})\b/i);
+                let week = Number.parseInt(weekMatch?.[1], 10);
+                let weekCellIndex = cells.findIndex(cell => /(?:tu[ầa]n|week)\s*[:.\-]?\s*\d{1,2}/i.test(cell));
+                if (!(week > 0 && week <= MAX_SCHOOL_WEEKS)) {
+                    const firstNumber = Number.parseInt(cells[0], 10);
+                    if (/^\d{1,2}$/.test(cells[0]) && firstNumber > 0 && firstNumber <= MAX_SCHOOL_WEEKS) {
+                        week = firstNumber;
+                        weekCellIndex = 0;
+                    } else if (currentWeek) {
+                        // Các dòng kiểu “Tiết 12: ...” thường nằm ngay sau dòng “Tuần N”.
+                        // Giữ ngữ cảnh tuần hiện tại thay vì bỏ qua dòng PPCT hợp lệ.
+                        week = currentWeek;
+                    }
+                }
+                if (!(week > 0 && week <= MAX_SCHOOL_WEEKS)) continue;
+                currentWeek = week;
+
+                const ppctMatch = line.match(/(?:ti[ếe]t\s*(?:ppct)?|ppct)\s*[:.\-]?\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?)/i);
+                let ppctPeriod = cleanText(ppctMatch?.[1]);
+                let periodCellIndex = cells.findIndex(cell => /(?:ti[ếe]t\s*(?:ppct)?|ppct)\s*[:.\-]?\s*\d/i.test(cell));
+                if (!ppctPeriod) {
+                    const candidateIndex = cells.findIndex((cell, cellIndex) =>
+                        cellIndex !== weekCellIndex && /^\d{1,3}(?:\s*[-–]\s*\d{1,3})?$/.test(cell)
+                    );
+                    if (candidateIndex >= 0) {
+                        ppctPeriod = cells[candidateIndex];
+                        periodCellIndex = candidateIndex;
+                    }
+                }
+
+                let topics = cells.filter((cell, cellIndex) => {
+                    if (!cell || cellIndex === weekCellIndex || cellIndex === periodCellIndex) return false;
+                    if (/^(?:tu[ầa]n|week|ti[ếe]t(?:\s*ppct)?|ppct)$/i.test(cell)) return false;
+                    return true;
+                }).join(' - ');
+                if (cells.length === 1) {
+                    // Một dòng có thể chỉ là “Tiết 12: Tên bài” và kế thừa tuần ở dòng trước.
+                    topics = cleanText(line
+                        .replace(weekMatch?.[0] || '', '')
+                        .replace(ppctMatch?.[0] || '', '')
+                        .replace(/^[\s,:;|\-]+/, ''));
+                }
+                if (!topics && !ppctPeriod && !weekMatch && lines[index + 1] && !/(?:tu[ầa]n|week)\s*\d/i.test(lines[index + 1])) {
+                    topics = lines[index + 1];
+                }
+                if (!topics && !ppctPeriod) continue;
+                const previous = byWeek.get(week) || { week, topics: '', lessons: [] };
+                if (topics) previous.topics = [...new Set([previous.topics, topics].filter(Boolean))].join('\n');
+                if (ppctPeriod || topics) previous.lessons.push({ ppctPeriod, topic: topics });
+                byWeek.set(week, previous);
+            }
+            return normalizeCurriculumWeeks(Array.from(byWeek.values()));
+        }
+
+
         function parseLegacyCurriculumWeeks(value) {
             const text = typeof value === 'string' ? value : '';
             if (!text) return [];
@@ -725,6 +831,45 @@
                 ? items.map(item => normalizeWorkItem(item, fallbackScope)).filter(Boolean)
                 : [];
         }
+
+        function normalizeTeachingScheduleBackup(value) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+            return Object.fromEntries(
+                Object.entries(value)
+                    .map(([week, items]) => [Number.parseInt(week, 10), items])
+                    .filter(([week, items]) => week > 0 && week <= MAX_SCHOOL_WEEKS && Array.isArray(items))
+                    .map(([week, items]) => [String(week), items
+                        .map((item, index) => normalizeScheduleItem(item, week, index))
+                        .filter(Boolean)])
+            );
+        }
+
+
+
+        function normalizeScheduleMetaBackup(value) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+            return Object.fromEntries(
+                Object.entries(value)
+                    .map(([week, meta]) => [Number.parseInt(week, 10), meta])
+                    .filter(([week, meta]) => week > 0 && week <= MAX_SCHOOL_WEEKS && meta && typeof meta === 'object' && !Array.isArray(meta))
+                    .map(([week, meta]) => [String(week), {
+                        stale: Boolean(meta.stale),
+                        staleReason: cleanText(meta.staleReason),
+                        generatedAt: cleanText(meta.generatedAt),
+                        sourceMode: cleanText(meta.sourceMode),
+                        status: meta.status === 'final' ? 'final' : 'draft',
+                        finalizedAt: cleanText(meta.finalizedAt),
+                        removedSourceSlots: Array.isArray(meta.removedSourceSlots)
+                            ? [...new Set(meta.removedSourceSlots.map(cleanText).filter(Boolean))]
+                            : [],
+                        affectedScope: meta.affectedScope === 'slots' ? 'slots' : 'all',
+                        affectedSourceSlots: Array.isArray(meta.affectedSourceSlots)
+                            ? [...new Set(meta.affectedSourceSlots.map(cleanText).filter(Boolean))]
+                            : [],
+                    }])
+            );
+        }
+
 
         function normalizeYearWorkspace(value) {
             const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
