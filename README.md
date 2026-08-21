@@ -1,14 +1,35 @@
-# Sổ Tay Giáo Viên v34 — Bước 3
+# Sổ Tay Giáo Viên v36.0.0 — Bản sửa lỗi toàn diện
 
-Bản nâng cấp trải nghiệm người dùng, giữ nguyên nghiệp vụ v33.
+Bản này kế thừa v35, không viết lại nghiệp vụ.
 
-## Điểm mới
-- Tổng quan Hôm nay/Tuần này ngay đầu trang.
-- Hiển thị nhanh Tuần hiện tại, tiết dạy hôm nay, trạng thái lịch báo giảng, việc chưa hoàn thành.
-- Cảnh báo nhanh khi thiếu Kế hoạch/TKB, lịch báo giảng cũ hoặc có việc quá hạn.
-- Gom Gemini, OCR và Sao lưu vào mục **Cài đặt & an toàn** có thể thu gọn.
-- Thanh chức năng chính sticky để chuyển mục nhanh.
-- Giao diện responsive gọn hơn trên laptop và điện thoại.
+## Các lỗi đã sửa
 
-## Đưa lên GitHub Pages
-Chép **toàn bộ** `index.html` và thư mục `assets/` vào thư mục repository, sau đó Commit và Push bằng GitHub Desktop.
+1. Khôi phục `assets/js/config.js` vào đúng thứ tự tải trước `01-state.js`.
+   - Đây là lỗi hồi quy do bước tách module: file cấu hình Firebase tồn tại nhưng `index.html` v35 không nạp file này.
+2. Gia cố chức năng chọn năm học:
+   - selector luôn có năm đang chọn;
+   - không lỗi nếu một control chưa tồn tại;
+   - lỗi đồng bộ Firestore không còn chặn chuyển năm học cục bộ;
+   - chuẩn hóa workspace trước khi render;
+   - nếu chuyển năm học lỗi sẽ phục hồi selector và báo nguyên nhân.
+3. Gia cố nhận dạng ảnh kế hoạch:
+   - kiểm tra dữ liệu trả về trước khi ghi;
+   - validate `days` an toàn;
+   - chuẩn hóa dữ liệu Gemini/OCR trong lớp bảo vệ lỗi;
+   - Tesseract.js dùng danh sách ngôn ngữ `['vie','eng']`;
+   - nếu OCR dạng `blocks` lỗi sẽ tự thử lại text-only;
+   - lỗi OCR được bọc lại với thông báo rõ hơn;
+   - bảng kế hoạch không còn giả định `days` luôn tồn tại.
+4. Giữ nguyên fallback Gemini → OCR → nhập thủ công.
+5. APP_VERSION = 36.0.0.
+
+## Kiểm tra tĩnh đã chạy
+
+- 19 đường dẫn tài nguyên nội bộ: đầy đủ 19/19.
+- 357 hàm có tên: 357 hàm duy nhất, không trùng khai báo.
+- Toàn bộ JavaScript: `node --check` đạt.
+- 228 DOM id; các tham chiếu thiếu còn lại đều là id được tạo động trong modal hoặc chuỗi selector động.
+
+## Cập nhật GitHub Desktop
+
+Giải nén ZIP, chép `index.html`, `README.md` và nguyên thư mục `assets` vào thư mục repo cũ, chọn Replace, sau đó Commit và Push origin.

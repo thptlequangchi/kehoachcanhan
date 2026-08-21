@@ -2060,56 +2060,78 @@ service cloud.firestore {
         function activateAcademicYearWorkspace(academicYear, notify = true) {
             const normalizedYear = normalizeAcademicYear(academicYear);
             if (!normalizedYear) return false;
-            if (planSyncContext) closePlanSyncPanel();
-            if (scheduleValidationContext) closeScheduleValidationPanel();
-            flushCloudWorkspaceSync();
-            persistActiveYearWorkspace();
-            const workspace = ensureYearWorkspace(normalizedYear);
-            state.selectedAcademicYear = normalizedYear;
-            state.planData = workspace.planData;
-            state.timetablesByWeek = workspace.timetablesByWeek;
-            state.curriculumText = workspace.curriculumText;
-            state.curriculumProfiles = workspace.curriculumProfiles;
-            state.teachingSchedule = workspace.teachingSchedule;
-            state.scheduleMeta = workspace.scheduleMeta;
-            state.workItems = workspace.workItems;
-            state.sharedWorkItems = [];
-            state.workSyncError = '';
-            state.selectedTimetableWeek = workspace.selectedTimetableWeek || 1;
-            state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
-            state.teacherProfile.academicYear = normalizedYear;
-            Object.keys(scheduleUndoStack).forEach(key => delete scheduleUndoStack[key]);
-            localStorage.setItem(SELECTED_ACADEMIC_YEAR_STORAGE, normalizedYear);
-            writeStoredJSON('teacher_profile', state.teacherProfile);
-            runDataMigrationsForActiveYear();
-            syncPlanDatesForActiveYear();
-            persistActiveYearWorkspace();
-            persistLegacyActiveYear();
-            populateAcademicYearSelect(normalizedYear);
-            updateSchoolYearWeekInfo();
-            planWeekSelect.value = '';
-            renderPlanTable();
-            populateTimetableWeekSelect();
-            activateTimetableWeek(state.selectedTimetableWeek, false);
-            renderCurriculumProfiles();
-            populateWeekSelect();
-            const selectedTeachingWeek = workspace.selectedTeachingWeek;
-            if (selectedTeachingWeek && scheduleWeekSelect.querySelector(`option[value="${selectedTeachingWeek}"]`)) {
-                scheduleWeekSelect.value = String(selectedTeachingWeek);
-                localStorage.setItem('teacher_selected_week', String(selectedTeachingWeek));
-                if (state.teachingSchedule[selectedTeachingWeek]?.length) renderTeachingSchedule(selectedTeachingWeek);
-                else updateScheduleToolbar(selectedTeachingWeek);
-            } else {
-                scheduleWeekSelect.value = '';
-                localStorage.removeItem('teacher_selected_week');
-                scheduleDisplay.innerHTML = '<p class="text-muted text-center" style="padding:32px 0;">Chọn tuần và nhấn “Tạo lịch báo giảng”</p>';
-                updateScheduleToolbar(null);
+            const previousYear = state.selectedAcademicYear;
+            try {
+                if (planSyncContext) closePlanSyncPanel();
+                if (scheduleValidationContext) closeScheduleValidationPanel();
+                // Không để lỗi đồng bộ đám mây chặn thao tác chuyển năm học trên máy.
+                try {
+                    const pendingSync = flushCloudWorkspaceSync();
+                    pendingSync?.catch?.(error => console.warn('Không thể lưu tức thời năm học cũ trước khi chuyển:', error));
+                } catch (error) {
+                    console.warn('Bỏ qua lỗi đồng bộ trước khi chuyển năm học:', error);
+                }
+                persistActiveYearWorkspace();
+                const workspace = ensureYearWorkspace(normalizedYear);
+                state.selectedAcademicYear = normalizedYear;
+                state.planData = Array.isArray(workspace.planData) ? workspace.planData : [];
+                state.timetablesByWeek = workspace.timetablesByWeek && typeof workspace.timetablesByWeek === 'object' ? workspace.timetablesByWeek : {};
+                state.curriculumText = cleanText(workspace.curriculumText);
+                state.curriculumProfiles = Array.isArray(workspace.curriculumProfiles) ? workspace.curriculumProfiles : [];
+                state.teachingSchedule = workspace.teachingSchedule && typeof workspace.teachingSchedule === 'object' ? workspace.teachingSchedule : {};
+                state.scheduleMeta = workspace.scheduleMeta && typeof workspace.scheduleMeta === 'object' ? workspace.scheduleMeta : {};
+                state.workItems = Array.isArray(workspace.workItems) ? workspace.workItems : [];
+                state.sharedWorkItems = [];
+                state.workSyncError = '';
+                state.selectedTimetableWeek = Number.parseInt(workspace.selectedTimetableWeek, 10) || 1;
+                state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
+                state.teacherProfile.academicYear = normalizedYear;
+                Object.keys(scheduleUndoStack).forEach(key => delete scheduleUndoStack[key]);
+                localStorage.setItem(SELECTED_ACADEMIC_YEAR_STORAGE, normalizedYear);
+                writeStoredJSON('teacher_profile', state.teacherProfile);
+                runDataMigrationsForActiveYear();
+                syncPlanDatesForActiveYear();
+                persistActiveYearWorkspace();
+                persistLegacyActiveYear();
+                populateAcademicYearSelect(normalizedYear);
+                updateSchoolYearWeekInfo();
+                if (planWeekSelect) planWeekSelect.value = '';
+                renderPlanTable();
+                populateTimetableWeekSelect();
+                activateTimetableWeek(state.selectedTimetableWeek, false);
+                renderCurriculumProfiles();
+                populateWeekSelect();
+                const selectedTeachingWeek = Number.parseInt(workspace.selectedTeachingWeek, 10) || 0;
+                if (selectedTeachingWeek && scheduleWeekSelect?.querySelector(`option[value="${selectedTeachingWeek}"]`)) {
+                    scheduleWeekSelect.value = String(selectedTeachingWeek);
+                    localStorage.setItem('teacher_selected_week', String(selectedTeachingWeek));
+                    if (state.teachingSchedule[selectedTeachingWeek]?.length) renderTeachingSchedule(selectedTeachingWeek);
+                    else updateScheduleToolbar(selectedTeachingWeek);
+                } else if (scheduleWeekSelect) {
+                    scheduleWeekSelect.value = '';
+                    localStorage.removeItem('teacher_selected_week');
+                    if (scheduleDisplay) scheduleDisplay.innerHTML = '<p class="text-muted text-center" style="padding:32px 0;">Chọn tuần và nhấn “Tạo lịch báo giảng”</p>';
+                    updateScheduleToolbar(null);
+                }
+                initializeProgressDashboardControls();
+                renderProgressDashboard();
+                renderWorkWorkspace();
+                updateDataSafetySummary();
+                try {
+                    activateCloudDataSync();
+                } catch (error) {
+                    console.warn('Đã chuyển năm học nhưng chưa thể bật đồng bộ đám mây:', error);
+                    setCloudSyncStatus?.('error', 'Năm học đã chuyển; đồng bộ đám mây đang tạm lỗi');
+                }
+                if (notify) showToast(`✅ Đã chuyển sang năm học ${normalizedYear}`, 'success');
+                return true;
+            } catch (error) {
+                console.error(`Không thể kích hoạt năm học ${normalizedYear}:`, error);
+                // Không cố hoàn nguyên dữ liệu bằng suy đoán; chỉ khôi phục selector và báo lỗi rõ ràng.
+                if (previousYear && previousYear !== normalizedYear) {
+                    state.selectedAcademicYear = previousYear;
+                    populateAcademicYearSelect(previousYear);
+                }
+                throw error;
             }
-            initializeProgressDashboardControls();
-            renderProgressDashboard();
-            renderWorkWorkspace();
-            updateDataSafetySummary();
-            activateCloudDataSync();
-            if (notify) showToast(`✅ Đã chuyển sang năm học ${normalizedYear}`, 'success');
-            return true;
         }

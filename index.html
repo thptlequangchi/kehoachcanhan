@@ -182,6 +182,33 @@
             </div>
         </section>
 
+        <section class="teacher-command-center" id="teacherCommandCenter" aria-label="Trợ lý công việc tuần">
+            <div class="command-center-heading">
+                <div>
+                    <span class="overview-eyebrow">TRỢ LÝ TUẦN</span>
+                    <h2>Việc cần làm ngay</h2>
+                    <p id="commandCenterSubtitle">Tự tổng hợp lịch dạy, công việc và tiến độ PPCT từ dữ liệu hiện có.</p>
+                </div>
+                <button class="overview-action" id="refreshCommandCenterBtn" type="button">↻ Làm mới</button>
+            </div>
+            <div class="command-center-grid">
+                <article class="command-panel">
+                    <div class="command-panel-title"><span>🎓</span><div><strong>Lịch dạy hôm nay</strong><small id="todayTeachingSummary">Đang kiểm tra TKB…</small></div></div>
+                    <div class="command-list" id="todayTeachingList"></div>
+                    <button class="command-link" type="button" data-command-tab="timetable">Mở Thời khóa biểu →</button>
+                </article>
+                <article class="command-panel command-panel-priority">
+                    <div class="command-panel-title"><span>🎯</span><div><strong>Ưu tiên tuần này</strong><small id="weeklyPrioritySummary">Đang xác định việc quan trọng…</small></div></div>
+                    <div class="command-list" id="weeklyPriorityList"></div>
+                </article>
+                <article class="command-panel">
+                    <div class="command-panel-title"><span>📈</span><div><strong>Tiến độ giảng dạy</strong><small id="teachingProgressSummary">Đang đối chiếu PPCT…</small></div></div>
+                    <div class="command-list" id="teachingProgressList"></div>
+                    <button class="command-link" type="button" data-command-tab="teaching" data-command-progress="1">Xem bảng tiến độ →</button>
+                </article>
+            </div>
+        </section>
+
         <!-- TABS -->
         <nav class="tabs" id="tabNav" role="tablist" aria-label="Các chức năng chính">
             <button class="tab-btn active" data-tab="plan" role="tab" aria-selected="true" aria-controls="tab-plan">
@@ -816,6 +843,7 @@
     <script src="assets/js/13-curriculum.js"></script>
     <script src="assets/js/14-teaching-schedule.js"></script>
     <script src="assets/js/15-ux.js"></script>
+    <script src="assets/js/16-command-center.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

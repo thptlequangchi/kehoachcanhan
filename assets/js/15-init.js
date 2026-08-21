@@ -43,6 +43,8 @@
             renderProgressDashboard();
             initTeacherOverview();
             renderTeacherOverview();
+            initTeacherCommandCenter();
+            renderTeacherCommandCenter();
 
             if (storageWarnings.length > 0) {
                 showToast('⚠️ Một số dữ liệu lưu cũ bị hỏng đã được bỏ qua an toàn.', 'info');

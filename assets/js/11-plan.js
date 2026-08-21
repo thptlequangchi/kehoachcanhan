@@ -50,7 +50,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                             prompt,
                             schema: PLAN_SCHEMA,
                             normalize: normalizePlanWeek,
-                            validateGemini: data => data.days.length > 0,
+                            validateGemini: data => Array.isArray(data?.days) && data.days.length > 0,
                             onStage: stage => {
                                 planStatus.innerHTML = `<span class="loading-spinner"></span> Ảnh ${index + 1}/${fileList.length}: ${escapeHTML(stage)}`;
                             },
@@ -58,6 +58,8 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                         if (!canEditSharedPlan()) {
                             throw new Error('Kế hoạch vừa có phiên bản mới. Hãy xử lý thông báo đồng bộ an toàn rồi tải lại ảnh.');
                         }
+                        if (!plan || typeof plan !== 'object') throw new Error('Kết quả nhận dạng kế hoạch không hợp lệ');
+                        if (!Array.isArray(plan.days)) plan.days = [];
                         plan.schoolYear = state.selectedAcademicYear;
                         plan.updatedAt = new Date().toISOString();
                         applyAutomaticDatesToPlan(plan);
@@ -76,7 +78,9 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                     } catch (fileError) {
                         failedCount++;
                         console.error('Lỗi ảnh kế hoạch:', file.name, fileError);
-                        showToast(`❌ ${file.name}: ${fileError.message}`, 'error');
+                        const detail = cleanText(fileError?.message) || 'Lỗi không xác định';
+                        showToast(`❌ ${file.name}: ${detail}`, 'error');
+                        if (planStatus) planStatus.textContent = `Lỗi ảnh: ${detail}`;
                     }
                 }
                 if (successCount > 0) {
@@ -135,7 +139,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 <td class="week-num"><span class="plan-week-label ${auxiliary ? 'auxiliary' : ''}">${escapeHTML(weekLabel)}</span></td>
                 <td>${escapeHTML(p.dateRange || '—')}</td>
                 <td>${escapeHTML(p.duty || '—')}</td>
-                <td><span class="status-badge done">✅ ${p.days.length} ngày${escapeHTML(warningText)}</span></td>
+                <td><span class="status-badge done">✅ ${Array.isArray(p.days) ? p.days.length : 0} ngày${escapeHTML(warningText)}</span></td>
                 <td>
                   <button class="btn btn-outline btn-sm" style="color:#1e3a5f;border-color:#cbd5e1;" 
                           data-action="view" data-week="${week}" aria-label="Xem kế hoạch ${escapeHTML(weekLabel)}">👁️ Xem</button>

@@ -366,6 +366,9 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             if (!window.Tesseract?.createWorker) {
                 throw new Error('Không tải được bộ OCR Tesseract.js');
             }
+            if (!imageFile || typeof imageFile !== 'object') {
+                throw new Error('Ảnh OCR không hợp lệ');
+            }
             const progressLabels = {
                 'loading tesseract core': 'đang nạp bộ máy OCR',
                 'initializing tesseract': 'đang khởi tạo OCR',
@@ -375,26 +378,42 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             };
             let worker = null;
             try {
-                worker = await window.Tesseract.createWorker('vie+eng', window.Tesseract.OEM?.LSTM_ONLY ?? 1, {
+                const oem = window.Tesseract.OEM?.LSTM_ONLY ?? 1;
+                // Tesseract.js v6+ hỗ trợ nhiều ngôn ngữ trong createWorker. Dùng mảng để tránh lỗi phân tích chuỗi ở một số build CDN.
+                worker = await window.Tesseract.createWorker(['vie', 'eng'], oem, {
                     logger: message => {
                         if (!onStage) return;
-                        const label = progressLabels[message.status] || cleanText(message.status) || 'đang xử lý';
-                        const percent = Number.isFinite(message.progress) ? ` ${Math.round(message.progress * 100)}%` : '';
+                        const label = progressLabels[message?.status] || cleanText(message?.status) || 'đang xử lý';
+                        const percent = Number.isFinite(message?.progress) ? ` ${Math.round(message.progress * 100)}%` : '';
                         onStage(`OCR trên máy: ${label}${percent}`);
                     },
                 });
-                await worker.setParameters({
-                    preserve_interword_spaces: '1',
-                    tessedit_pageseg_mode: '3',
-                });
-                const result = await worker.recognize(imageFile, {}, { text: true, blocks: true });
-                const data = result?.data || {};
+                if (!worker?.recognize) throw new Error('Bộ OCR khởi tạo không đầy đủ');
+                if (worker.setParameters) {
+                    await worker.setParameters({
+                        preserve_interword_spaces: '1',
+                        tessedit_pageseg_mode: '3',
+                    });
+                }
+                let result;
+                try {
+                    // blocks cần cho ghép cột/hàng; nếu build Tesseract không hỗ trợ ổn định thì tự hạ xuống text-only.
+                    result = await worker.recognize(imageFile, {}, { text: true, blocks: true });
+                } catch (structuredError) {
+                    console.warn('OCR blocks không khả dụng, thử lại text-only:', structuredError);
+                    if (onStage) onStage('OCR cấu trúc chưa tương thích, đang thử lại chế độ văn bản...');
+                    result = await worker.recognize(imageFile);
+                }
+                const data = result?.data && typeof result.data === 'object' ? result.data : {};
                 return {
                     text: cleanText(data.text),
                     words: extractOcrWords(data),
                 };
+            } catch (error) {
+                const message = cleanText(error?.message) || 'OCR trên máy gặp lỗi không xác định';
+                throw new Error(`OCR trên máy: ${message}`);
             } finally {
-                if (worker) await worker.terminate().catch(() => {});
+                if (worker?.terminate) await worker.terminate().catch(() => {});
             }
         }
 
@@ -708,13 +727,33 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             }
         }
 
+        function normalizeRecognitionSafely(normalize, value, context = 'dữ liệu nhận dạng') {
+            if (typeof normalize !== 'function') throw new Error(`Thiếu hàm chuẩn hóa ${context}`);
+            try {
+                return normalize(value);
+            } catch (error) {
+                console.error(`Lỗi chuẩn hóa ${context}:`, error, value);
+                throw new Error(`Không thể chuẩn hóa ${context}: ${cleanText(error?.message) || 'lỗi dữ liệu'}`);
+            }
+        }
+
+        function validateRecognitionSafely(validate, value) {
+            if (typeof validate !== 'function') return true;
+            try {
+                return Boolean(validate(value));
+            } catch (error) {
+                console.warn('Hàm kiểm tra dữ liệu nhận dạng phát sinh lỗi:', error, value);
+                return false;
+            }
+        }
+
         async function recognizeStructuredImage({ file, kind, prompt, schema, normalize, validateGemini, onStage }) {
             if (onStage) onStage('Đang kiểm tra bộ nhớ ảnh...');
             const hash = await hashImageFile(file);
             rememberRecentRecognitionFile(kind, hash, file);
             const cached = getCachedRecognition(kind, hash);
             if (cached) {
-                const cachedData = normalize(cached);
+                const cachedData = normalizeRecognitionSafely(normalize, cached, `${kind} từ bộ nhớ`);
                 if (cachedData) {
                     cachedData.cacheHash = hash;
                     cachedData.cacheHit = true;
@@ -730,14 +769,14 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
                 try {
                     const verifySecondPass = mode !== 'economy';
                     let json = await geminiExtractVerified(file, prompt, schema, onStage, verifySecondPass);
-                    let data = normalize(json);
+                    let data = normalizeRecognitionSafely(normalize, json, `${kind} từ Gemini`);
                     let recoveredStructure = false;
-                    if (!data || (validateGemini && !validateGemini(data))) {
+                    if (!data || !validateRecognitionSafely(validateGemini, data)) {
                         json = await geminiRecoverStructuredImage(file, prompt, schema, onStage);
-                        data = normalize(json);
+                        data = normalizeRecognitionSafely(normalize, json, `${kind} sau cứu cấu trúc`);
                         recoveredStructure = true;
                     }
-                    if (!data || (validateGemini && !validateGemini(data))) {
+                    if (!data || !validateRecognitionSafely(validateGemini, data)) {
                         throw new Error('Dữ liệu Gemini vẫn chưa đủ để dựng bảng sau lượt cứu cấu trúc');
                     }
                     data.sourceMode = recoveredStructure
@@ -794,7 +833,7 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
                 ? (sourceMode === 'offline-ocr' ? createPlanDraftFromSpatialOcr(ocrResult, sourceError) : null)
                     || createPlanDraftFromOcr(ocrResult.text, sourceMode, sourceError)
                 : createTimetableDraftFromOcr(ocrResult.text, sourceMode, sourceError);
-            const data = normalize(draft);
+            const data = normalizeRecognitionSafely(normalize, draft, `${kind} dự phòng`);
             if (!data) throw new Error('Không thể tạo mẫu dữ liệu dự phòng');
             data.sourceMode = cleanText(draft.sourceMode) || sourceMode;
             data.offlineOcrText = cleanText(ocrResult.text);

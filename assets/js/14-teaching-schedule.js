@@ -16,14 +16,20 @@
                 ...Object.keys(state.yearWorkspaces || {}).map(year => Number.parseInt(year, 10)).filter(Boolean),
             ]);
             for (let start = currentStart - 3; start <= currentStart + 3; start++) starts.add(start);
-            [schoolYearSelect, academicYearSelect, progressAcademicYearSelect].forEach(select => {
+            [schoolYearSelect, academicYearSelect, progressAcademicYearSelect].filter(Boolean).forEach(select => {
                 select.innerHTML = '';
-                Array.from(starts).sort((a, b) => b - a).forEach(start => {
+                Array.from(starts).filter(Number.isFinite).sort((a, b) => b - a).forEach(start => {
                     const option = document.createElement('option');
                     option.value = `${start}-${start + 1}`;
                     option.textContent = `${start}-${start + 1}`;
                     select.appendChild(option);
                 });
+                if (!Array.from(select.options).some(option => option.value === normalizedPreferred)) {
+                    const preferredOption = document.createElement('option');
+                    preferredOption.value = normalizedPreferred;
+                    preferredOption.textContent = normalizedPreferred;
+                    select.appendChild(preferredOption);
+                }
                 const customOption = document.createElement('option');
                 customOption.value = '__custom__';
                 customOption.textContent = 'Năm học khác…';
@@ -38,18 +44,29 @@
                 showToast('⚠️ Năm học phải có dạng 2025-2026 và hai năm liên tiếp', 'error');
                 return false;
             }
-            return activateAcademicYearWorkspace(academicYear, notify);
+            try {
+                const changed = activateAcademicYearWorkspace(academicYear, notify);
+                if (!changed) populateAcademicYearSelect(state.selectedAcademicYear);
+                return Boolean(changed);
+            } catch (error) {
+                console.error('Không thể chuyển năm học:', academicYear, error);
+                populateAcademicYearSelect(state.selectedAcademicYear);
+                showToast(`❌ Không thể chuyển năm học: ${cleanText(error?.message) || 'Lỗi không xác định'}`, 'error');
+                return false;
+            }
         }
 
         function handleAcademicYearSelectChange(select) {
+            if (!select) return;
+            const previousYear = state.selectedAcademicYear;
             if (select.value === '__custom__') {
                 const entered = prompt('Nhập năm học (ví dụ 2025-2026):', state.teacherProfile.academicYear);
                 if (entered === null || !applyAcademicYear(entered)) {
-                    populateAcademicYearSelect(state.selectedAcademicYear);
+                    populateAcademicYearSelect(previousYear);
                 }
                 return;
             }
-            applyAcademicYear(select.value);
+            if (!applyAcademicYear(select.value)) populateAcademicYearSelect(previousYear);
         }
 
         academicYearSelect.addEventListener('change', () => handleAcademicYearSelectChange(academicYearSelect));

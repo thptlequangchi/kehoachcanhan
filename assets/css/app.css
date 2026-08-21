@@ -2744,3 +2744,80 @@
   .tabs { top:4px; overflow-x:auto; flex-wrap:nowrap; justify-content:flex-start; }
   .tab-btn { flex:0 0 auto; min-width:128px; }
 }
+
+/* ================================================================
+   v35 — Teacher Command Center
+   ================================================================ */
+.teacher-command-center {
+    margin: 0 0 24px;
+    padding: 20px;
+    border: 1px solid #dbe5f0;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    box-shadow: 0 7px 24px rgba(15, 23, 42, 0.07);
+}
+.command-center-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+.command-center-heading h2 { margin: 2px 0 4px; color: #0f172a; font-size: 20px; }
+.command-center-heading p { margin: 0; color: #64748b; font-size: 12px; line-height: 1.45; }
+.command-center-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+.command-panel {
+    display: flex;
+    min-height: 230px;
+    flex-direction: column;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    background: #fff;
+}
+.command-panel-priority { border-color: #bfdbfe; background: linear-gradient(160deg, #fff, #eff6ff); }
+.command-panel-title { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 11px; }
+.command-panel-title > span { display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border-radius:11px; background:#f1f5f9; font-size:17px; }
+.command-panel-title strong, .command-panel-title small { display:block; }
+.command-panel-title strong { color:#0f172a; font-size:14px; }
+.command-panel-title small { margin-top:3px; color:#64748b; font-size:10px; line-height:1.35; }
+.command-list { display:grid; gap:8px; }
+.command-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 10px;
+    border: 1px solid #eef2f6;
+    border-radius: 11px;
+    background: #f8fafc;
+}
+.command-item.warning { border-color:#fde68a; background:#fffbeb; }
+.command-item.danger { border-color:#fecaca; background:#fef2f2; }
+.command-item.good { border-color:#bbf7d0; background:#f0fdf4; }
+.command-item-icon { font-size:15px; }
+.command-item-main { min-width:0; }
+.command-item-main strong, .command-item-main small { display:block; overflow:hidden; text-overflow:ellipsis; }
+.command-item-main strong { color:#1e293b; font-size:11px; line-height:1.35; white-space:nowrap; }
+.command-item-main small { margin-top:2px; color:#64748b; font-size:10px; line-height:1.35; }
+.command-item-badge { padding:3px 7px; border-radius:999px; background:#fff; color:#475569; font-size:9px; font-weight:800; white-space:nowrap; }
+.command-empty { padding:18px 10px; color:#64748b; text-align:center; font-size:11px; line-height:1.5; }
+.command-link {
+    align-self: flex-start;
+    margin-top: auto;
+    padding: 9px 0 0;
+    border: 0;
+    background: transparent;
+    color: #1d4ed8;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.command-link:hover { text-decoration: underline; }
+@media (max-width: 980px) { .command-center-grid { grid-template-columns: 1fr; } .command-panel { min-height:0; } }
+@media (max-width: 640px) { .teacher-command-center { padding:14px; border-radius:15px; } .command-center-heading { flex-direction:column; } .command-center-heading .overview-action { width:100%; justify-content:center; } }
