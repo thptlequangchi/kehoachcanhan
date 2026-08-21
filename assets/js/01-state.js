@@ -43,7 +43,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '36.1.0';
+        const APP_VERSION = '36.2.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -57,7 +57,7 @@
         const MAX_SCHOOL_WEEKS = 37;
         const AUXILIARY_PLAN_WEEKS = [-1, -2];
         const RECOGNITION_CACHE_KEY = 'teacher_recognition_cache_v1';
-        const RECOGNITION_ENGINE_VERSION = 2;
+        const RECOGNITION_ENGINE_VERSION = 3;
         const CURRICULUM_PROFILES_STORAGE = 'teacher_curriculum_profiles_v2';
         const YEAR_WORKSPACES_STORAGE = 'teacher_year_workspaces_v1';
         const SELECTED_ACADEMIC_YEAR_STORAGE = 'teacher_selected_academic_year';

@@ -379,8 +379,8 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             let worker = null;
             try {
                 const oem = window.Tesseract.OEM?.LSTM_ONLY ?? 1;
-                // Tesseract.js v6+ hỗ trợ nhiều ngôn ngữ trong createWorker. Dùng mảng để tránh lỗi phân tích chuỗi ở một số build CDN.
-                worker = await window.Tesseract.createWorker(['vie', 'eng'], oem, {
+                // Dùng chuỗi ngôn ngữ chuẩn của Tesseract để tương thích ổn định với bản CDN.
+                worker = await window.Tesseract.createWorker('vie+eng', oem, {
                     logger: message => {
                         if (!onStage) return;
                         const label = progressLabels[message?.status] || cleanText(message?.status) || 'đang xử lý';
@@ -395,15 +395,10 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
                         tessedit_pageseg_mode: '3',
                     });
                 }
-                let result;
-                try {
-                    // blocks cần cho ghép cột/hàng; nếu build Tesseract không hỗ trợ ổn định thì tự hạ xuống text-only.
-                    result = await worker.recognize(imageFile, {}, { text: true, blocks: true });
-                } catch (structuredError) {
-                    console.warn('OCR blocks không khả dụng, thử lại text-only:', structuredError);
-                    if (onStage) onStage('OCR cấu trúc chưa tương thích, đang thử lại chế độ văn bản...');
-                    result = await worker.recognize(imageFile);
-                }
+                // Không yêu cầu output blocks ở đây. Một số build Tesseract.js CDN có thể phát sinh
+                // TypeError "Cannot read properties of undefined (reading 'undefined')" khi serialize blocks.
+                // Text-only ổn định hơn; nếu không có tọa độ thì hệ thống vẫn dựng mẫu để chỉnh thủ công.
+                const result = await worker.recognize(imageFile);
                 const data = result?.data && typeof result.data === 'object' ? result.data : {};
                 return {
                     text: cleanText(data.text),

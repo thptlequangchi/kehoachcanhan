@@ -76,9 +76,36 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                         showPlanWeek(plan.week);
                         successCount++;
                     } catch (fileError) {
-                        failedCount++;
                         console.error('Lỗi ảnh kế hoạch:', file.name, fileError);
                         const detail = cleanText(fileError?.message) || 'Lỗi không xác định';
+                        // Không để lỗi OCR/Gemini làm mất luôn thao tác tải ảnh. Nếu nhận dạng hỏng bất ngờ,
+                        // tạo tuần trống an toàn để giáo viên vẫn có thể mở và nhập/sửa thủ công.
+                        try {
+                            const emergency = normalizePlanWeek(createPlanDraftFromOcr('', 'manual', detail));
+                            if (emergency && canEditSharedPlan()) {
+                                emergency.schoolYear = state.selectedAcademicYear;
+                                emergency.updatedAt = new Date().toISOString();
+                                emergency.warnings = [
+                                    'Ảnh đã tải nhưng bộ nhận dạng gặp lỗi. Hệ thống đã tạo mẫu trống an toàn để thầy nhập hoặc thử nhận dạng lại.',
+                                    `Chi tiết kỹ thuật: ${detail}`,
+                                ];
+                                applyAutomaticDatesToPlan(emergency);
+                                const existingIndex = state.planData.findIndex(item => item.week === emergency.week);
+                                if (existingIndex >= 0) state.planData[existingIndex] = emergency;
+                                else state.planData.push(emergency);
+                                state.planData.sort((a, b) => a.week - b.week);
+                                writeStoredJSON('teacher_plan_data', state.planData);
+                                persistActiveYearWorkspace();
+                                renderPlanTable();
+                                showPlanWeek(emergency.week);
+                                showToast(`⚠️ ${file.name}: nhận dạng lỗi, đã tạo mẫu tuần để chỉnh thủ công`, 'info');
+                                successCount++;
+                                continue;
+                            }
+                        } catch (fallbackError) {
+                            console.error('Không thể tạo mẫu dự phòng kế hoạch:', fallbackError);
+                        }
+                        failedCount++;
                         showToast(`❌ ${file.name}: ${detail}`, 'error');
                         if (planStatus) planStatus.textContent = `Lỗi ảnh: ${detail}`;
                     }
