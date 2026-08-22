@@ -999,16 +999,28 @@ service cloud.firestore {
             }
         }
 
-        function savePreCloudSyncBackupOnce() {
-            if (localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY)) return true;
-            const saved = writeStoredJSON(PRE_CLOUD_SYNC_BACKUP_KEY, createBackupPayload());
-            if (saved && exportPreCloudBackupBtn) {
-                exportPreCloudBackupBtn.hidden = false;
+        let preCloudBackupPromise = null;
+        async function savePreCloudSyncBackupOnce() {
+            const storageApi = window.teacherNotebookIndexedDB;
+            try {
+                if (storageApi && await storageApi.hasBackup(PRE_CLOUD_SYNC_BACKUP_KEY)) return true;
+                if (!storageApi && localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY)) return true;
+                if (!preCloudBackupPromise) {
+                    const payload = createBackupPayload();
+                    preCloudBackupPromise = storageApi
+                        ? storageApi.setBackup(PRE_CLOUD_SYNC_BACKUP_KEY, payload)
+                        : Promise.resolve(writeStoredJSON(PRE_CLOUD_SYNC_BACKUP_KEY, payload));
+                }
+                const saved = await preCloudBackupPromise;
+                if (saved && exportPreCloudBackupBtn) exportPreCloudBackupBtn.hidden = false;
+                if (!saved) showToast('⚠️ Chưa thể đồng bộ vì trình duyệt không tạo được bản sao dữ liệu an toàn', 'error');
+                return Boolean(saved);
+            } catch (error) {
+                preCloudBackupPromise = null;
+                window.teacherNotebookRecordError?.('pre-cloud-backup', error);
+                showToast('⚠️ Chưa thể đồng bộ vì không tạo được bản sao dữ liệu an toàn', 'error');
+                return false;
             }
-            if (!saved) {
-                showToast('⚠️ Chưa thể đồng bộ vì trình duyệt không tạo được bản sao dữ liệu an toàn', 'error');
-            }
-            return saved;
         }
 
         function stopCloudWorkspaceSync() {
@@ -1074,72 +1086,88 @@ service cloud.firestore {
             if (typeof renderYearDashboard === 'function') renderYearDashboard();
         }
 
-        function applySharedYearSnapshot(data, academicYear, options = {}) {
-            if (state.account.syncYear !== academicYear || state.selectedAcademicYear !== academicYear) return;
-            const previousPayload = buildSharedYearPayload(academicYear);
-            const workspace = ensureYearWorkspace(academicYear);
-            const nextPayload = normalizeSharedYearPayload(data, academicYear);
-            const changed = cloudPayloadHash(previousPayload) !== cloudPayloadHash(nextPayload);
-            if (!savePreCloudSyncBackupOnce()) return;
-            if (changed && !options.skipHistory && state.account.profile?.role === 'admin') {
-                saveSharedPlanHistorySnapshot(previousPayload, 'Trước khi nhận phiên bản mới', {
-                    revision: state.account.sharedRevision,
-                    updatedByName: state.account.sharedUpdatedByName,
-                });
-            }
-            state.account.syncApplyingRemote = true;
-            workspace.week1Start = nextPayload.week1Start;
-            workspace.planData = nextPayload.planData;
-            state.planData = workspace.planData;
-            syncPlanDatesForActiveYear();
-            persistActiveYearWorkspace();
-            persistLegacyActiveYear();
-            refreshViewsAfterCloudWorkspace(true, false);
-            state.account.syncApplyingRemote = false;
-            state.account.lastSharedHash = cloudPayloadHash(nextPayload);
-            state.account.sharedRevision = Number(data?.revision) || 0;
-            state.account.sharedBasePayload = cloneSharedYearPayload(nextPayload);
-            state.account.sharedUpdatedAt = data?.updatedAt || null;
-            state.account.sharedUpdatedBy = cleanText(data?.updatedBy);
-            state.account.sharedUpdatedByName = cleanText(data?.updatedByName);
-            updateSharedPlanEditingControls();
-            if (changed && Object.keys(state.teachingSchedule || {}).length > 0) {
-                invalidateTeachingSchedules('Kế hoạch tuần dùng chung đã được cập nhật');
+        async function applySharedYearSnapshot(data, academicYear, options = {}) {
+            try {
+
+                if (state.account.syncYear !== academicYear || state.selectedAcademicYear !== academicYear) return;
+                const previousPayload = buildSharedYearPayload(academicYear);
+                const workspace = ensureYearWorkspace(academicYear);
+                const nextPayload = normalizeSharedYearPayload(data, academicYear);
+                const changed = cloudPayloadHash(previousPayload) !== cloudPayloadHash(nextPayload);
+                if (!await savePreCloudSyncBackupOnce()) return;
+                if (changed && !options.skipHistory && state.account.profile?.role === 'admin') {
+                    saveSharedPlanHistorySnapshot(previousPayload, 'Trước khi nhận phiên bản mới', {
+                        revision: state.account.sharedRevision,
+                        updatedByName: state.account.sharedUpdatedByName,
+                    });
+                }
+                state.account.syncApplyingRemote = true;
+                workspace.week1Start = nextPayload.week1Start;
+                workspace.planData = nextPayload.planData;
+                state.planData = workspace.planData;
+                syncPlanDatesForActiveYear();
+                persistActiveYearWorkspace();
+                persistLegacyActiveYear();
+                refreshViewsAfterCloudWorkspace(true, false);
+                state.account.syncApplyingRemote = false;
+                state.account.lastSharedHash = cloudPayloadHash(nextPayload);
+                state.account.sharedRevision = Number(data?.revision) || 0;
+                state.account.sharedBasePayload = cloneSharedYearPayload(nextPayload);
+                state.account.sharedUpdatedAt = data?.updatedAt || null;
+                state.account.sharedUpdatedBy = cleanText(data?.updatedBy);
+                state.account.sharedUpdatedByName = cleanText(data?.updatedByName);
+                updateSharedPlanEditingControls();
+                if (changed && Object.keys(state.teachingSchedule || {}).length > 0) {
+                    invalidateTeachingSchedules('Kế hoạch tuần dùng chung đã được cập nhật');
+                }
+            } catch (error) {
+                state.account.syncApplyingRemote = false;
+                console.error('Không thể áp dụng kế hoạch dùng chung:', error);
+                window.teacherNotebookRecordError?.('cloud-sync', error, { source: 'Không thể áp dụng kế hoạch dùng chung' });
+                setCloudSyncStatus('error', translateAccountError(error));
             }
         }
 
-        function applyPersonalYearSnapshot(data, academicYear) {
-            if (state.account.syncYear !== academicYear || state.selectedAcademicYear !== academicYear) return;
-            if (!savePreCloudSyncBackupOnce()) return;
-            const workspace = ensureYearWorkspace(academicYear);
-            const normalized = normalizeYearWorkspace({
-                ...data,
-                week1Start: workspace.week1Start,
-                planData: workspace.planData,
-            });
-            state.account.syncApplyingRemote = true;
-            workspace.timetablesByWeek = normalized.timetablesByWeek;
-            workspace.curriculumText = normalized.curriculumText;
-            workspace.curriculumProfiles = normalized.curriculumProfiles;
-            workspace.teachingSchedule = normalized.teachingSchedule;
-            workspace.scheduleMeta = normalized.scheduleMeta;
-            workspace.workItems = normalized.workItems;
-            workspace.selectedTimetableWeek = normalized.selectedTimetableWeek;
-            workspace.selectedTeachingWeek = normalized.selectedTeachingWeek;
-            state.timetablesByWeek = workspace.timetablesByWeek;
-            state.curriculumText = workspace.curriculumText;
-            state.curriculumProfiles = workspace.curriculumProfiles;
-            state.teachingSchedule = workspace.teachingSchedule;
-            state.scheduleMeta = workspace.scheduleMeta;
-            state.workItems = workspace.workItems;
-            state.selectedTimetableWeek = workspace.selectedTimetableWeek || 1;
-            state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
-            persistActiveYearWorkspace();
-            persistLegacyActiveYear();
-            refreshViewsAfterCloudWorkspace(false, true);
-            state.account.syncApplyingRemote = false;
-            state.account.lastPersonalHash = cloudPayloadHash(buildPersonalYearPayload(academicYear));
-            renderWorkWorkspace();
+        async function applyPersonalYearSnapshot(data, academicYear) {
+            try {
+
+                if (state.account.syncYear !== academicYear || state.selectedAcademicYear !== academicYear) return;
+                if (!await savePreCloudSyncBackupOnce()) return;
+                const workspace = ensureYearWorkspace(academicYear);
+                const normalized = normalizeYearWorkspace({
+                    ...data,
+                    week1Start: workspace.week1Start,
+                    planData: workspace.planData,
+                });
+                state.account.syncApplyingRemote = true;
+                workspace.timetablesByWeek = normalized.timetablesByWeek;
+                workspace.curriculumText = normalized.curriculumText;
+                workspace.curriculumProfiles = normalized.curriculumProfiles;
+                workspace.teachingSchedule = normalized.teachingSchedule;
+                workspace.scheduleMeta = normalized.scheduleMeta;
+                workspace.workItems = normalized.workItems;
+                workspace.selectedTimetableWeek = normalized.selectedTimetableWeek;
+                workspace.selectedTeachingWeek = normalized.selectedTeachingWeek;
+                state.timetablesByWeek = workspace.timetablesByWeek;
+                state.curriculumText = workspace.curriculumText;
+                state.curriculumProfiles = workspace.curriculumProfiles;
+                state.teachingSchedule = workspace.teachingSchedule;
+                state.scheduleMeta = workspace.scheduleMeta;
+                state.workItems = workspace.workItems;
+                state.selectedTimetableWeek = workspace.selectedTimetableWeek || 1;
+                state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
+                persistActiveYearWorkspace();
+                persistLegacyActiveYear();
+                refreshViewsAfterCloudWorkspace(false, true);
+                state.account.syncApplyingRemote = false;
+                state.account.lastPersonalHash = cloudPayloadHash(buildPersonalYearPayload(academicYear));
+                renderWorkWorkspace();
+            } catch (error) {
+                state.account.syncApplyingRemote = false;
+                console.error('Không thể áp dụng dữ liệu cá nhân:', error);
+                window.teacherNotebookRecordError?.('cloud-sync', error, { source: 'Không thể áp dụng dữ liệu cá nhân' });
+                setCloudSyncStatus('error', translateAccountError(error));
+            }
         }
 
         function registerSharedPlanConflict(serverData, localPayload, academicYear) {
@@ -1411,91 +1439,104 @@ service cloud.firestore {
             return syncActiveYearToCloud();
         }
 
-        function activateCloudDataSync() {
-            if (!accountCloudSyncEnabled()) {
+        let cloudActivationBusy = false;
+        async function activateCloudDataSync() {
+            if (cloudActivationBusy) return;
+            cloudActivationBusy = true;
+            try {
+
+                if (!accountCloudSyncEnabled()) {
+                    stopCloudWorkspaceSync();
+                    return;
+                }
+                const academicYear = normalizeAcademicYear(state.selectedAcademicYear);
+                if (!academicYear) return;
+                if (state.account.syncYear === academicYear
+                    && state.account.sharedYearUnsubscribe
+                    && state.account.personalYearUnsubscribe
+                    && state.account.sharedWorkItemsUnsubscribe) return;
+
                 stopCloudWorkspaceSync();
-                return;
-            }
-            const academicYear = normalizeAcademicYear(state.selectedAcademicYear);
-            if (!academicYear) return;
-            if (state.account.syncYear === academicYear
-                && state.account.sharedYearUnsubscribe
-                && state.account.personalYearUnsubscribe
-                && state.account.sharedWorkItemsUnsubscribe) return;
-
-            stopCloudWorkspaceSync();
-            state.account.syncYear = academicYear;
-            if (!savePreCloudSyncBackupOnce()) {
-                setCloudSyncStatus('error', 'Không tạo được bản sao trước đồng bộ');
-                return;
-            }
-            setCloudSyncStatus('syncing', `Đang mở dữ liệu ${academicYear}`);
-            const { firestoreModule } = state.account.modules;
-            const sharedRef = getSharedYearRef(academicYear);
-            const personalRef = getPersonalYearRef(state.account.user.uid, academicYear);
-            const sharedWorkItemsRef = getSharedWorkItemsRef(academicYear);
-
-            state.account.sharedYearUnsubscribe = firestoreModule.onSnapshot(sharedRef, snapshot => {
-                if (state.account.syncYear !== academicYear) return;
-                state.account.sharedYearLoaded = true;
-                state.account.sharedYearExists = snapshot.exists();
-                if (snapshot.exists()) {
-                    handleSharedYearSnapshot(snapshot.data(), academicYear);
-                } else {
-                    state.account.lastSharedHash = '';
-                    state.account.sharedRevision = 0;
-                    state.account.sharedBasePayload = null;
-                    state.account.sharedUpdatedAt = null;
-                    state.account.sharedUpdatedBy = '';
-                    state.account.sharedUpdatedByName = '';
-                    state.account.sharedConflict = null;
-                    updateSharedPlanEditingControls();
+                state.account.syncYear = academicYear;
+                if (!await savePreCloudSyncBackupOnce()) {
+                    setCloudSyncStatus('error', 'Không tạo được bản sao trước đồng bộ');
+                    return;
                 }
-                if (state.account.personalYearLoaded) {
-                    queueCloudWorkspaceSync();
-                    if (state.account.profile?.role !== 'admin' && !snapshot.exists()) {
-                        setCloudSyncStatus('synced', 'Đang chờ admin tạo kế hoạch chung');
+                setCloudSyncStatus('syncing', `Đang mở dữ liệu ${academicYear}`);
+                const { firestoreModule } = state.account.modules;
+                const sharedRef = getSharedYearRef(academicYear);
+                const personalRef = getPersonalYearRef(state.account.user.uid, academicYear);
+                const sharedWorkItemsRef = getSharedWorkItemsRef(academicYear);
+
+                state.account.sharedYearUnsubscribe = firestoreModule.onSnapshot(sharedRef, snapshot => {
+                    if (state.account.syncYear !== academicYear) return;
+                    state.account.sharedYearLoaded = true;
+                    state.account.sharedYearExists = snapshot.exists();
+                    if (snapshot.exists()) {
+                        handleSharedYearSnapshot(snapshot.data(), academicYear);
+                    } else {
+                        state.account.lastSharedHash = '';
+                        state.account.sharedRevision = 0;
+                        state.account.sharedBasePayload = null;
+                        state.account.sharedUpdatedAt = null;
+                        state.account.sharedUpdatedBy = '';
+                        state.account.sharedUpdatedByName = '';
+                        state.account.sharedConflict = null;
+                        updateSharedPlanEditingControls();
                     }
-                }
-            }, error => {
-                console.error('Không thể nhận kế hoạch tuần dùng chung:', error);
-                setCloudSyncStatus('error', translateAccountError(error));
-            });
+                    if (state.account.personalYearLoaded) {
+                        queueCloudWorkspaceSync();
+                        if (state.account.profile?.role !== 'admin' && !snapshot.exists()) {
+                            setCloudSyncStatus('synced', 'Đang chờ admin tạo kế hoạch chung');
+                        }
+                    }
+                }, error => {
+                    console.error('Không thể nhận kế hoạch tuần dùng chung:', error);
+                    setCloudSyncStatus('error', translateAccountError(error));
+                });
 
-            state.account.personalYearUnsubscribe = firestoreModule.onSnapshot(personalRef, snapshot => {
-                if (state.account.syncYear !== academicYear) return;
-                state.account.personalYearLoaded = true;
-                state.account.personalYearExists = snapshot.exists();
-                if (snapshot.exists()) {
-                    applyPersonalYearSnapshot(snapshot.data(), academicYear);
-                } else {
-                    state.account.lastPersonalHash = '';
-                }
-                if (state.account.sharedYearLoaded) queueCloudWorkspaceSync();
-            }, error => {
-                console.error('Không thể nhận dữ liệu riêng của giáo viên:', error);
-                setCloudSyncStatus('error', translateAccountError(error));
-            });
+                state.account.personalYearUnsubscribe = firestoreModule.onSnapshot(personalRef, snapshot => {
+                    if (state.account.syncYear !== academicYear) return;
+                    state.account.personalYearLoaded = true;
+                    state.account.personalYearExists = snapshot.exists();
+                    if (snapshot.exists()) {
+                        applyPersonalYearSnapshot(snapshot.data(), academicYear);
+                    } else {
+                        state.account.lastPersonalHash = '';
+                    }
+                    if (state.account.sharedYearLoaded) queueCloudWorkspaceSync();
+                }, error => {
+                    console.error('Không thể nhận dữ liệu riêng của giáo viên:', error);
+                    setCloudSyncStatus('error', translateAccountError(error));
+                });
 
-            state.account.sharedWorkItemsUnsubscribe = firestoreModule.onSnapshot(sharedWorkItemsRef, snapshot => {
-                if (state.account.syncYear !== academicYear) return;
-                state.account.sharedWorkItemsLoaded = true;
-                state.workSyncError = '';
-                state.sharedWorkItems = snapshot.docs
-                    .map(itemSnapshot => normalizeWorkItem({
-                        id: itemSnapshot.id,
-                        ...itemSnapshot.data(),
-                        academicYear,
-                        scope: 'shared',
-                    }, 'shared'))
-                    .filter(Boolean);
-                renderWorkWorkspace();
-            }, error => {
-                console.error('Không thể nhận sổ công việc nhóm:', error);
-                state.account.sharedWorkItemsLoaded = false;
-                state.workSyncError = translateAccountError(error);
-                renderWorkWorkspace();
-            });
+                state.account.sharedWorkItemsUnsubscribe = firestoreModule.onSnapshot(sharedWorkItemsRef, snapshot => {
+                    if (state.account.syncYear !== academicYear) return;
+                    state.account.sharedWorkItemsLoaded = true;
+                    state.workSyncError = '';
+                    state.sharedWorkItems = snapshot.docs
+                        .map(itemSnapshot => normalizeWorkItem({
+                            id: itemSnapshot.id,
+                            ...itemSnapshot.data(),
+                            academicYear,
+                            scope: 'shared',
+                        }, 'shared'))
+                        .filter(Boolean);
+                    renderWorkWorkspace();
+                }, error => {
+                    console.error('Không thể nhận sổ công việc nhóm:', error);
+                    state.account.sharedWorkItemsLoaded = false;
+                    state.workSyncError = translateAccountError(error);
+                    renderWorkWorkspace();
+                });
+            } catch (error) {
+                state.account.syncApplyingRemote = false;
+                console.error('Không thể kích hoạt đồng bộ cloud:', error);
+                window.teacherNotebookRecordError?.('cloud-sync', error, { source: 'Không thể kích hoạt đồng bộ cloud' });
+                setCloudSyncStatus('error', translateAccountError(error));
+            } finally {
+                cloudActivationBusy = false;
+            }
         }
 
         async function ensureAccountMembership(user, preferredName = '') {
@@ -1980,7 +2021,8 @@ service cloud.firestore {
 
         function persistActiveYearWorkspace() {
             captureActiveYearWorkspace();
-            writeStoredJSON(YEAR_WORKSPACES_STORAGE, state.yearWorkspaces);
+            if (window.persistYearWorkspacesHybrid) window.persistYearWorkspacesHybrid(state.yearWorkspaces);
+            else writeStoredJSON(YEAR_WORKSPACES_STORAGE, state.yearWorkspaces);
             queueCloudWorkspaceSync();
             try {
                 window.dispatchEvent(new CustomEvent('teacher-data-changed', {

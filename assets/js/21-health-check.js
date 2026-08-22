@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v45.3 — TRUNG TÂM KIỂM TRA SỨC KHỎE & CHẨN ĐOÁN
+   SỔ TAY GIÁO VIÊN v47.0 — TRUNG TÂM KIỂM TRA SỨC KHỎE & CHẨN ĐOÁN
    Chỉ đọc trạng thái hệ thống. Không tự sửa hoặc gửi dữ liệu ra ngoài.
    ============================================================================ */
 (() => {
@@ -129,6 +129,24 @@
         }
 
         return results;
+    }
+
+
+    async function indexedDbResult(results) {
+        const api = window.teacherNotebookIndexedDB;
+        if (!api) {
+            add(results, 'indexeddb', 'IndexedDB / dữ liệu nhiều năm', 'warn', 'Module Storage Pro chưa được tải');
+            return;
+        }
+        try {
+            const stats = await api.stats();
+            const status = stats.ready ? 'pass' : stats.available ? 'warn' : 'info';
+            add(results, 'indexeddb', 'IndexedDB / dữ liệu nhiều năm', status,
+                stats.ready ? `${stats.workspaceCount} năm · ${stats.cacheCount} cache · ${stats.backupCount} checkpoint` : 'Đang dùng LocalStorage dự phòng',
+                stats.error || 'Năm đang mở có bản local an toàn; dữ liệu lớn được tách khỏi LocalStorage.');
+        } catch (error) {
+            add(results, 'indexeddb', 'IndexedDB / dữ liệu nhiều năm', 'warn', 'Không đọc được thống kê IndexedDB', error.message);
+        }
     }
 
     async function storageEstimateResult(results) {
@@ -268,7 +286,7 @@
             <div class="health-log-entry"><strong>${escapeHTML(item.kind || 'runtime')} · ${escapeHTML(formatDateTime(item.at))}</strong><span>${escapeHTML(item.message || '')}</span>${item.source ? `<span>${escapeHTML(item.source)}${item.line ? `:${item.line}` : ''}</span>` : ''}</div>`).join('');
     }
 
-    function newestRecoveryCandidate() {
+    async function newestRecoveryCandidate() {
         const candidates = [
             ['Trước lần khôi phục gần nhất', PRE_RESTORE_BACKUP_KEY],
             ['Trước đồng bộ Firebase đầu tiên', PRE_CLOUD_SYNC_BACKUP_KEY],
@@ -276,21 +294,23 @@
         const valid = [];
         for (const [label,key] of candidates) {
             try {
-                const raw = localStorage.getItem(key);
-                if (!raw) continue;
-                const payload = normalizeBackupPayload(JSON.parse(raw));
-                valid.push({ label, key, payload, date: safeDate(payload.exportedAt) || new Date(0) });
+                const payload = window.teacherNotebookIndexedDB
+                    ? await window.teacherNotebookIndexedDB.getBackup(key)
+                    : readStoredJSON(key, null);
+                if (!payload) continue;
+                const normalized = normalizeBackupPayload(payload);
+                valid.push({ label, key, payload: normalized, date: safeDate(normalized.exportedAt) || new Date(0) });
             } catch (_) { /* bỏ checkpoint lỗi */ }
         }
         valid.sort((a,b) => b.date - a.date);
         return valid[0] || null;
     }
 
-    function refreshSafeRecoveryButton() {
+    async function refreshSafeRecoveryButton() {
         const button = byId('healthSafeRecoveryBtn');
         const note = byId('healthRecoveryNote');
         if (!button || !note) return;
-        const candidate = newestRecoveryCandidate();
+        const candidate = await newestRecoveryCandidate();
         button.disabled = !candidate;
         note.textContent = candidate
             ? `Có bản an toàn: “${candidate.label}” · ${formatDateTime(candidate.payload.exportedAt)}. Chỉ khôi phục khi dữ liệu hiện tại có vấn đề.`
@@ -305,7 +325,7 @@
         if (badge) { badge.className = 'health-overall-badge running'; badge.textContent = 'Đang kiểm tra…'; }
         if (meta) meta.textContent = 'Đang kiểm tra dữ liệu, PWA, thư viện và tệp triển khai…';
         const results = quickHealthResults();
-        await Promise.all([storageEstimateResult(results), persistentStorageResult(results), pwaResult(results)]);
+        await Promise.all([storageEstimateResult(results), persistentStorageResult(results), pwaResult(results), indexedDbResult(results)]);
         if (options.assets !== false) await assetResult(results);
         const counts = getDataCountsSafe();
         const log = window.teacherNotebookGetDiagnosticLog?.() || [];
@@ -384,14 +404,17 @@
         showToast('✅ Đã xuất dữ liệu lỗi cách ly để kiểm tra', 'success');
     }
 
-    function safeRecovery() {
-        const candidate = newestRecoveryCandidate();
+    async function safeRecovery() {
+        const candidate = await newestRecoveryCandidate();
         if (!candidate) { showToast('Chưa có bản sao an toàn để khôi phục', 'info'); return; }
         const counts = backupDataCounts(candidate.payload);
         if (!confirm(`Khôi phục bản “${candidate.label}” (${formatDateTime(candidate.payload.exportedAt)})?\n\nBản này có ${counts.years} năm học, ${counts.plans} kế hoạch, ${counts.timetables} TKB và ${counts.schedules} tuần báo giảng.\n\nDữ liệu hiện tại sẽ được lưu thành checkpoint khẩn cấp trước khi thay thế.`)) return;
         try {
             const current = createBackupPayload();
-            if (!writeStoredJSON(HEALTH_RECOVERY_CHECKPOINT, current)) throw new Error('Không đủ bộ nhớ để tạo checkpoint khẩn cấp');
+            const stored = window.teacherNotebookIndexedDB
+                ? await window.teacherNotebookIndexedDB.setBackup(HEALTH_RECOVERY_CHECKPOINT, current)
+                : writeStoredJSON(HEALTH_RECOVERY_CHECKPOINT, current);
+            if (!stored) throw new Error('Không đủ bộ nhớ để tạo checkpoint khẩn cấp');
             applyBackupPayload(candidate.payload);
             updateDataSafetySummary();
             showToast('✅ Đã khôi phục bản sao an toàn. Dữ liệu trước khôi phục vẫn được giữ ở checkpoint khẩn cấp.', 'success');

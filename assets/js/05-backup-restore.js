@@ -149,13 +149,27 @@
         function updateDataSafetySummary() {
             const counts = backupDataCounts();
             dataSafetySummary.textContent = `${counts.years} năm học · ${counts.plans} tuần kế hoạch · ${counts.timetables} tuần TKB · ${counts.schedules} tuần lịch báo giảng${counts.curriculum ? ` · ${counts.curriculum} bộ phân phối` : ''}${counts.workItems ? ` · ${counts.workItems} mục công việc` : ''}. File sao lưu không chứa API key.`;
-            undoRestoreBtn.hidden = !localStorage.getItem(PRE_RESTORE_BACKUP_KEY);
-            exportPreCloudBackupBtn.hidden = !localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY);
+            const storageApi = window.teacherNotebookIndexedDB;
+            if (storageApi) {
+                Promise.all([
+                    storageApi.hasBackup(PRE_RESTORE_BACKUP_KEY),
+                    storageApi.hasBackup(PRE_CLOUD_SYNC_BACKUP_KEY),
+                ]).then(([hasRestore, hasCloud]) => {
+                    undoRestoreBtn.hidden = !hasRestore;
+                    exportPreCloudBackupBtn.hidden = !hasCloud;
+                }).catch(() => {
+                    undoRestoreBtn.hidden = !localStorage.getItem(PRE_RESTORE_BACKUP_KEY);
+                    exportPreCloudBackupBtn.hidden = !localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY);
+                });
+            } else {
+                undoRestoreBtn.hidden = !localStorage.getItem(PRE_RESTORE_BACKUP_KEY);
+                exportPreCloudBackupBtn.hidden = !localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY);
+            }
         }
 
         function persistCoreState() {
             let success = true;
-            success = writeStoredJSON(YEAR_WORKSPACES_STORAGE, state.yearWorkspaces) && success;
+            success = (window.persistAllYearWorkspacesHybrid ? window.persistAllYearWorkspacesHybrid(state.yearWorkspaces) : window.persistYearWorkspacesHybrid ? window.persistYearWorkspacesHybrid(state.yearWorkspaces) : writeStoredJSON(YEAR_WORKSPACES_STORAGE, state.yearWorkspaces)) && success;
             success = writeStoredJSON('teacher_plan_data', state.planData) && success;
             success = writeStoredJSON('teacher_timetables_by_week', state.timetablesByWeek) && success;
             success = writeStoredJSON('teacher_teaching_schedule', state.teachingSchedule) && success;
@@ -276,11 +290,13 @@
             }
         });
 
-        exportPreCloudBackupBtn.addEventListener('click', () => {
+        exportPreCloudBackupBtn.addEventListener('click', async () => {
             try {
-                const raw = localStorage.getItem(PRE_CLOUD_SYNC_BACKUP_KEY);
-                if (!raw) throw new Error('Không còn bản sao trước đồng bộ');
-                const payload = normalizeBackupPayload(JSON.parse(raw));
+                const stored = window.teacherNotebookIndexedDB
+                    ? await window.teacherNotebookIndexedDB.getBackup(PRE_CLOUD_SYNC_BACKUP_KEY)
+                    : readStoredJSON(PRE_CLOUD_SYNC_BACKUP_KEY, null);
+                if (!stored) throw new Error('Không còn bản sao trước đồng bộ');
+                const payload = normalizeBackupPayload(stored);
                 const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -318,10 +334,16 @@
                 const description = `${counts.years} năm học, ${counts.plans} tuần kế hoạch, ${counts.timetables} tuần TKB, ${counts.schedules} tuần lịch báo giảng`;
                 if (!confirm(`Khôi phục ${description} từ file “${file.name}”?\n\nDữ liệu hiện tại sẽ được thay thế. API key vẫn được giữ nguyên.`)) return;
 
-                localStorage.removeItem(PRE_RESTORE_BACKUP_KEY);
-                const checkpointSaved = writeStoredJSON(PRE_RESTORE_BACKUP_KEY, createBackupPayload());
+                const storageApi = window.teacherNotebookIndexedDB;
+                if (storageApi) await storageApi.removeBackup(PRE_RESTORE_BACKUP_KEY);
+                else localStorage.removeItem(PRE_RESTORE_BACKUP_KEY);
+                const checkpointPayload = createBackupPayload();
+                const checkpointSaved = storageApi
+                    ? await storageApi.setBackup(PRE_RESTORE_BACKUP_KEY, checkpointPayload)
+                    : writeStoredJSON(PRE_RESTORE_BACKUP_KEY, checkpointPayload);
                 if (!checkpointSaved) {
-                    localStorage.removeItem(PRE_RESTORE_BACKUP_KEY);
+                    if (storageApi) await storageApi.removeBackup(PRE_RESTORE_BACKUP_KEY);
+                    else localStorage.removeItem(PRE_RESTORE_BACKUP_KEY);
                     if (!confirm('Không thể tạo điểm hoàn tác do bộ nhớ trình duyệt hạn chế. Vẫn tiếp tục khôi phục?')) return;
                 }
                 applyBackupPayload(normalized);
@@ -333,18 +355,22 @@
             }
         });
 
-        undoRestoreBtn.addEventListener('click', () => {
-            const raw = localStorage.getItem(PRE_RESTORE_BACKUP_KEY);
-            if (!raw) {
+        undoRestoreBtn.addEventListener('click', async () => {
+            const storageApi = window.teacherNotebookIndexedDB;
+            const stored = storageApi
+                ? await storageApi.getBackup(PRE_RESTORE_BACKUP_KEY)
+                : readStoredJSON(PRE_RESTORE_BACKUP_KEY, null);
+            if (!stored) {
                 updateDataSafetySummary();
                 showToast('Không còn điểm hoàn tác khôi phục', 'info');
                 return;
             }
             if (!confirm('Hoàn tác lần khôi phục gần nhất và quay về dữ liệu trước đó?')) return;
             try {
-                const checkpoint = normalizeBackupPayload(JSON.parse(raw));
+                const checkpoint = normalizeBackupPayload(stored);
                 applyBackupPayload(checkpoint);
-                localStorage.removeItem(PRE_RESTORE_BACKUP_KEY);
+                if (storageApi) await storageApi.removeBackup(PRE_RESTORE_BACKUP_KEY);
+                else localStorage.removeItem(PRE_RESTORE_BACKUP_KEY);
                 updateDataSafetySummary();
                 showToast('✅ Đã hoàn tác lần khôi phục gần nhất', 'success');
             } catch (error) {

@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v45.3 — Service Worker */
-const APP_VERSION = '45.3.0';
+/* Sổ Tay Giáo Viên v47.0 — Service Worker */
+const APP_VERSION = '47.0.0';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -16,12 +16,15 @@ const APP_SHELL = [
     './assets/css/health-check.css',
     './assets/css/work-pro.css',
     './assets/css/links-center.css',
+    './assets/css/command-palette.css',
+    './assets/css/storage-pro.css',
     './assets/icons/apple-touch-icon.png',
     './assets/icons/icon-192.png',
     './assets/icons/icon-512.png',
     './assets/icons/icon-maskable-512.png',
     './assets/js/00-diagnostics-bootstrap.js',
     './assets/js/01-state.js',
+    './assets/js/01-indexeddb-storage.js',
     './assets/js/02-dom.js',
     './assets/js/03-ui-core.js',
     './assets/js/04-account-firestore.js',
@@ -44,6 +47,8 @@ const APP_SHELL = [
     './assets/js/20-pwa.js',
     './assets/js/21-health-check.js',
     './assets/js/22-links-center.js',
+    './assets/js/23-global-command.js',
+    './assets/js/24-storage-center.js',
     './assets/js/config.js'
 ];
 

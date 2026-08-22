@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v45.3 — DIAGNOSTICS BOOTSTRAP
+   SỔ TAY GIÁO VIÊN v46.0 — DIAGNOSTICS BOOTSTRAP
    Nạp trước các module khác để ghi nhận lỗi khởi động/tài nguyên sớm nhất có thể.
    Không lưu API key, mật khẩu hoặc nội dung dữ liệu nghiệp vụ.
    ============================================================================ */

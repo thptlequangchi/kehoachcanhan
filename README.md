@@ -1,16 +1,22 @@
-# Sổ Tay Giáo Viên v45.3.0 — Giao diện gọn theo vai trò
+# Sổ Tay Giáo Viên v47.0.0 — Bước 14: IndexedDB & dữ liệu nhiều năm
 
-Bản v45.3 phát triển trực tiếp trên v45.2. Toàn bộ dữ liệu và nghiệp vụ cũ được giữ nguyên.
+Bản v47 phát triển trực tiếp từ v46. Toàn bộ Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc Pro, Dashboard, Automation, Báo cáo, PWA, Health Check, Liên kết và Ctrl+K được giữ nguyên.
 
 ## Điểm mới
-- Giao diện tài khoản tự thay đổi theo **chế độ cá nhân / giáo viên nhóm / admin nhóm**.
-- Giáo viên thường không còn thấy các nút quản trị hoặc kiểm tra kỹ thuật nhóm.
-- Ở chế độ cá nhân chỉ giữ hành động **Dùng cùng nhóm**; khi cần, nút này tự mở đúng bước đăng nhập/thiết lập.
-- Admin vẫn có **Quản trị nhóm**; chức năng **Kiểm tra kết nối nhóm** được đặt bên trong cửa sổ quản trị để thanh công cụ không bị dài.
-- Có lớp CSS dự phòng bảo đảm công cụ admin không hiện với role teacher/personal ngay cả khi trạng thái giao diện cập nhật chậm.
+- Thêm **Storage Pro** dùng IndexedDB cho dữ liệu dung lượng lớn.
+- Tự di chuyển các năm học đã lưu từ LocalStorage sang IndexedDB ở lần mở đầu tiên.
+- LocalStorage chỉ giữ bản an toàn của **năm học đang mở** cùng các cấu hình nhỏ; các năm khác vẫn được nạp vào bộ nhớ khi khởi động.
+- Cache nhận dạng ảnh Gemini/OCR được chuyển sang IndexedDB, giới hạn 20 kết quả gần nhất.
+- Checkpoint trước Restore / trước đồng bộ Firebase được lưu ở IndexedDB khi khả dụng, giảm nguy cơ đầy LocalStorage.
+- Có bảng **Bộ nhớ nhiều năm · IndexedDB** trong Cài đặt & an toàn để xem số năm, cache, checkpoint và dung lượng trình duyệt.
+- Nút **Tối ưu bộ nhớ** chủ động đồng bộ dữ liệu lớn sang IndexedDB; **Dọn cache OCR** không xóa dữ liệu năm học.
+- Health Check có thêm hạng mục IndexedDB.
+
+## Nguyên tắc an toàn
+- `DATA_SCHEMA_VERSION` giữ nguyên: đây là thay đổi nơi lưu, không thay đổi cấu trúc nghiệp vụ.
+- Nếu IndexedDB không khả dụng hoặc phát sinh lỗi, hệ thống tự quay về LocalStorage.
+- Năm học đang mở vẫn có bản local để khởi động an toàn.
+- File sao lưu thủ công JSON vẫn là phương án dự phòng độc lập và nên tiếp tục sử dụng định kỳ.
 
 ## Cập nhật GitHub Pages
-Giải nén và chép toàn bộ nội dung vào repo rồi Commit → Push. PWA sẽ nhận cache v45.3.0 và đề nghị cập nhật.
-
-## Dữ liệu
-`DATA_SCHEMA_VERSION` không thay đổi. Không cần chuyển đổi hoặc nhập lại dữ liệu.
+Chép toàn bộ gói v47 vào repo và Push. Service Worker v47 sẽ cập nhật app-shell, gồm thêm `assets/js/01-indexeddb-storage.js`, `assets/js/24-storage-center.js` và `assets/css/storage-pro.css`.

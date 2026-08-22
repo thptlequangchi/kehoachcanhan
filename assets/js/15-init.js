@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v45.3: giao diện theo vai trò, ẩn chức năng quản trị không cần thiết
+        //  INIT — v47: IndexedDB & dữ liệu nhiều năm
         // ================================================================
         function safeInitStage(name, fn) {
             try {
@@ -20,7 +20,29 @@
             context.textContent = year;
         }
 
-        function init() {
+        async function init() {
+            // Nếu IndexedDB hoàn tất sau timeout bảo vệ, làm mới danh sách năm học ngay khi dữ liệu cũ được nạp.
+            window.addEventListener('teacher-notebook:storage-ready', () => {
+                safeInitStage('Làm mới năm học từ IndexedDB', () => populateAcademicYearSelect(state.selectedAcademicYear));
+                safeInitStage('Làm mới tổng quan từ IndexedDB', () => {
+                    if (typeof renderTeacherOverview === 'function') renderTeacherOverview();
+                    if (typeof renderYearDashboard === 'function') renderYearDashboard();
+                });
+            }, { once: true });
+
+            // 0) Nạp kho dữ liệu nhiều năm trước khi dựng selector năm học.
+            try {
+                if (window.teacherNotebookIndexedDB) {
+                    await Promise.race([
+                        window.teacherNotebookIndexedDB.initialize(),
+                        new Promise(resolve => setTimeout(() => resolve(null), 1800)),
+                    ]);
+                }
+            } catch (error) {
+                console.warn('[INIT] IndexedDB không khả dụng, tiếp tục bằng LocalStorage:', error);
+                window.teacherNotebookRecordError?.('indexeddb-init', error);
+            }
+
             // 1) UI lõi phải sống trước mọi tác vụ dữ liệu/cloud.
             safeInitStage('Danh sách năm học', () => populateAcademicYearSelect(state.selectedAcademicYear));
             safeInitStage('Header năm học', setHeaderAcademicContextFallback);
@@ -114,6 +136,12 @@
             safeInitStage('Trung tâm liên kết', () => {
                 if (typeof initLinkCenter === 'function') initLinkCenter();
                 if (typeof renderLinkCenter === 'function') renderLinkCenter();
+            });
+            safeInitStage('Tìm kiếm toàn cục', () => {
+                if (typeof initGlobalCommandPalette === 'function') initGlobalCommandPalette();
+            });
+            safeInitStage('Trung tâm lưu trữ nhiều năm', () => {
+                if (typeof initStorageCenter === 'function') initStorageCenter();
             });
 
             // Cập nhật lại header/tổng quan sau khi mọi dữ liệu cục bộ đã nạp.

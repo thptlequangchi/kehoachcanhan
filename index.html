@@ -32,6 +32,8 @@
         <link rel="stylesheet" href="assets/css/health-check.css" />
         <link rel="stylesheet" href="assets/css/work-pro.css" />
         <link rel="stylesheet" href="assets/css/links-center.css" />
+        <link rel="stylesheet" href="assets/css/command-palette.css" />
+    <link rel="stylesheet" href="assets/css/storage-pro.css" />
 </head>
 <body class="premium-ui">
 
@@ -45,7 +47,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v45.3 · Giao diện gọn theo vai trò</span>
+                        <span>v47.0 · IndexedDB &amp; Dữ liệu nhiều năm</span>
                         <i aria-hidden="true"></i>
                         <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
                     </div>
@@ -56,6 +58,11 @@
                     <span class="header-context-label">Đang làm việc</span>
                     <strong id="headerAcademicContext">Đang tải năm học…</strong>
                 </div>
+                <button class="header-command-trigger" id="globalCommandBtn" type="button" aria-haspopup="dialog" aria-controls="globalCommandPalette" title="Tìm nhanh trong toàn bộ Sổ Tay (Ctrl+K)">
+                    <span class="header-command-icon" aria-hidden="true">🔍</span>
+                    <span class="header-command-label">Tìm nhanh</span>
+                    <kbd class="header-command-kbd">Ctrl K</kbd>
+                </button>
                 <nav class="header-favorite-links" aria-label="Liên kết dùng thường xuyên">
                     <a class="header-favorite-link timetable"
                        href="https://thptlequangchi.hatinh.edu.vn/thoi-khoa-bieu"
@@ -159,6 +166,31 @@
                     </div>
                     <p class="pwa-settings-note" id="pwaSettingsNote">PWA hoạt động tốt nhất khi website được mở qua HTTPS trên GitHub Pages.</p>
                 </section>
+                <section class="storage-pro-card" id="storageProCard" aria-label="Bộ nhớ nhiều năm và IndexedDB">
+                    <div class="storage-pro-heading">
+                        <div class="storage-pro-title">
+                            <div class="storage-pro-icon" aria-hidden="true">🗄️</div>
+                            <div>
+                                <strong>Bộ nhớ nhiều năm · IndexedDB</strong>
+                                <span>Giảm áp lực LocalStorage khi dữ liệu tích lũy nhiều năm; vẫn giữ bản an toàn của năm đang mở.</span>
+                            </div>
+                        </div>
+                        <span class="storage-pro-badge">Storage Pro v47</span>
+                    </div>
+                    <div class="storage-pro-grid">
+                        <div class="storage-pro-item"><span>Cơ chế</span><strong class="storage-pro-value" id="storageProEngine">Đang khởi tạo…</strong></div>
+                        <div class="storage-pro-item"><span>Năm học trong DB</span><strong class="storage-pro-value" id="storageProYears">—</strong></div>
+                        <div class="storage-pro-item"><span>Cache nhận dạng</span><strong class="storage-pro-value" id="storageProCache">—</strong></div>
+                        <div class="storage-pro-item"><span>Checkpoint</span><strong class="storage-pro-value" id="storageProBackups">—</strong></div>
+                        <div class="storage-pro-item"><span>Dung lượng trình duyệt</span><strong class="storage-pro-value" id="storageProUsage">—</strong></div>
+                    </div>
+                    <div class="storage-pro-actions">
+                        <button class="btn btn-primary btn-sm" id="storageProOptimizeBtn" type="button">⚡ Tối ưu bộ nhớ</button>
+                        <button class="btn btn-outline btn-sm" id="storageProCheckBtn" type="button" style="color:#4338ca;border-color:#a5b4fc;">↻ Kiểm tra kho dữ liệu</button>
+                        <button class="btn btn-outline btn-sm" id="storageProClearOcrBtn" type="button" style="color:#9a3412;border-color:#fdba74;">🧹 Dọn cache OCR</button>
+                    </div>
+                    <p class="storage-pro-note" id="storageProStatus"><strong>Nguyên tắc an toàn:</strong> không xóa dữ liệu năm học; chỉ chuyển nơi lưu các phần dung lượng lớn và luôn có fallback nếu IndexedDB không khả dụng.</p>
+                </section>
                 <section class="health-center-card" id="healthCenterCard" aria-label="Kiểm tra sức khỏe và chẩn đoán hệ thống">
                     <div class="health-center-heading">
                         <div class="health-center-title-wrap">
@@ -171,7 +203,7 @@
                         <span class="health-overall-badge" id="healthOverallStatus">Chưa kiểm tra</span>
                     </div>
                     <div class="health-summary-grid">
-                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v45.3</strong></div>
+                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v47.0</strong></div>
                         <div class="health-summary-item"><span>Dữ liệu</span><strong id="healthSummaryData">Đang tổng hợp…</strong></div>
                         <div class="health-summary-item"><span>Cloud</span><strong id="healthSummaryCloud">Đang kiểm tra…</strong></div>
                         <div class="health-summary-item"><span>Nhật ký</span><strong id="healthSummaryErrors">0 lỗi</strong></div>
@@ -1314,10 +1346,41 @@
         </section>
     </div>
 
+    <!-- GLOBAL COMMAND PALETTE — v46 -->
+    <div class="global-command-backdrop" id="globalCommandPalette" hidden>
+        <section class="global-command-dialog" role="dialog" aria-modal="true" aria-labelledby="globalCommandTitle">
+            <div class="global-command-head">
+                <div>
+                    <span class="global-command-eyebrow">CTRL + K</span>
+                    <h2 id="globalCommandTitle">Tìm kiếm toàn cục &amp; Thanh lệnh nhanh</h2>
+                    <p>Tìm tuần, lớp, môn, PPCT, công việc, liên kết hoặc chạy nhanh một chức năng.</p>
+                </div>
+                <button class="global-command-close" id="globalCommandCloseBtn" type="button" aria-label="Đóng thanh lệnh">✕</button>
+            </div>
+            <div class="global-command-search-wrap">
+                <span class="global-command-search-icon" aria-hidden="true">⌕</span>
+                <input id="globalCommandInput" type="search" autocomplete="off" spellcheck="false"
+                       placeholder="Ví dụ: Tuần 6, 12A1, PPCT 35, vnEdu, sao lưu…"
+                       aria-describedby="globalCommandMeta" aria-controls="globalCommandResults" />
+                <button class="global-command-clear" id="globalCommandClearBtn" type="button" aria-label="Xóa nội dung tìm kiếm" hidden>×</button>
+            </div>
+            <div class="global-command-toolbar">
+                <span id="globalCommandMeta">Gõ để tìm hoặc chọn lệnh thường dùng.</span>
+                <div class="global-command-hints" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> chọn <kbd>Enter</kbd> mở <kbd>Esc</kbd> đóng</div>
+            </div>
+            <div class="global-command-results" id="globalCommandResults" role="listbox" aria-label="Kết quả tìm kiếm"></div>
+            <div class="global-command-footer">
+                <span>⭐ Có thể ghim lệnh dùng thường xuyên.</span>
+                <button class="global-command-text-btn" id="globalCommandClearRecentBtn" type="button">Xóa lịch sử gần đây</button>
+            </div>
+        </section>
+    </div>
+
     <!-- TOAST -->
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
         <script src="assets/js/01-state.js"></script>
+    <script src="assets/js/01-indexeddb-storage.js"></script>
     <script src="assets/js/02-dom.js"></script>
     <script src="assets/js/03-ui-core.js"></script>
     <script src="assets/js/04-account-firestore.js"></script>
@@ -1339,6 +1402,8 @@
     <script src="assets/js/20-pwa.js"></script>
     <script src="assets/js/21-health-check.js"></script>
     <script src="assets/js/22-links-center.js"></script>
+    <script src="assets/js/23-global-command.js"></script>
+    <script src="assets/js/24-storage-center.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

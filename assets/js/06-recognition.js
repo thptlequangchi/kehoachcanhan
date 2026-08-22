@@ -59,7 +59,11 @@
             const entries = Object.entries(state.recognitionCache)
                 .sort(([, a], [, b]) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
             state.recognitionCache = Object.fromEntries(entries.slice(0, 20));
-            writeStoredJSON(RECOGNITION_CACHE_KEY, state.recognitionCache);
+            if (window.teacherNotebookIndexedDB?.ready) {
+                window.teacherNotebookIndexedDB.saveRecognitionEntry(`${kind}:${hash}`, state.recognitionCache[`${kind}:${hash}`]);
+            } else {
+                writeStoredJSON(RECOGNITION_CACHE_KEY, state.recognitionCache);
+            }
         }
 
         function refreshRecognitionCache(kind, data) {
@@ -78,10 +82,12 @@
             setRecognitionRuntime('Đã đổi chế độ', state.recognitionMode === 'offline' ? 'offline' : '');
         });
 
-        clearRecognitionCacheBtn.addEventListener('click', () => {
+        clearRecognitionCacheBtn.addEventListener('click', async () => {
             if (!confirm('Xóa bộ nhớ kết quả nhận dạng của các ảnh đã xử lý?')) return;
             state.recognitionCache = {};
+            if (window.teacherNotebookIndexedDB) await window.teacherNotebookIndexedDB.clearRecognitionCache();
             localStorage.removeItem(RECOGNITION_CACHE_KEY);
             setRecognitionRuntime('Đã xóa nhớ ảnh');
+            if (typeof renderStorageCenter === 'function') renderStorageCenter();
             showToast('Đã xóa bộ nhớ nhận dạng ảnh', 'info');
         });
