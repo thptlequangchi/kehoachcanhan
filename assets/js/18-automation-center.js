@@ -395,7 +395,7 @@
                     renderAutomationCenter();
                 }, 120);
             };
-            window.addEventListener('teacher-data-changed', scheduleRefresh);
+            registerAppDataRefresh('automation-center', scheduleRefresh);
             document.addEventListener('click', event => {
                 if (event.target.closest('.btn, [data-schedule-action], [data-overview-tab], [data-year-week]')) setTimeout(renderAutomationCenter, 220);
             });

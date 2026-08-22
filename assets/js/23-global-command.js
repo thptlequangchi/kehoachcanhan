@@ -449,7 +449,7 @@
             }
             if(event.key==='Escape'&&palette&&!palette.hidden){event.preventDefault();closePalette();}
         },true);
-        window.addEventListener('teacher-data-changed',()=>{if(palette&&!palette.hidden)renderPalette();});
+        registerAppDataRefresh('global-command', renderPalette, { activeWhen:()=>Boolean(palette && !palette.hidden) });
         window.openTeacherCommandPalette=openPalette;
         window.closeTeacherCommandPalette=closePalette;
     }

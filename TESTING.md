@@ -1,17 +1,22 @@
-# Hướng dẫn kiểm thử v50
+# Kiểm thử v50.1
 
-Mở **Cài đặt & an toàn → Kiểm thử hồi quy tự động**.
+## Build-time
+Chạy tại thư mục gốc:
 
-- **Kiểm thử nhanh**: chạy sau mỗi lần mở trang; có thể bấm lại bất kỳ lúc nào.
-- **Kiểm thử đầy đủ**: nên chạy sau khi Push một phiên bản mới lên GitHub Pages.
-- Nếu có **LỖI** hoặc **HỒI QUY MỚI**, mở danh sách kết quả và tải báo cáo JSON trước khi tiếp tục sửa code.
+```bash
+python tests/run-static-audit.py
+node tests/run-state-fixtures.js
+```
 
-## Luồng kiểm tra tay tối thiểu sau một bản nâng cấp lớn
-1. Chuyển năm học và tải lại trang.
-2. Mở một tuần Kế hoạch, TKB và Lịch báo giảng đã có dữ liệu.
-3. Mở Sổ Công Việc, thử Danh sách/Kanban/Lịch.
-4. Mở Ctrl+K và tìm `vnEdu`, `Tuần 5`, `Kiểm thử hồi quy`.
-5. Mở Storage Pro và Health Check.
-6. Nếu dùng nhóm giáo viên, thử 1 tài khoản admin và 1 tài khoản teacher.
+`run-static-audit.py` kiểm tra thêm hai bất biến kiến trúc của v50.1:
+- chỉ có 1 listener `teacher-data-changed` dùng chung;
+- chỉ có 1 timer UI chu kỳ 60 giây.
 
-Bộ kiểm thử tự động không tự gọi Gemini hoặc ghi Firestore.
+Fixture hiện gồm: năm học, Kế hoạch, TKB, Sổ Công Việc cũ, tiết báo giảng và quy tắc `final/finalized`.
+
+## Sau khi deploy
+1. Mở **Cài đặt → Kiểm thử hồi quy**.
+2. Chạy **Kiểm thử đầy đủ**.
+3. Xác nhận Overview hiển thị **Đã chốt** với một tuần đã chốt thật.
+4. Chuyển năm học rồi quay lại để kiểm tra TKB/PPCT/Lịch báo giảng vẫn giữ đúng dữ liệu.
+5. Thử Sao lưu JSON và xuất Word/PDF để xác nhận helper tải/in dùng chung hoạt động trên trình duyệt thực tế.

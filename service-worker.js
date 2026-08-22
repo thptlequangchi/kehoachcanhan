@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v50.0 — Service Worker */
-const APP_VERSION = '50.0.0';
+/* Sổ Tay Giáo Viên v50.1 — Service Worker */
+const APP_VERSION = '50.1.0';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -31,6 +31,7 @@ const APP_SHELL = [
     './assets/js/02-dom.js',
     './assets/js/03-ui-core.js',
     './assets/js/04-account-firestore.js',
+    './assets/js/04-shared-core.js',
     './assets/js/05-backup-restore.js',
     './assets/js/06-recognition.js',
     './assets/js/07-api-key.js',

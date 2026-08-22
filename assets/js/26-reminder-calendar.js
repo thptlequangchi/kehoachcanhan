@@ -15,7 +15,6 @@
     const REMINDER_FILTER_KEY = 'teacher_work_reminder_filter_v1';
     const MAX_NOTIFIED_KEYS = 120;
     let initialized = false;
-    let timer = null;
     let currentAlerts = [];
     let reminderFilter = ['all','urgent','today','upcoming','system'].includes(localStorage.getItem(REMINDER_FILTER_KEY))
         ? localStorage.getItem(REMINDER_FILTER_KEY) : 'all';
@@ -558,8 +557,7 @@
         });
         lines.push('END:VCALENDAR');
         const blob = new Blob([lines.join('\r\n')], {type:'text/calendar;charset=utf-8'});
-        const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url;
-        a.download=`so-tay-giao-vien-cong-viec-${state.selectedAcademicYear || 'nam-hoc'}.ics`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+        downloadBlobFile(blob, `so-tay-giao-vien-cong-viec-${state.selectedAcademicYear || 'nam-hoc'}.ics`);
         showToast?.(`📤 Đã xuất ${tasks.length} nhiệm vụ sang file .ics`, 'success');
     }
     window.exportWorkCalendarIcs = exportWorkCalendarIcs;
@@ -625,8 +623,8 @@
             if(lesson&&typeof openAutomationTarget==='function')openAutomationTarget('teaching',Number.parseInt(lesson.dataset.calendarTeachingWeek,10));
         });
         document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')renderSmartReminderCenter(); });
-        window.addEventListener('teacher-data-changed',()=>renderSmartReminderCenter());
-        timer=setInterval(()=>renderSmartReminderCenter(),60000);
+        registerAppDataRefresh('smart-reminder', renderSmartReminderCenter);
+        registerMinuteRefresh('smart-reminder', renderSmartReminderCenter);
         renderSmartReminderCenter();
     }
     window.initSmartReminderCenter=initSmartReminderCenter;

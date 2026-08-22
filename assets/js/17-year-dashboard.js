@@ -27,23 +27,9 @@
         }
 
         function getYearWeekState(week, referenceWeek) {
-            const hasPlan = Boolean(state.planData?.some(item => Number(item?.week) === Number(week)));
-            const hasTimetable = Boolean(state.timetablesByWeek?.[week]);
-            const schedule = state.teachingSchedule?.[week] || [];
-            const hasSchedule = schedule.length > 0;
-            const meta = hasSchedule
-                ? (typeof getScheduleMeta === 'function' ? getScheduleMeta(week) : (state.scheduleMeta?.[week] || {}))
-                : (state.scheduleMeta?.[week] || {});
-            const finalized = hasSchedule && ['final', 'finalized'].includes(meta?.status) && !meta?.stale;
-            let stateKey = 'empty';
-            let label = 'Chưa có dữ liệu';
-            if (hasSchedule && meta?.stale) { stateKey = 'stale'; label = 'Lịch cần tạo lại'; }
-            else if (finalized) { stateKey = 'finalized'; label = 'Đã chốt'; }
-            else if (hasSchedule) { stateKey = 'draft'; label = 'Lịch bản nháp'; }
-            else if (hasPlan && hasTimetable) { stateKey = 'ready'; label = 'Đủ nguồn, chưa tạo báo giảng'; }
-            else if (hasPlan || hasTimetable) { stateKey = 'partial'; label = hasPlan ? 'Có kế hoạch, thiếu TKB' : 'Có TKB, thiếu kế hoạch'; }
-            const future = week > referenceWeek && !hasPlan && !hasTimetable && !hasSchedule;
-            return { week, hasPlan, hasTimetable, hasSchedule, meta, finalized, stateKey, label, future };
+            const status = getWeekOperationalStatus(week);
+            const future = week > referenceWeek && !status.hasPlan && !status.hasTimetable && !status.hasSchedule;
+            return { ...status, week:Number(week), future };
         }
 
         function buildYearDashboardSnapshot(today = new Date()) {
@@ -282,11 +268,7 @@
                     setTimeout(renderYearDashboard, 180);
                 }
             });
-            let dataRefreshTimer = null;
-            window.addEventListener('teacher-data-changed', () => {
-                if (dataRefreshTimer) clearTimeout(dataRefreshTimer);
-                dataRefreshTimer = setTimeout(renderYearDashboard, 80);
-            });
-            setInterval(renderYearDashboard, 60000);
+            registerAppDataRefresh('year-dashboard', renderYearDashboard, { delay:80 });
+            registerMinuteRefresh('year-dashboard', renderYearDashboard);
             renderYearDashboard();
         }

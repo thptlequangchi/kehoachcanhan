@@ -1,29 +1,24 @@
-# Sổ Tay Giáo Viên v50.0.0 — Bước 17: Kiểm thử hồi quy tự động
+# Sổ Tay Giáo Viên v50.1.0 — Làm sạch & hợp nhất logic
 
-Bản v50 phát triển trực tiếp từ v49.0.0. Toàn bộ Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc Pro, Nhắc việc, Dashboard, Automation, Báo cáo/Hồ sơ, IndexedDB, PWA, Health Check, Liên kết và Ctrl+K được giữ nguyên.
+Bản v50.1 phát triển trực tiếp từ v50.0.0. Đây là bản bảo trì kiến trúc: không thêm nghiệp vụ mới, tập trung giảm logic trùng và ngăn sai lệch giữa Dashboard, Trợ lý tuần, Sổ Công Việc, Báo cáo và các luồng lưu/khôi phục.
 
-## Điểm mới
-- Thêm **Trung tâm Kiểm thử hồi quy tự động** trong **Cài đặt & an toàn**.
-- Tự chạy **Kiểm thử nhanh** sau khi ứng dụng khởi động để phát hiện lỗi lõi sau nâng cấp.
-- Có **Kiểm thử đầy đủ** theo yêu cầu, kiểm tra thêm LocalStorage tạm, IndexedDB tạm, tài nguyên triển khai, PWA và các module báo cáo/nhắc việc.
-- Bộ kiểm thử dùng fixture riêng, không ghi đè Kế hoạch/TKB/PPCT/Lịch báo giảng/Sổ Công Việc thật.
-- IndexedDB được kiểm thử bằng database tạm có tên riêng rồi xóa ngay sau phép thử.
-- Không tự gọi Gemini, không ghi Firestore và không gửi dữ liệu người dùng ra ngoài.
-- Lưu kết quả kiểm thử gần nhất trên máy để đánh dấu **hồi quy mới** khi một test trước đây đạt nhưng lần sau bị lỗi.
-- Có nút **Sao chép báo cáo** và **Tải báo cáo JSON** để gửi khi cần phân tích lỗi.
-- Ctrl+K có lệnh **Kiểm thử hồi quy**.
-- Thêm `tests/run-static-audit.py`, `tests/run-state-fixtures.js` và GitHub Actions `.github/workflows/regression.yml` để tự kiểm tra mỗi lần Push/Pull Request.
+## Điểm chính
+- Sửa lỗi trạng thái **Đã chốt** trong Overview (`final` / `finalized`).
+- Thêm **Shared Core** dùng chung cho trạng thái tuần, tiết dạy hôm nay, nhiệm vụ chưa xong, tải file và in báo cáo.
+- Hợp nhất refresh: chỉ còn **1 listener `teacher-data-changed`** điều phối các module.
+- Hợp nhất timer: chỉ còn **1 heartbeat 60 giây** cho Overview, Trợ lý tuần, Dashboard và Reminder.
+- Hợp nhất thao tác áp dữ liệu workspace khi chuyển năm học, nhận Firebase snapshot hoặc Restore.
+- Dọn CSS header responsive bị chồng quy tắc.
+- Regression Test được bổ sung kiểm tra quy tắc trạng thái chốt dùng chung.
 
-## Hai chế độ kiểm thử
-### Kiểm thử nhanh
-Kiểm tra phiên bản, init, lỗi module, ID giao diện, hàm lõi, quy tắc 37 tuần, normalizer Kế hoạch/TKB/Báo giảng/Sổ Công Việc, state, liên kết và phân quyền giao diện hiện tại.
-
-### Kiểm thử đầy đủ
-Bao gồm toàn bộ kiểm thử nhanh và thêm: LocalStorage roundtrip bằng key tạm, IndexedDB roundtrip bằng DB tạm, Storage Pro, backup fixture, tài nguyên nội bộ trên server, Service Worker, Notification API, Report Center, Hồ sơ tự động, Reminder Center và Health Check.
+## Không thay đổi
+- Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc, Reminder, Báo cáo, Hồ sơ tự động.
+- Firebase/Firestore và phân quyền.
+- IndexedDB/Storage Pro.
+- Gemini/OCR.
+- `DATA_SCHEMA_VERSION`.
 
 ## Cập nhật GitHub Pages
-Chép toàn bộ gói vào repo rồi Push. Service Worker v50 sẽ nhận thêm `assets/js/27-regression-tests.js` và `assets/css/regression-test.css`.
+Chép **toàn bộ** gói v50.1 vào repo và Push. Service Worker đã tăng lên `50.1.0` và app-shell có thêm `assets/js/04-shared-core.js`.
 
-## Lưu ý
-- Kiểm thử tự động làm giảm mạnh nguy cơ lỗi sau nâng cấp nhưng không thay thế hoàn toàn việc thử một vài luồng thật trên trình duyệt đang dùng.
-- Kiểm thử đầy đủ không gọi Gemini/Firestore nên không tốn quota AI và không tạo dữ liệu cloud rác.
+Sau khi deploy, nếu PWA báo có phiên bản mới hãy chọn **Cập nhật ngay**, sau đó vào **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ** để xác nhận trên trình duyệt đang dùng.

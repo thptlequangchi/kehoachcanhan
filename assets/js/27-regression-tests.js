@@ -1,4 +1,4 @@
-/* Bước 17 · v50 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
+/* Bước 17 · v50.1 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
 (() => {
     'use strict';
     const STORAGE_KEY = 'teacher_regression_last_v1';
@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.0.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.1.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -86,7 +86,7 @@
             return missing.length ? {status:'fail',message:`Thiếu: ${missing.join(', ')}`} : `Đủ ${ids.length}/${ids.length} vùng lõi.`;
         }));
         tests.push(runSync('core-globals','Các hàm nghiệp vụ lõi đã nạp','Khởi động',() => {
-            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter'];
+            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','getWeekOperationalStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter'];
             const missing=names.filter(name=>typeof globalThis[name] !== 'function');
             return missing.length ? {status:'fail',message:`Thiếu hàm: ${missing.join(', ')}`} : `Đủ ${names.length} hàm lõi.`;
         }));
@@ -108,6 +108,10 @@
         tests.push(runSync('schedule-normalizer','Chuẩn hóa tiết báo giảng','Nghiệp vụ',() => {
             const item=normalizeScheduleItem({day:'Thứ 3',session:'Sáng',period:'2',class:'12A1',subject:'Toán',topic:'Đạo hàm'},5,0);
             return item?.id && item.day==='Thứ 3' && item.class==='12A1' ? 'Fixture tiết báo giảng có ID và dữ liệu hợp lệ.' : {status:'fail',message:'normalizeScheduleItem không đạt fixture chuẩn.'};
+        }));
+        tests.push(runSync('schedule-final-status','Trạng thái chốt dùng chung','Nghiệp vụ',() => {
+            const ok=isScheduleFinalized({status:'final'}) && isScheduleFinalized({status:'finalized'}) && !isScheduleFinalized({status:'final',stale:true}) && !isScheduleFinalized({status:'draft'});
+            return ok ? 'final/finalized được hiểu thống nhất; lịch stale không tính là đã chốt.' : {status:'fail',message:'Quy tắc trạng thái chốt đang không đồng nhất.'};
         }));
         tests.push(runSync('state-shape','Cấu trúc state hiện tại','Dữ liệu',() => {
             const issues=[];
@@ -340,8 +344,7 @@
         if(!lastReport) return runRegressionTests({full:false}).then(downloadRegressionReport);
         const payload={...lastReport,results:lastReport.results.map(({id,title,status,message,group})=>({id,title,status,message,group}))};
         const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
-        const url=URL.createObjectURL(blob); const a=document.createElement('a');
-        a.href=url; a.download=`so-tay-gv-regression-v${lastReport.version}-${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+        downloadBlobFile(blob, `so-tay-gv-regression-v${lastReport.version}-${new Date().toISOString().slice(0,10)}.json`);
     }
 
     function restoreLastReportPreview(){

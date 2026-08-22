@@ -385,22 +385,14 @@
     function downloadReport() {
         if (!lastReport) return runHealthCheck({ assets: false }).then(downloadReport);
         const blob = new Blob([reportText()], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `so-tay-giao-vien-chan-doan-v${APP_VERSION}-${new Date().toISOString().slice(0,10)}.txt`;
-        document.body.appendChild(link); link.click(); link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        downloadBlobFile(blob, `so-tay-giao-vien-chan-doan-v${APP_VERSION}-${new Date().toISOString().slice(0,10)}.txt`);
     }
 
     function exportQuarantine() {
         const data = window.teacherNotebookGetQuarantine?.() || [];
         if (!data.length) { showToast('Không có dữ liệu lỗi đang cách ly', 'info'); return; }
         const blob = new Blob([JSON.stringify({ exportedAt:new Date().toISOString(), entries:data }, null, 2)], { type:'application/json;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url; link.download = `du-lieu-loi-cach-ly-${new Date().toISOString().slice(0,10)}.json`;
-        document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),1000);
+        downloadBlobFile(blob, `du-lieu-loi-cach-ly-${new Date().toISOString().slice(0,10)}.json`);
         showToast('✅ Đã xuất dữ liệu lỗi cách ly để kiểm tra', 'success');
     }
 

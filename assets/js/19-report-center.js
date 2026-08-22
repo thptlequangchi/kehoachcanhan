@@ -584,10 +584,7 @@
                 th,td { border:1px solid #000; padding:4px 5px; vertical-align:top; } th{font-weight:bold;text-align:center;}
             </style></head><body>${body}</body></html>`;
             const blob = new Blob(['\ufeff', html], { type:'application/msword;charset=utf-8' });
-            if (typeof downloadScheduleBlob === 'function') downloadScheduleBlob(blob, `ho-so-giang-day-${reportFilenameSuffix(snapshot)}.doc`);
-            else {
-                const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `ho-so-giang-day-${reportFilenameSuffix(snapshot)}.doc`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-            }
+            downloadBlobFile(blob, `ho-so-giang-day-${reportFilenameSuffix(snapshot)}.doc`);
             showToast('✅ Đã xuất Word hồ sơ giảng dạy', 'success');
         }
 
@@ -596,11 +593,7 @@
             const area = document.getElementById('reportPrintArea');
             if (!area) return;
             area.innerHTML = reportBuildDocumentBody(snapshot);
-            document.body.classList.add('print-report-mode');
-            const cleanup = () => document.body.classList.remove('print-report-mode');
-            window.addEventListener('afterprint', cleanup, { once:true });
-            window.print();
-            setTimeout(cleanup, 1800);
+            triggerPrintMode('print-report-mode', 1800);
         }
 
         function openReportCenter() {
@@ -654,11 +647,10 @@
                 }, 0));
             });
             document.getElementById('week1StartDateInput')?.addEventListener('change', () => setTimeout(renderReportCenter, 0));
-            let timer = null;
-            window.addEventListener('teacher-data-changed', () => {
-                if (timer) clearTimeout(timer);
-                timer = setTimeout(() => { reportRefreshCourseFilters(); renderReportCenter(); }, 100);
-            });
+            registerAppDataRefresh('report-center', () => {
+                reportRefreshCourseFilters();
+                renderReportCenter();
+            }, { delay:100 });
             document.addEventListener('click', event => {
                 if (event.target.closest('.btn, [data-schedule-action], [data-work-action], [data-automation-action]')) setTimeout(() => {
                     if (document.getElementById('tab-reports')?.classList.contains('active')) renderReportCenter();

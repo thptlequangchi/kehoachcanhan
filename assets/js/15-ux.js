@@ -18,21 +18,6 @@
             return labels[date.getDay()] || '';
         }
 
-        function countTodayTimetableLessons(week, dayLabel) {
-            const timetable = state.timetablesByWeek?.[week];
-            if (!timetable?.sessions) return 0;
-            return timetable.sessions.reduce((total, session) => total + (session.periods || []).reduce((sum, period) => {
-                return sum + (period.cells || []).filter(cell => normalizeDayName(cell?.day) === dayLabel).length;
-            }, 0), 0);
-        }
-
-        function getOverviewPendingTasks() {
-            const personal = normalizeWorkItems(state.workItems, 'personal');
-            const shared = sharedWorkScopeAvailable() ? normalizeWorkItems(state.sharedWorkItems, 'shared') : [];
-            const all = [...personal, ...shared];
-            return all.filter(item => item.type === 'task' && !item.completed);
-        }
-
         function renderTeacherOverview() {
             const title = document.getElementById('overviewTitle');
             if (!title) return;
@@ -67,19 +52,20 @@
                 weekMeta.textContent = 'Kiểm tra ngày Tuần 1';
             }
 
-            const lessonCount = week ? countTodayTimetableLessons(week, dayLabel) : 0;
+            const lessonCount = week ? getTodayTeachingItems(week, dayLabel).length : 0;
             lessonValue.textContent = lessonCount ? `${lessonCount} tiết` : 'Chưa có';
             lessonMeta.textContent = lessonCount ? `${dayLabel} theo TKB tuần ${week}` : 'Không thấy tiết trong TKB hôm nay';
 
-            const scheduleItems = week ? (state.teachingSchedule?.[week] || []) : [];
-            const meta = week ? (state.scheduleMeta?.[week] || {}) : {};
-            if (!scheduleItems.length) {
+            const weekStatus = week ? getWeekOperationalStatus(week) : null;
+            const scheduleItems = weekStatus?.schedule || [];
+            const meta = weekStatus?.meta || {};
+            if (!weekStatus?.hasSchedule) {
                 scheduleValue.textContent = 'Chưa tạo';
                 scheduleMetaEl.textContent = week ? `Lịch báo giảng Tuần ${week}` : 'Lịch báo giảng';
-            } else if (meta.stale) {
+            } else if (weekStatus.stale) {
                 scheduleValue.textContent = 'Cần tạo lại';
                 scheduleMetaEl.textContent = 'Nguồn dữ liệu đã thay đổi';
-            } else if (meta.status === 'finalized') {
+            } else if (weekStatus.finalized) {
                 scheduleValue.textContent = 'Đã chốt';
                 scheduleMetaEl.textContent = `${scheduleItems.length} dòng lịch Tuần ${week}`;
             } else {
@@ -87,7 +73,7 @@
                 scheduleMetaEl.textContent = `${scheduleItems.length} dòng lịch Tuần ${week}`;
             }
 
-            const pendingTasks = getOverviewPendingTasks();
+            const pendingTasks = getPendingWorkTasks();
             const todayIso = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
             const overdue = pendingTasks.filter(item => item.dueDate && item.dueDate < todayIso).length;
             taskValue.textContent = pendingTasks.length ? `${pendingTasks.length} việc` : 'Đã xong';
@@ -95,9 +81,9 @@
 
             const issues = [];
             let level = 'ok';
-            if (week && !state.planData?.some(item => Number(item.week) === Number(week))) issues.push('chưa có kế hoạch trường');
-            if (week && !state.timetablesByWeek?.[week]) issues.push('chưa có TKB tuần');
-            if (meta.stale) { issues.push('lịch báo giảng cần tạo lại'); level = 'danger'; }
+            if (weekStatus && !weekStatus.hasPlan) issues.push('chưa có kế hoạch trường');
+            if (weekStatus && !weekStatus.hasTimetable) issues.push('chưa có TKB tuần');
+            if (weekStatus?.stale) { issues.push('lịch báo giảng cần tạo lại'); level = 'danger'; }
             if (overdue) { issues.push(`${overdue} việc quá hạn`); if (level !== 'danger') level = 'warning'; }
             if (issues.length && level === 'ok') level = 'warning';
             alert.className = 'overview-alert' + (level === 'warning' ? ' warning' : level === 'danger' ? ' danger' : '');
@@ -132,6 +118,6 @@
                     setTimeout(renderTeacherOverview, 120);
                 }
             });
-            setInterval(renderTeacherOverview, 60000);
+            registerMinuteRefresh('teacher-overview', renderTeacherOverview);
             renderTeacherOverview();
         }

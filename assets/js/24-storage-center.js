@@ -92,10 +92,7 @@
         byId('storageProCheckBtn')?.addEventListener('click', () => renderStorageCenter('Đã cập nhật thống kê kho dữ liệu.'));
         byId('storageProClearOcrBtn')?.addEventListener('click', clearOcrCache);
         window.addEventListener('teacher-notebook:storage-ready', () => renderStorageCenter());
-        window.addEventListener('teacher-data-changed', () => {
-            clearTimeout(initStorageCenter._timer);
-            initStorageCenter._timer = setTimeout(() => renderStorageCenter(), 500);
-        });
+        registerAppDataRefresh('storage-center', () => renderStorageCenter(), { delay:500 });
         renderStorageCenter();
     }
 

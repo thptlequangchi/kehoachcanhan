@@ -202,15 +202,7 @@
             const workspace = state.yearWorkspaces[state.selectedAcademicYear]
                 || normalizeYearWorkspace(data);
             state.yearWorkspaces[state.selectedAcademicYear] = workspace;
-            state.planData = workspace.planData;
-            state.timetablesByWeek = workspace.timetablesByWeek;
-            state.selectedTimetableWeek = workspace.selectedTimetableWeek;
-            state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
-            state.curriculumText = workspace.curriculumText;
-            state.curriculumProfiles = workspace.curriculumProfiles;
-            state.teachingSchedule = workspace.teachingSchedule;
-            state.scheduleMeta = workspace.scheduleMeta;
-            state.workItems = workspace.workItems;
+            applyYearWorkspaceToRuntime(workspace);
             state.teacherProfile = normalizeTeacherProfile(data.teacherProfile);
             state.teacherProfile.academicYear = state.selectedAcademicYear;
             state.recognitionMode = data.recognitionMode;
@@ -272,15 +264,8 @@
                 const payload = createBackupPayload();
                 const json = JSON.stringify(payload, null, 2);
                 const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
                 const date = new Date().toISOString().slice(0, 10);
-                link.href = url;
-                link.download = `so-tay-giao-vien-sao-luu-${date}.json`;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                downloadBlobFile(blob, `so-tay-giao-vien-sao-luu-${date}.json`);
                 const counts = backupDataCounts(payload);
                 try { localStorage.setItem('teacher_last_backup_at_v1', new Date().toISOString()); } catch (_) { /* noop */ }
                 if (typeof refreshHealthCenterSummary === 'function') refreshHealthCenterSummary();
@@ -298,14 +283,7 @@
                 if (!stored) throw new Error('Không còn bản sao trước đồng bộ');
                 const payload = normalizeBackupPayload(stored);
                 const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'so-tay-giao-vien-truoc-dong-bo-firebase.json';
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                downloadBlobFile(blob, 'so-tay-giao-vien-truoc-dong-bo-firebase.json');
                 showToast('✅ Đã tải bản sao dữ liệu trước lần đồng bộ Firebase đầu tiên', 'success');
             } catch (error) {
                 showToast('❌ ' + error.message, 'error');

@@ -1,49 +1,47 @@
-# AUDIT REPORT — v50.0.0 / Bước 17: Kiểm thử hồi quy tự động
+# AUDIT REPORT — v50.1.0 Làm sạch & hợp nhất logic
 
-## Phạm vi nâng cấp
-- Nền trực tiếp: v49.0.0.
-- Thêm `assets/js/27-regression-tests.js` và `assets/css/regression-test.css`.
-- Thêm Trung tâm Kiểm thử hồi quy trong **Cài đặt & an toàn**.
-- Service Worker / APP_VERSION: `50.0.0`.
-- `DATA_SCHEMA_VERSION`: giữ nguyên `1`.
+## Phạm vi
+- Nền trực tiếp: v50.0.0.
+- APP_VERSION / Service Worker: `50.1.0`.
+- `DATA_SCHEMA_VERSION`: giữ nguyên.
+- Không migration dữ liệu, không đổi Firestore Rules hay IndexedDB schema.
 
-## Bộ kiểm thử tích hợp
-- **17 kiểm thử nhanh** tự chạy sau khi init hoàn tất.
-- **29 kiểm thử ở chế độ đầy đủ** (17 nhanh + 12 kiểm tra sâu).
-- Kiểm tra các nhóm: Khởi động, Giao diện, Nghiệp vụ, Dữ liệu, Phân quyền, Lưu trữ, PWA, Báo cáo, Nhắc việc, Chẩn đoán và Tích hợp.
-- Fixture Kế hoạch/TKB/Báo giảng/Sổ Công Việc/Backup chạy trên dữ liệu giả, không áp vào state thật.
-- LocalStorage dùng key tạm và tự xóa.
-- IndexedDB dùng database tạm riêng và xóa sau khi kiểm thử.
-- Kiểm thử đầy đủ không gọi Gemini và không ghi Firestore.
-- Baseline trạng thái test được giữ qua các lần chạy để đánh dấu test trước đây đạt nhưng phiên bản sau lỗi là **Hồi quy mới**.
-- Có thêm test build-time: `run-static-audit.py` và `run-state-fixtures.js`; workflow GitHub Actions tự chạy trên Push/Pull Request.
+## Các điểm trùng đã xử lý
+- Quy tắc trạng thái tuần: Overview / Command Center / Year Dashboard / Work Suggestions → dùng chung `getWeekOperationalStatus()`.
+- Quy tắc chốt: dùng chung `isScheduleFinalized()`; hỗ trợ dữ liệu cũ `finalized` nhưng trạng thái chuẩn vẫn là `final`.
+- Tiết dạy hôm nay: dùng chung `getTodayTeachingItems()`.
+- Công việc chưa hoàn thành: dùng chung `getPendingWorkTasks()`.
+- `teacher-data-changed`: từ 8 listener độc lập → 1 dispatcher dùng chung.
+- Timer 60 giây: từ 4 timer độc lập → 1 heartbeat dùng chung.
+- Áp workspace vào state/runtime: dùng chung `applyYearWorkspaceToRuntime()`.
+- Tải Blob: dùng chung `downloadBlobFile()`.
+- In Report/Profile: dùng chung `triggerPrintMode()`.
+- CSS header responsive: bỏ quy tắc order chồng nhau và `!important` không cần thiết.
 
-## Kiểm tra tĩnh của gói v50
-- Toàn bộ JavaScript nội bộ + `service-worker.js`: **PASS `node --check`**.
+## Lỗi đã sửa
+- `15-ux.js` từng kiểm tra `meta.status === 'finalized'`, trong khi lịch báo giảng chuẩn lưu `status: 'final'`. Điều này có thể khiến Overview báo “Bản nháp” cho tuần thực tế đã chốt.
+
+## Kiểm tra tĩnh
 - HTML ID: **427/427 duy nhất**.
-- Literal DOM references (`getElementById` / `byId`): **196**, không thiếu ID.
-- Hàm JavaScript có tên: **705/705 duy nhất**, không phát hiện khai báo trùng.
-- Tài nguyên nội bộ được tham chiếu từ HTML: **45**, không thiếu file.
-- Service Worker app-shell: **48 tài nguyên**, không thiếu file.
-- Toàn bộ **48/48 app-shell resource trả HTTP 200** trong kiểm thử local.
-- APP_VERSION trong state và Service Worker: cùng `50.0.0`.
-- Node fixture test cho năm học/Kế hoạch/TKB/Sổ Công Việc/Lịch báo giảng: **5/5 PASS**.
-- `tests/run-static-audit.py`: **PASS** trên gói đóng phiên bản.
-- `DATA_SCHEMA_VERSION`: `1`.
-- Script order cuối: `26-reminder-calendar.js` → `20-pwa.js` → `21-health-check.js` → `22-links-center.js` → `23-global-command.js` → `24-storage-center.js` → `27-regression-tests.js` → `15-init.js`.
+- Literal DOM refs: **196/196 hợp lệ**.
+- Hàm JavaScript có tên: **711/711 duy nhất**.
+- Tài nguyên HTML nội bộ: **46**, không thiếu.
+- Service Worker app-shell: **49 tài nguyên**, không thiếu.
+- APP_VERSION state / Service Worker: cùng **50.1.0**.
+- JavaScript nội bộ + Service Worker: **PASS `node --check`**.
+- `teacher-data-changed`: **1 listener dùng chung**.
+- heartbeat 60 giây: **1 timer dùng chung**.
 
-## An toàn dữ liệu
-- Bộ kiểm thử nhanh chỉ đọc state hoặc chạy normalizer trên fixture riêng.
-- Bộ kiểm thử đầy đủ chỉ ghi key/DB tạm thời rồi dọn ngay; không sửa dữ liệu năm học thật.
-- Báo cáo regression chỉ lưu tên test, trạng thái và thông báo kỹ thuật; không lưu nội dung Kế hoạch/TKB/PPCT hay API key.
-- Không thay Firestore Rules, IndexedDB schema hoặc backup schema.
+## Fixture nghiệp vụ
+- Năm học: PASS.
+- Kế hoạch: PASS.
+- TKB: PASS.
+- Sổ Công Việc legacy: PASS.
+- Lịch báo giảng: PASS.
+- Quy tắc `final/finalized`: PASS.
 
-## PWA
-- App-shell bổ sung `regression-test.css` và `27-regression-tests.js`.
-- Request kiểm tra tài nguyên có `__regression` được Service Worker chuyển thẳng tới network với `cache: no-store`, tránh báo đạt giả do cache cũ.
-- Cache version tăng lên `50.0.0`.
+## Kiểm tra app-shell local
+- **49/49** tài nguyên app-shell trả HTTP 200 qua local HTTP server.
 
-## Giới hạn kiểm thử trong môi trường build
-- Chromium headless trong container vẫn treo do môi trường Chromium/DBus và không trả DOM trước timeout; vì vậy **không tuyên bố đã chạy E2E trình duyệt thật trong container**.
-- Kiểm tra cú pháp, HTML/DOM tĩnh, tài nguyên, app-shell và HTTP local đều PASS.
-- Sau khi deploy GitHub Pages, nên chạy **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ** một lần trên trình duyệt thực; đây chính là mục tiêu của Test Center mới.
+## Giới hạn
+Chưa tuyên bố E2E trình duyệt thật trong môi trường build. Sau deploy GitHub Pages nên chạy **Kiểm thử hồi quy đầy đủ** trực tiếp trên trình duyệt/PWA đang sử dụng.

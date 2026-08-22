@@ -1148,14 +1148,7 @@ service cloud.firestore {
                 workspace.workItems = normalized.workItems;
                 workspace.selectedTimetableWeek = normalized.selectedTimetableWeek;
                 workspace.selectedTeachingWeek = normalized.selectedTeachingWeek;
-                state.timetablesByWeek = workspace.timetablesByWeek;
-                state.curriculumText = workspace.curriculumText;
-                state.curriculumProfiles = workspace.curriculumProfiles;
-                state.teachingSchedule = workspace.teachingSchedule;
-                state.scheduleMeta = workspace.scheduleMeta;
-                state.workItems = workspace.workItems;
-                state.selectedTimetableWeek = workspace.selectedTimetableWeek || 1;
-                state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
+                applyYearWorkspaceToRuntime(workspace, { includePlan:false });
                 persistActiveYearWorkspace();
                 persistLegacyActiveYear();
                 refreshViewsAfterCloudWorkspace(false, true);
@@ -2001,6 +1994,23 @@ service cloud.firestore {
             return state.yearWorkspaces[state.selectedAcademicYear];
         }
 
+        function applyYearWorkspaceToRuntime(workspace, options = {}) {
+            const source = workspace && typeof workspace === 'object' ? workspace : {};
+            if (options.includePlan !== false) state.planData = Array.isArray(source.planData) ? source.planData : [];
+            state.timetablesByWeek = source.timetablesByWeek && typeof source.timetablesByWeek === 'object' && !Array.isArray(source.timetablesByWeek)
+                ? source.timetablesByWeek : {};
+            state.curriculumText = cleanText(source.curriculumText);
+            state.curriculumProfiles = Array.isArray(source.curriculumProfiles) ? source.curriculumProfiles : [];
+            state.teachingSchedule = source.teachingSchedule && typeof source.teachingSchedule === 'object' && !Array.isArray(source.teachingSchedule)
+                ? source.teachingSchedule : {};
+            state.scheduleMeta = source.scheduleMeta && typeof source.scheduleMeta === 'object' && !Array.isArray(source.scheduleMeta)
+                ? source.scheduleMeta : {};
+            state.workItems = Array.isArray(source.workItems) ? source.workItems : [];
+            state.selectedTimetableWeek = Number.parseInt(source.selectedTimetableWeek, 10) || 1;
+            state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
+            return source;
+        }
+
         function captureActiveYearWorkspace() {
             const workspace = getActiveYearWorkspace();
             if (!workspace) return;
@@ -2160,17 +2170,9 @@ service cloud.firestore {
                 persistActiveYearWorkspace();
                 const workspace = ensureYearWorkspace(normalizedYear);
                 state.selectedAcademicYear = normalizedYear;
-                state.planData = Array.isArray(workspace.planData) ? workspace.planData : [];
-                state.timetablesByWeek = workspace.timetablesByWeek && typeof workspace.timetablesByWeek === 'object' ? workspace.timetablesByWeek : {};
-                state.curriculumText = cleanText(workspace.curriculumText);
-                state.curriculumProfiles = Array.isArray(workspace.curriculumProfiles) ? workspace.curriculumProfiles : [];
-                state.teachingSchedule = workspace.teachingSchedule && typeof workspace.teachingSchedule === 'object' ? workspace.teachingSchedule : {};
-                state.scheduleMeta = workspace.scheduleMeta && typeof workspace.scheduleMeta === 'object' ? workspace.scheduleMeta : {};
-                state.workItems = Array.isArray(workspace.workItems) ? workspace.workItems : [];
+                applyYearWorkspaceToRuntime(workspace);
                 state.sharedWorkItems = [];
                 state.workSyncError = '';
-                state.selectedTimetableWeek = Number.parseInt(workspace.selectedTimetableWeek, 10) || 1;
-                state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
                 state.teacherProfile.academicYear = normalizedYear;
                 Object.keys(scheduleUndoStack).forEach(key => delete scheduleUndoStack[key]);
                 localStorage.setItem(SELECTED_ACADEMIC_YEAR_STORAGE, normalizedYear);

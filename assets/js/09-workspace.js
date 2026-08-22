@@ -307,18 +307,15 @@
             const week = typeof getAutomationReferenceWeek === 'function' ? getAutomationReferenceWeek() : (Number(state.selectedTimetableWeek) || 1);
             const dueDate = workWeekEndISO(week);
             const year = state.selectedAcademicYear;
-            const plan = state.planData?.find(item => Number(item.week) === week);
-            const timetable = state.timetablesByWeek?.[week];
-            const schedule = state.teachingSchedule?.[week] || [];
-            const meta = state.scheduleMeta?.[week] || {};
+            const weekStatus = getWeekOperationalStatus(week);
             const add = (key, title, content, priority, linkTarget, linkedWeek = week, className = '', subject = '') => suggestions.push({
                 key, title, content, priority, linkTarget, linkedWeek, className, subject, dueDate,
             });
-            if (!plan) add(`system:${year}:plan:${week}`, `Bổ sung Kế hoạch Tuần ${week}`, 'Tuần hiện tại chưa có Kế hoạch nhà trường.', 'high', 'plan');
-            if (!timetable) add(`system:${year}:timetable:${week}`, `Hoàn thiện TKB Tuần ${week}`, 'Tuần hiện tại chưa có Thời khóa biểu.', 'high', 'timetable');
-            if (!schedule.length) add(`system:${year}:schedule:${week}`, `Tạo Lịch báo giảng Tuần ${week}`, 'Đã đến tuần làm việc nhưng chưa có Lịch báo giảng.', 'high', 'teaching');
-            else if (meta.stale) add(`system:${year}:schedule-stale:${week}`, `Tạo lại Lịch báo giảng Tuần ${week}`, cleanText(meta.staleReason) || 'Dữ liệu nguồn đã thay đổi.', 'urgent', 'teaching');
-            else if (meta.status !== 'final') add(`system:${year}:finalize:${week}`, `Kiểm tra & chốt Tuần ${week}`, 'Lịch báo giảng đã có nhưng chưa chốt.', 'normal', 'teaching');
+            if (!weekStatus.hasPlan) add(`system:${year}:plan:${week}`, `Bổ sung Kế hoạch Tuần ${week}`, 'Tuần hiện tại chưa có Kế hoạch nhà trường.', 'high', 'plan');
+            if (!weekStatus.hasTimetable) add(`system:${year}:timetable:${week}`, `Hoàn thiện TKB Tuần ${week}`, 'Tuần hiện tại chưa có Thời khóa biểu.', 'high', 'timetable');
+            if (!weekStatus.hasSchedule) add(`system:${year}:schedule:${week}`, `Tạo Lịch báo giảng Tuần ${week}`, 'Đã đến tuần làm việc nhưng chưa có Lịch báo giảng.', 'high', 'teaching');
+            else if (weekStatus.stale) add(`system:${year}:schedule-stale:${week}`, `Tạo lại Lịch báo giảng Tuần ${week}`, cleanText(weekStatus.meta?.staleReason) || 'Dữ liệu nguồn đã thay đổi.', 'urgent', 'teaching');
+            else if (!weekStatus.finalized) add(`system:${year}:finalize:${week}`, `Kiểm tra & chốt Tuần ${week}`, 'Lịch báo giảng đã có nhưng chưa chốt.', 'normal', 'teaching');
 
             if (typeof collectAutomationMakeupLedger === 'function') {
                 try {
@@ -846,8 +843,7 @@
                 if (id) moveKanbanTask(id, column.dataset.workDropStatus);
             });
 
-            window.addEventListener('teacher-data-changed', () => {
-                const active = document.getElementById('tab-workspace')?.classList.contains('active');
-                if (active) renderWorkWorkspace();
+            registerAppDataRefresh('work-workspace', renderWorkWorkspace, {
+                activeWhen: () => document.getElementById('tab-workspace')?.classList.contains('active')
             });
         }

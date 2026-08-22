@@ -124,15 +124,7 @@
     }
 
     function downloadBlob(blob, name) {
-        if (typeof downloadScheduleBlob === 'function') return downloadScheduleBlob(blob, name);
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = name;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return downloadBlobFile(blob, name);
     }
 
     function table(headers, rows, mapper) {
@@ -237,11 +229,7 @@
         const area = byId('reportPrintArea');
         if (!area) return;
         area.innerHTML = profileBuildDocumentBody(snapshot);
-        document.body.classList.add('print-report-mode');
-        const cleanup = () => document.body.classList.remove('print-report-mode');
-        window.addEventListener('afterprint', cleanup, { once:true });
-        window.print();
-        setTimeout(cleanup, 1800);
+        triggerPrintMode('print-report-mode', 1800);
         markExport(snapshot, 'pdf-print');
     }
 
@@ -299,7 +287,7 @@
             let xlsxBytes = null;
             if (workbook) xlsxBytes = new Uint8Array(XLSX.write(workbook, { bookType:'xlsx', type:'array' }));
             const manifest = {
-                application:'Sổ Tay Giáo Viên Pro', version:typeof APP_VERSION !== 'undefined' ? APP_VERSION : '50.0.0', createdAt:snapshot.packageCreatedAt,
+                application:'Sổ Tay Giáo Viên Pro', version:typeof APP_VERSION !== 'undefined' ? APP_VERSION : '50.1.0', createdAt:snapshot.packageCreatedAt,
                 academicYear:snapshot.academicYear,
                 range:{ label:snapshot.range.label, startWeek:snapshot.range.startWeek, endWeek:snapshot.range.endWeek, dateRange:snapshot.range.text },
                 teacher:{ school:snapshot.profile?.schoolName || '', name:snapshot.profile?.teacherName || '', subject:snapshot.profile?.subject || '' },
@@ -352,7 +340,7 @@
         byId('profilePackageExcelBtn')?.addEventListener('click', exportExcel);
         byId('profilePackagePrintBtn')?.addEventListener('click', printPdf);
         ['reportScopeSelect','reportMonthSelect','reportStartWeek','reportEndWeek','reportClassSelect','reportSubjectSelect'].forEach(id => byId(id)?.addEventListener('change', () => setTimeout(renderProfilePackageCenter, 0)));
-        window.addEventListener('teacher-data-changed', () => setTimeout(renderProfilePackageCenter, 120));
+        registerAppDataRefresh('profile-package', renderProfilePackageCenter, { delay:120 });
         ['schoolYearSelect','academicYearSelect','progressAcademicYearSelect'].forEach(id => byId(id)?.addEventListener('change', () => setTimeout(renderProfilePackageCenter, 80)));
         renderProfilePackageCenter();
     }

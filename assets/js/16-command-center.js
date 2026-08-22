@@ -5,46 +5,6 @@
             return escapeHTML(cleanText(value));
         }
 
-        function commandSessionOrder(session) {
-            const text = normalizeSessionLabel(session || '');
-            if (text === 'Buổi sáng') return 1;
-            if (text === 'Buổi chiều') return 2;
-            return 3;
-        }
-
-        function getTodayTeachingItems(week, dayLabel) {
-            const timetable = state.timetablesByWeek?.[week];
-            if (!timetable?.sessions) return [];
-            const items = [];
-            timetable.sessions.forEach(session => {
-                (session.periods || []).forEach(period => {
-                    (period.cells || []).forEach(cell => {
-                        if (normalizeDayName(cell?.day) !== dayLabel) return;
-                        items.push({
-                            session: session.label || normalizeSessionLabel(session.key),
-                            period: Number.parseInt(period.period, 10) || 0,
-                            className: cleanText(cell.className),
-                            subject: cleanText(cell.subject || cell.content),
-                        });
-                    });
-                });
-            });
-            return items.sort((a, b) => commandSessionOrder(a.session) - commandSessionOrder(b.session) || a.period - b.period);
-        }
-
-        function getCommandPendingTasks(todayIso) {
-            const personal = normalizeWorkItems(state.workItems, 'personal');
-            const shared = sharedWorkScopeAvailable() ? normalizeWorkItems(state.sharedWorkItems, 'shared') : [];
-            return [...personal, ...shared]
-                .filter(item => item.type === 'task' && !item.completed)
-                .sort((a, b) => {
-                    const ad = a.dueDate || '9999-12-31';
-                    const bd = b.dueDate || '9999-12-31';
-                    return ad.localeCompare(bd) || Number(b.pinned) - Number(a.pinned);
-                })
-                .map(item => ({ ...item, overdue: Boolean(item.dueDate && item.dueDate < todayIso) }));
-        }
-
         function renderTodayTeachingCommand(week, dayLabel) {
             const list = document.getElementById('todayTeachingList');
             const summary = document.getElementById('todayTeachingSummary');
@@ -58,7 +18,7 @@
             summary.textContent = items.length ? `${items.length} tiết · ${dayLabel} · Tuần ${week}` : `${dayLabel} · chưa thấy tiết dạy`;
             list.innerHTML = items.length ? items.slice(0, 6).map(item => `
                 <div class="command-item">
-                    <span class="command-item-icon">${commandSessionOrder(item.session) === 1 ? '☀️' : '🌤️'}</span>
+                    <span class="command-item-icon">${teachingSessionOrder(item.session) === 1 ? '☀️' : '🌤️'}</span>
                     <span class="command-item-main"><strong>${commandEscape(item.className || 'Chưa rõ lớp')} · ${commandEscape(item.subject || 'Chưa rõ môn')}</strong><small>${commandEscape(item.session)} · Tiết ${item.period || '—'}</small></span>
                     <span class="command-item-badge">T${item.period || '—'}</span>
                 </div>`).join('') : '<div class="command-empty">Không có tiết dạy trong TKB hôm nay.</div>';
@@ -67,17 +27,14 @@
         function buildWeeklyPriorities(week, todayIso) {
             const priorities = [];
             if (!week) return priorities;
-            const plan = state.planData?.some(item => Number(item.week) === Number(week));
-            const timetable = state.timetablesByWeek?.[week];
-            const schedule = state.teachingSchedule?.[week] || [];
-            const meta = getScheduleMeta ? getScheduleMeta(week) : (state.scheduleMeta?.[week] || {});
-            if (!plan) priorities.push({ level:'warning', icon:'📋', title:`Bổ sung Kế hoạch trường Tuần ${week}`, detail:'Chưa có dữ liệu để đối chiếu ngày nghỉ/hoạt động.', tab:'plan' });
-            if (!timetable) priorities.push({ level:'warning', icon:'⏰', title:`Bổ sung TKB Tuần ${week}`, detail:'Chưa thể tổng hợp lịch dạy và tạo báo giảng.', tab:'timetable' });
-            if (!schedule.length) priorities.push({ level:'warning', icon:'📖', title:`Tạo Lịch báo giảng Tuần ${week}`, detail:'Tuần hiện tại chưa có lịch báo giảng.', tab:'teaching' });
-            else if (meta.stale) priorities.push({ level:'danger', icon:'🔄', title:'Tạo lại Lịch báo giảng', detail:meta.staleReason || 'Nguồn dữ liệu của tuần đã thay đổi.', tab:'teaching' });
-            else if (!['final','finalized'].includes(meta.status)) priorities.push({ level:'warning', icon:'🔒', title:`Kiểm tra và chốt Tuần ${week}`, detail:'Lịch báo giảng hiện vẫn là bản nháp.', tab:'teaching' });
+            const weekStatus = getWeekOperationalStatus(week);
+            if (!weekStatus.hasPlan) priorities.push({ level:'warning', icon:'📋', title:`Bổ sung Kế hoạch trường Tuần ${week}`, detail:'Chưa có dữ liệu để đối chiếu ngày nghỉ/hoạt động.', tab:'plan' });
+            if (!weekStatus.hasTimetable) priorities.push({ level:'warning', icon:'⏰', title:`Bổ sung TKB Tuần ${week}`, detail:'Chưa thể tổng hợp lịch dạy và tạo báo giảng.', tab:'timetable' });
+            if (!weekStatus.hasSchedule) priorities.push({ level:'warning', icon:'📖', title:`Tạo Lịch báo giảng Tuần ${week}`, detail:'Tuần hiện tại chưa có lịch báo giảng.', tab:'teaching' });
+            else if (weekStatus.stale) priorities.push({ level:'danger', icon:'🔄', title:'Tạo lại Lịch báo giảng', detail:weekStatus.meta?.staleReason || 'Nguồn dữ liệu của tuần đã thay đổi.', tab:'teaching' });
+            else if (!weekStatus.finalized) priorities.push({ level:'warning', icon:'🔒', title:`Kiểm tra và chốt Tuần ${week}`, detail:'Lịch báo giảng hiện vẫn là bản nháp.', tab:'teaching' });
 
-            const tasks = getCommandPendingTasks(todayIso);
+            const tasks = getPendingWorkTasks(todayIso);
             tasks.filter(item => item.overdue).slice(0, 2).forEach(item => priorities.push({ level:'danger', icon:'⏰', title:item.title || 'Nhiệm vụ quá hạn', detail:`Quá hạn${item.dueDate ? ' ' + formatISODateForDisplay(item.dueDate) : ''}.`, tab:'workspace' }));
             if (!tasks.some(item => item.overdue)) tasks.filter(item => item.dueDate).slice(0, 1).forEach(item => priorities.push({ level:'', icon:'✅', title:item.title || 'Nhiệm vụ sắp tới', detail:`Hạn ${formatISODateForDisplay(item.dueDate)}.`, tab:'workspace' }));
             return priorities.slice(0, 5);
@@ -149,6 +106,6 @@
             ['schoolYearSelect','week1StartDateInput','scheduleWeekSelect','timetableWeekSelect','progressWeekSelect'].forEach(id => {
                 document.getElementById(id)?.addEventListener('change', () => setTimeout(renderTeacherCommandCenter, 0));
             });
-            setInterval(renderTeacherCommandCenter, 60000);
+            registerMinuteRefresh('teacher-command-center', renderTeacherCommandCenter);
             renderTeacherCommandCenter();
         }
