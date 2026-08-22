@@ -25,7 +25,7 @@
             <div class="brand">
                 <div>
                     <h1>📚 Sổ Tay Giáo Viên</h1>
-                    <span>Teacher's Notebook v39 — Tự động hóa công việc giáo viên</span>
+                    <span>Teacher's Notebook v40 — Báo cáo & xuất hồ sơ giáo viên</span>
                 </div>
             </div>
             <div class="header-quick-actions" aria-label="Truy cập nhanh">
@@ -164,6 +164,7 @@
                     <button class="overview-action" type="button" data-overview-tab="plan">📋 Kế hoạch</button>
                     <button class="overview-action" type="button" data-overview-tab="timetable">⏰ TKB</button>
                     <button class="overview-action" type="button" data-overview-tab="teaching">📖 Báo giảng</button>
+                    <button class="overview-action" type="button" data-overview-tab="reports">📑 Báo cáo</button>
                     <button class="overview-action" type="button" data-overview-tab="workspace">✅ Công việc</button>
                 </div>
             </div>
@@ -200,6 +201,7 @@
                 </div>
                 <div class="year-dashboard-actions">
                     <button class="overview-action" id="openYearProgressBtn" type="button">📈 Tiến độ chi tiết</button>
+                    <button class="overview-action" id="openReportCenterBtn" type="button">📑 Báo cáo & hồ sơ</button>
                     <button class="overview-action" id="refreshYearDashboardBtn" type="button">↻ Làm mới</button>
                 </div>
             </div>
@@ -321,6 +323,9 @@
             </button>
             <button class="tab-btn" data-tab="teaching" role="tab" aria-selected="false" aria-controls="tab-teaching">
                 <span class="icon">📖</span> Lịch Báo Giảng
+            </button>
+            <button class="tab-btn" data-tab="reports" role="tab" aria-selected="false" aria-controls="tab-reports">
+                <span class="icon">📑</span> Báo Cáo & Hồ Sơ
             </button>
             <button class="tab-btn" data-tab="workspace" role="tab" aria-selected="false" aria-controls="tab-workspace">
                 <span class="icon">🗂️</span> Sổ Công Việc
@@ -657,7 +662,72 @@
         </div>
 
         <!-- ============================================================ -->
-        <!-- TAB 4: SỔ CÔNG VIỆC                                           -->
+        <!-- TAB 4: BÁO CÁO & HỒ SƠ                                        -->
+        <!-- ============================================================ -->
+        <div class="tab-content" id="tab-reports" role="tabpanel">
+            <div class="card report-center-card" id="reportCenterCard">
+                <div class="card-header report-center-header">
+                    <div>
+                        <h2>📑 Báo cáo &amp; xuất hồ sơ <small>tuần · tháng · học kỳ · năm học</small></h2>
+                        <span class="sub" id="reportCenterSubtitle">Đang tổng hợp dữ liệu giảng dạy…</span>
+                    </div>
+                    <div class="report-export-actions">
+                        <button class="btn btn-outline btn-sm" id="refreshReportBtn" type="button" style="color:#475569;border-color:#cbd5e1;">↻ Cập nhật</button>
+                        <button class="btn btn-success btn-sm" id="exportReportExcelBtn" type="button">📊 Excel</button>
+                        <button class="btn btn-outline btn-sm" id="exportReportWordBtn" type="button" style="color:#1d4ed8;border-color:#93c5fd;">📝 Word</button>
+                        <button class="btn btn-outline btn-sm" id="printReportBtn" type="button" style="color:#7c3aed;border-color:#c4b5fd;">🖨️ In / PDF</button>
+                    </div>
+                </div>
+
+                <div class="report-guide">
+                    <span>💡</span>
+                    <div><strong>Một nơi để hoàn thiện hồ sơ giảng dạy.</strong> Báo cáo được lấy trực tiếp từ Kế hoạch trường, TKB, PPCT, Lịch báo giảng và Sổ công việc hiện có; không tạo dữ liệu mới và không tự sửa dữ liệu nguồn.</div>
+                </div>
+
+                <div class="report-filter-grid">
+                    <label class="report-filter-field"><span>Phạm vi báo cáo</span>
+                        <select id="reportScopeSelect">
+                            <option value="currentWeek">Tuần hiện tại</option>
+                            <option value="currentMonth">Theo tháng</option>
+                            <option value="semester1">Học kỳ I · Tuần 1–18</option>
+                            <option value="semester2">Học kỳ II · Tuần 19–37</option>
+                            <option value="year">Cả năm học</option>
+                            <option value="custom">Tùy chọn tuần</option>
+                        </select>
+                    </label>
+                    <label class="report-filter-field" id="reportMonthField"><span>Tháng</span><select id="reportMonthSelect"></select></label>
+                    <div class="report-custom-weeks" id="reportCustomWeekFields" hidden>
+                        <label class="report-filter-field"><span>Từ tuần</span><select id="reportStartWeek"></select></label>
+                        <label class="report-filter-field"><span>Đến tuần</span><select id="reportEndWeek"></select></label>
+                    </div>
+                    <label class="report-filter-field"><span>Lớp</span><select id="reportClassSelect"><option value="">Tất cả lớp</option></select></label>
+                    <label class="report-filter-field"><span>Môn</span><select id="reportSubjectSelect"><option value="">Tất cả môn</option></select></label>
+                </div>
+                <div class="report-range-hint" id="reportRangeHint">Đang xác định phạm vi báo cáo…</div>
+
+                <div class="report-kpi-grid">
+                    <div class="report-kpi"><span>🗓️</span><div><strong id="reportKpiWeeks">0</strong><small>Tuần trong báo cáo</small></div></div>
+                    <div class="report-kpi"><span>📋</span><div><strong id="reportKpiPlan">0/0</strong><small>Tuần có Kế hoạch</small></div></div>
+                    <div class="report-kpi"><span>⏰</span><div><strong id="reportKpiTimetable">0/0</strong><small>Tuần có TKB</small></div></div>
+                    <div class="report-kpi"><span>🔒</span><div><strong id="reportKpiFinal">0/0</strong><small>Tuần đã chốt</small></div></div>
+                    <div class="report-kpi"><span>🎓</span><div><strong id="reportKpiLessons">0</strong><small>Tiết đã lập báo giảng</small></div></div>
+                    <div class="report-kpi"><span>⏸️</span><div><strong id="reportKpiCanceled">0</strong><small>Tiết Không học</small></div></div>
+                    <div class="report-kpi"><span>🔁</span><div><strong id="reportKpiMakeup">0</strong><small>Tiết học bù</small></div></div>
+                    <div class="report-kpi"><span>📉</span><div><strong id="reportKpiBehind">0</strong><small>Lớp–môn cần chú ý</small></div></div>
+                </div>
+
+                <div class="report-completion">
+                    <div class="report-completion-copy"><strong>Độ hoàn thiện hồ sơ</strong><span id="reportCompletionText">Đang kiểm tra…</span></div>
+                    <div class="report-completion-track"><span id="reportCompletionBar" style="width:0%"></span></div>
+                </div>
+
+                <div class="report-preview" id="reportPreview"></div>
+                <div class="report-print-area" id="reportPrintArea" aria-hidden="true"></div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 5: SỔ CÔNG VIỆC                                           -->
         <!-- ============================================================ -->
         <div class="tab-content" id="tab-workspace" role="tabpanel">
             <div class="card">
@@ -966,6 +1036,7 @@
     <script src="assets/js/16-command-center.js"></script>
     <script src="assets/js/17-year-dashboard.js"></script>
     <script src="assets/js/18-automation-center.js"></script>
+    <script src="assets/js/19-report-center.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

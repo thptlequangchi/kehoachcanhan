@@ -20,6 +20,7 @@
                     populateWeekSelect();
                     renderProgressDashboard();
                 }
+                if (tabId === 'reports' && typeof renderReportCenter === 'function') renderReportCenter();
                 if (tabId === 'workspace') renderWorkWorkspace();
             });
         });
