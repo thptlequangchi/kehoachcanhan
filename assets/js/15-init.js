@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v45.1: nền v44 + Trung Tâm Liên Kết & Tích Hợp
+        //  INIT — v45.2: nền v45.1 + nút nhanh TKB/vnEdu trên thanh công cụ
         // ================================================================
         function safeInitStage(name, fn) {
             try {

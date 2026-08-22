@@ -1,4 +1,4 @@
-/* Sổ Tay Giáo Viên v45.1 — Trung Tâm Liên Kết */
+/* Sổ Tay Giáo Viên v45.2 — Trung Tâm Liên Kết */
 .links-center-shell{overflow:hidden;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%)}
 .links-center-hero{display:flex;justify-content:space-between;gap:24px;align-items:center;padding:26px 28px;border:1px solid #dbeafe;border-radius:20px;background:radial-gradient(circle at 90% 10%,rgba(59,130,246,.16),transparent 34%),linear-gradient(135deg,#eff6ff,#fff 50%,#f5f3ff);box-shadow:0 16px 40px rgba(15,23,42,.07);margin-bottom:18px}
 .links-center-kicker{display:inline-flex;font-size:11px;font-weight:900;letter-spacing:.16em;color:#2563eb;margin-bottom:6px}.links-center-hero h2{margin:0;color:#0f172a;font-size:26px;line-height:1.2}.links-center-hero h2 small{font-weight:700;color:#64748b}.links-center-hero p{max-width:720px;margin:8px 0 0;color:#526072;line-height:1.55}.links-center-hero-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
@@ -12,3 +12,17 @@
 @media(max-width:1100px){.links-center-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.links-quick-grid,.links-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.links-add-form{grid-template-columns:1fr 1fr 160px}.links-add-form .links-pin-check,.links-add-form button{width:100%}}
 @media(max-width:760px){.links-center-hero{align-items:flex-start;flex-direction:column;padding:20px}.links-center-hero-actions{width:100%;justify-content:flex-start}.links-center-hero-actions .btn{flex:1}.links-center-stats{grid-template-columns:1fr 1fr}.links-toolbar{grid-template-columns:1fr}.links-quick-grid,.links-grid{grid-template-columns:1fr}.links-add-form{grid-template-columns:1fr}.quick-link-card{grid-template-columns:auto minmax(0,1fr)}.quick-link-card .links-open-btn{grid-column:1/-1;width:100%}.links-section-heading{align-items:flex-start}.link-card-copy p{min-height:0}}
 @media(max-width:440px){.links-center-stats{grid-template-columns:1fr}.links-stat{padding:12px}.links-center-hero h2{font-size:22px}}
+
+
+/* ---------- v45.2 · Liên kết dùng thường xuyên trên thanh công cụ ---------- */
+.header-favorite-links{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
+.header-favorite-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:8px 11px;border:1px solid rgba(255,255,255,.20);border-radius:12px;background:rgba(255,255,255,.105);color:#fff;text-decoration:none;font-size:12px;font-weight:800;line-height:1;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(9px);transition:transform .16s ease,background-color .16s ease,border-color .16s ease,box-shadow .16s ease}
+.header-favorite-link:hover{transform:translateY(-1px);background:rgba(255,255,255,.19);border-color:rgba(255,255,255,.34);box-shadow:0 8px 18px rgba(0,0,0,.12);color:#fff}
+.header-favorite-link:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(147,197,253,.38),0 8px 18px rgba(0,0,0,.12)}
+.header-favorite-link.timetable{background:rgba(14,165,233,.16)}
+.header-favorite-link.vnedu{background:rgba(34,197,94,.14)}
+.header-favorite-icon{font-size:16px;line-height:1}.header-favorite-external{font-size:11px;opacity:.7}.header-favorite-label{transform:translateY(.2px)}
+@media(max-width:1180px){.header-favorite-link{padding:8px 9px}.header-favorite-external{display:none}}
+@media(max-width:900px){.header-favorite-links{order:3;flex:1 1 auto}.header-favorite-link{flex:1 1 auto;min-width:112px}.header-quick-actions .pwa-header-actions{order:4}.header-quick-actions .header-settings-btn{order:5}.header-quick-actions .header-context{order:1}.header-favorite-links{order:2}}
+@media(max-width:640px){.header-favorite-links{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}.header-favorite-link{width:100%;min-width:0}.header-quick-actions .pwa-header-actions{width:100%;justify-content:flex-start}.header-quick-actions .header-settings-btn{margin-left:auto}}
+@media print{.header-favorite-links{display:none!important}}

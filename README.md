@@ -1,14 +1,13 @@
-# Sổ Tay Giáo Viên v45.1.0 — Bổ sung vnEdu
+# Sổ Tay Giáo Viên v45.2.0 — Nút nhanh TKB Trường & vnEdu
 
-Bản v45.1 phát triển trực tiếp trên v45 Trung Tâm Liên Kết & Tích Hợp. Toàn bộ chức năng và dữ liệu cũ được giữ nguyên.
+Bản v45.2 phát triển trực tiếp trên v45.1. Toàn bộ dữ liệu và chức năng cũ được giữ nguyên.
 
-## Thay đổi
-- Thêm liên kết mặc định **vnEdu.vn - Mạng giáo dục Việt Nam**.
-- Địa chỉ: `https://user.vnedu.vn/sso/?app_id=1&use_cache=1&continue=http://vnedu.vn/security/ssoVnedu`.
-- vnEdu được xếp vào nhóm **Nhà trường** và **ghim sẵn** trong khu vực Truy cập nhanh.
-- Cập nhật ô tìm kiếm để gợi ý tìm vnEdu.
-- `APP_VERSION` và cache PWA tăng lên **45.1.0** để tránh trình duyệt giữ bản JavaScript cũ.
-- `DATA_SCHEMA_VERSION` không đổi, không cần chuyển đổi dữ liệu.
+## Điểm mới
+- Thêm 2 nút truy cập cố định trên thanh công cụ đầu trang: **🗓️ TKB Trường** và **🎓 vnEdu**.
+- Hai nút mở trang ngoài ở tab mới bằng `noopener noreferrer`, nên Sổ Tay đang làm việc vẫn được giữ nguyên.
+- Desktop hiển thị icon + tên; tablet/mobile tự co giãn thành hai nút cân đối để không làm vỡ header.
+- TKB dùng trang chính thức của THPT Lê Quảng Chí; vnEdu dùng đúng liên kết SSO đã cấu hình trong Trung Tâm Liên Kết.
+- APP_VERSION và cache PWA tăng lên **45.2.0** để trình duyệt nhận giao diện mới ngay sau deploy.
 
 ## Cập nhật GitHub Pages
-Giải nén rồi chép **toàn bộ** nội dung vào repo, sau đó Commit và Push. Nếu PWA báo có phiên bản mới, chọn **Cập nhật ngay**.
+Giải nén và chép **toàn bộ** nội dung vào repo, Replace file cũ, Commit và Push. Nếu PWA báo có phiên bản mới, chọn **Cập nhật ngay**.
