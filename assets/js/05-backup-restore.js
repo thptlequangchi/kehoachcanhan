@@ -268,6 +268,8 @@
                 link.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
                 const counts = backupDataCounts(payload);
+                try { localStorage.setItem('teacher_last_backup_at_v1', new Date().toISOString()); } catch (_) { /* noop */ }
+                if (typeof refreshHealthCenterSummary === 'function') refreshHealthCenterSummary();
                 showToast(`✅ Đã sao lưu ${counts.years} năm học, ${counts.plans} tuần kế hoạch, ${counts.timetables} tuần TKB và ${counts.schedules} tuần lịch báo giảng`, 'success');
             } catch (error) {
                 showToast('❌ Không thể tạo file sao lưu: ' + error.message, 'error');

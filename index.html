@@ -18,6 +18,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <script src="assets/js/00-diagnostics-bootstrap.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
@@ -28,6 +29,7 @@
         <link rel="stylesheet" href="assets/css/app.css" />
         <link rel="stylesheet" href="assets/css/premium-ui.css" />
         <link rel="stylesheet" href="assets/css/pwa.css" />
+        <link rel="stylesheet" href="assets/css/health-check.css" />
 </head>
 <body class="premium-ui">
 
@@ -41,7 +43,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v42 · PWA &amp; Hiệu năng</span>
+                        <span>v43 · Kiểm tra sức khỏe hệ thống</span>
                         <i aria-hidden="true"></i>
                         <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
                     </div>
@@ -103,7 +105,7 @@
         <details class="settings-hub" id="settingsHub">
             <summary>
                 <span class="settings-hub-title">⚙️ Cài đặt &amp; an toàn</span>
-                <span class="settings-hub-summary">Gemini · OCR · Sao lưu dữ liệu</span>
+                <span class="settings-hub-summary">Chẩn đoán · Gemini · OCR · Sao lưu dữ liệu</span>
                 <span class="settings-hub-chevron" aria-hidden="true">⌄</span>
             </summary>
             <div class="settings-hub-body">
@@ -136,6 +138,44 @@
                         <button class="btn btn-outline btn-sm" id="pwaRefreshCacheBtn" type="button" style="color:#475569;border-color:#cbd5e1;">🧹 Làm mới ứng dụng</button>
                     </div>
                     <p class="pwa-settings-note" id="pwaSettingsNote">PWA hoạt động tốt nhất khi website được mở qua HTTPS trên GitHub Pages.</p>
+                </section>
+                <section class="health-center-card" id="healthCenterCard" aria-label="Kiểm tra sức khỏe và chẩn đoán hệ thống">
+                    <div class="health-center-heading">
+                        <div class="health-center-title-wrap">
+                            <div class="health-center-icon" aria-hidden="true">🩺</div>
+                            <div>
+                                <strong>Kiểm tra sức khỏe &amp; chẩn đoán</strong>
+                                <span>Tự kiểm tra ứng dụng, dữ liệu, PWA, Firebase, Gemini, OCR và ghi nhật ký tối đa 50 lỗi gần nhất.</span>
+                            </div>
+                        </div>
+                        <span class="health-overall-badge" id="healthOverallStatus">Chưa kiểm tra</span>
+                    </div>
+                    <div class="health-summary-grid">
+                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v43</strong></div>
+                        <div class="health-summary-item"><span>Dữ liệu</span><strong id="healthSummaryData">Đang tổng hợp…</strong></div>
+                        <div class="health-summary-item"><span>Cloud</span><strong id="healthSummaryCloud">Đang kiểm tra…</strong></div>
+                        <div class="health-summary-item"><span>Nhật ký</span><strong id="healthSummaryErrors">0 lỗi</strong></div>
+                    </div>
+                    <div class="health-center-actions">
+                        <button class="btn btn-primary btn-sm" id="runHealthCheckBtn" type="button">🩺 Kiểm tra hệ thống</button>
+                        <button class="btn btn-outline btn-sm" id="copyHealthReportBtn" type="button" style="color:#1d4ed8;border-color:#93c5fd;">📋 Sao chép báo cáo</button>
+                        <button class="btn btn-outline btn-sm" id="downloadHealthReportBtn" type="button" style="color:#475569;border-color:#cbd5e1;">⬇️ Tải báo cáo</button>
+                        <button class="btn btn-outline btn-sm" id="healthSafeRecoveryBtn" type="button" style="color:#9a3412;border-color:#fdba74;">↶ Khôi phục an toàn</button>
+                    </div>
+                    <div class="health-run-meta" id="healthRunMeta">Trang sẽ tự kiểm tra nhanh sau khi khởi động; nhấn “Kiểm tra hệ thống” để kiểm tra cả các file đang triển khai.</div>
+                    <div class="health-results" id="healthCheckResults"></div>
+                    <div class="health-recovery-note" id="healthRecoveryNote">Đang kiểm tra bản sao an toàn…</div>
+                    <details class="health-diagnostics-details">
+                        <summary>🧾 Nhật ký kỹ thuật &amp; dữ liệu lỗi cách ly</summary>
+                        <div class="health-log-toolbar">
+                            <strong id="healthErrorCount">0 lỗi</strong>
+                            <div>
+                                <button class="btn btn-outline btn-sm" id="healthExportQuarantineBtn" type="button">⬇️ Xuất dữ liệu lỗi</button>
+                                <button class="btn btn-outline btn-sm" id="healthClearLogBtn" type="button" style="color:#b91c1c;border-color:#fecaca;">Xóa nhật ký</button>
+                            </div>
+                        </div>
+                        <div class="health-log-list" id="healthErrorLog"></div>
+                    </details>
                 </section>
                 <div class="api-section">
                 <label for="apiKeyInput">🔑 Gemini API</label>
@@ -1107,6 +1147,7 @@
     <script src="assets/js/18-automation-center.js"></script>
     <script src="assets/js/19-report-center.js"></script>
     <script src="assets/js/20-pwa.js"></script>
+    <script src="assets/js/21-health-check.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

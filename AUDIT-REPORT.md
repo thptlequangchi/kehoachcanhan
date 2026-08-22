@@ -1,29 +1,35 @@
-# AUDIT REPORT — v42.0.0 PWA & Hiệu năng
+# AUDIT REPORT — v43.0.0 Health Check & Diagnostics
 
 ## Kiểm tra tĩnh
 - Toàn bộ JavaScript nội bộ và `service-worker.js`: **PASS `node --check`**.
-- HTML ID: **307/307 duy nhất**, không phát hiện ID trùng.
-- Hàm JavaScript có tên: **450/450 duy nhất**, không phát hiện khai báo trùng.
-- Tài nguyên nội bộ được tham chiếu từ HTML: **28**, không thiếu file.
-- App-shell Service Worker: **32 tài nguyên**, tất cả tồn tại và trả HTTP 200 trong kiểm thử local.
-- Manifest JSON: hợp lệ; đủ icon 192, 512 và maskable 512.
-- `APP_VERSION` trong state và Service Worker: cùng **42.0.0**.
-- Thứ tự script mới: `19-report-center.js` → `20-pwa.js` → `15-init.js`.
+- HTML ID: **324/324 duy nhất**, không phát hiện ID trùng.
+- Hàm JavaScript có tên: **471/471 duy nhất**, không phát hiện khai báo trùng.
+- Tài nguyên nội bộ được tham chiếu từ HTML: **31**, không thiếu file.
+- Health Center: toàn bộ ID được `21-health-check.js` tham chiếu đều tồn tại trong HTML.
+- App-shell Service Worker: **35 tài nguyên**, không thiếu file.
+- Manifest JSON: hợp lệ.
+- `APP_VERSION` trong state và Service Worker: cùng **43.0.0**.
+- `DATA_SCHEMA_VERSION`: giữ nguyên **1**.
+- Thứ tự script cuối: `19-report-center.js` → `20-pwa.js` → `21-health-check.js` → `15-init.js`.
+- `00-diagnostics-bootstrap.js` được nạp trước các thư viện CDN để bắt lỗi tài nguyên/khởi động sớm.
 
 ## Kiểm tra an toàn dữ liệu
-- `DATA_SCHEMA_VERSION` không thay đổi.
-- PWA không xóa/chuyển đổi dữ liệu năm học.
-- Nút “Làm mới ứng dụng” chỉ xóa cache có tiền tố `teacher-notebook-app-`; không xóa localStorage/sessionStorage/Firestore.
-- Service Worker chỉ cache GET request; không can thiệp request ghi dữ liệu.
-- Request API Gemini/Firestore không bị Service Worker cache.
+- Health Check mặc định chỉ đọc trạng thái; không tự sửa dữ liệu.
+- Không gọi Gemini chỉ để kiểm tra, nên không tiêu hao quota kiểm tra sức khỏe.
+- Không tạo Firestore write giả để thử quyền.
+- Báo cáo kỹ thuật tự che chuỗi có dạng Gemini API key và không đưa mật khẩu vào báo cáo.
+- JSON localStorage lỗi được lưu bản xem trước vào khu cách ly trước khi key lỗi bị bỏ qua.
+- Nhật ký kỹ thuật giới hạn tối đa 50 mục.
+- Khôi phục an toàn chỉ bật khi có checkpoint hợp lệ và yêu cầu xác nhận; trước khi khôi phục tạo thêm checkpoint khẩn cấp của dữ liệu hiện tại.
+- Sao lưu file thành công được ghi thời điểm để Health Center cảnh báo khi lâu chưa backup.
 
-## Kiểm tra GitHub Pages
-- `start_url`, `scope`, manifest, Service Worker đều dùng đường dẫn tương đối `./`, phù hợp khi website nằm trong repo con như `/education/`.
-- Service Worker chỉ hoạt động trong secure context (HTTPS/localhost); GitHub Pages đáp ứng HTTPS.
-- Navigation dùng network-first; khi mất mạng fallback về bản app-shell đã cache.
+## PWA / triển khai
+- Service Worker cache thêm `health-check.css`, `00-diagnostics-bootstrap.js`, `21-health-check.js`.
+- Request có `__health` được đi thẳng ra network với `no-store`, nhờ đó Health Check có thể phát hiện file deploy thiếu thay vì bị cache cũ che khuất.
+- Cơ chế cache Gemini/Firestore không thay đổi; request ghi dữ liệu không bị Service Worker cache.
 
-## Giới hạn cần kiểm tra sau khi deploy
-- Nút “Cài ứng dụng” phụ thuộc tiêu chí cài PWA của từng trình duyệt/hệ điều hành.
-- Gemini và Firestore vẫn cần Internet.
-- CDN runtime chỉ dùng offline sau khi tài nguyên đó đã tải thành công ít nhất một lần.
-- Việc cấp “lưu trữ bền vững” do trình duyệt quyết định.
+## Giới hạn kiểm thử
+- Firebase/Auth/Firestore thực tế còn phụ thuộc tài khoản và Rules sau khi deploy. Health Center đánh giá trạng thái kết nối/đồng bộ của phiên thật nhưng không tạo write thử nghiệm.
+- Gemini thực tế phụ thuộc API key/quota. Health Center dùng trạng thái xác thực hiện có, không gọi API chỉ để test.
+- PWA install/persistent storage phụ thuộc trình duyệt/hệ điều hành.
+- Kiểm tra file server sâu chỉ chạy khi người dùng nhấn **Kiểm tra hệ thống** và có mạng.

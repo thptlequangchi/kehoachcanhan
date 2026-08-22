@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v41: nền v40 ổn định + Premium UI
+        //  INIT — v43: nền v42 + Health Check & Diagnostics
         // ================================================================
         function safeInitStage(name, fn) {
             try {
@@ -8,6 +8,7 @@
                 console.error(`[INIT] ${name} thất bại:`, error);
                 window.__teacherNotebookInitErrors = window.__teacherNotebookInitErrors || [];
                 window.__teacherNotebookInitErrors.push({ name, error: String(error?.message || error) });
+                window.teacherNotebookRecordError?.('init', error, { source: name });
                 return undefined;
             }
         }
@@ -45,6 +46,7 @@
                     console.error('[INIT] Tài khoản/Firebase bất đồng bộ thất bại, tiếp tục chế độ cục bộ:', error);
                     window.__teacherNotebookInitErrors = window.__teacherNotebookInitErrors || [];
                     window.__teacherNotebookInitErrors.push({ name: 'Firebase', error: String(error?.message || error) });
+                    window.teacherNotebookRecordError?.('firebase-init', error, { source: 'initializeAccountSystem' });
                     safeInitStage('Làm mới tổng quan sau lỗi Firebase', renderTeacherOverview);
                 });
             } catch (error) {
@@ -106,6 +108,9 @@
                 initReportCenter();
                 renderReportCenter();
             });
+            safeInitStage('Trung tâm chẩn đoán', () => {
+                initHealthCenter();
+            });
 
             // Cập nhật lại header/tổng quan sau khi mọi dữ liệu cục bộ đã nạp.
             safeInitStage('Cập nhật tổng quan cuối', () => {
@@ -121,6 +126,8 @@
             if (initErrors.length) {
                 console.warn('Trang đã khởi động với một số module lỗi nhưng giao diện lõi vẫn hoạt động:', initErrors);
             }
+            window.__teacherNotebookInitCompleted = true;
+            window.dispatchEvent(new CustomEvent('teacher-notebook:init-complete'));
         }
 
         // Đảm bảo DOM đã tồn tại đầy đủ kể cả khi cách nhúng script thay đổi sau này.
