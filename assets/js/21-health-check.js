@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v44 — TRUNG TÂM KIỂM TRA SỨC KHỎE & CHẨN ĐOÁN
+   SỔ TAY GIÁO VIÊN v45 — TRUNG TÂM KIỂM TRA SỨC KHỎE & CHẨN ĐOÁN
    Chỉ đọc trạng thái hệ thống. Không tự sửa hoặc gửi dữ liệu ra ngoài.
    ============================================================================ */
 (() => {
@@ -122,7 +122,7 @@
         add(results, 'network', 'Kết nối mạng', navigator.onLine ? 'pass' : 'info', navigator.onLine ? 'Đang Online' : 'Đang ngoại tuyến · phần local vẫn dùng được');
 
         const lastBackup = safeDate(localStorage.getItem(LAST_BACKUP_KEY));
-        if (!lastBackup) add(results, 'backup', 'Sao lưu gần nhất', 'warn', 'Chưa ghi nhận lần sao lưu file nào ở v44');
+        if (!lastBackup) add(results, 'backup', 'Sao lưu gần nhất', 'warn', 'Chưa ghi nhận lần sao lưu file nào');
         else {
             const ageDays = Math.floor((Date.now() - lastBackup.getTime()) / 86400000);
             add(results, 'backup', 'Sao lưu gần nhất', ageDays <= 14 ? 'pass' : 'warn', `${formatDateTime(lastBackup)} · ${ageDays} ngày trước`);

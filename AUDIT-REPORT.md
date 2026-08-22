@@ -1,39 +1,30 @@
-# AUDIT REPORT — v44.0.0 Sổ Công Việc Pro
+# AUDIT REPORT — v45.0.0 Trung Tâm Liên Kết & Tích Hợp
 
 ## Kiểm tra tĩnh
 - Toàn bộ JavaScript nội bộ và `service-worker.js`: **PASS `node --check`**.
-- HTML ID: **346/346 duy nhất**, không có ID trùng.
-- Hàm JavaScript có tên: **505/505 duy nhất**, không phát hiện khai báo trùng.
-- Tài nguyên nội bộ tham chiếu từ HTML: **32**, không thiếu file.
-- DOM selector lõi trong `02-dom.js`: **190**, không thiếu ID.
-- App-shell Service Worker: **36 tài nguyên**, không thiếu file.
-- `APP_VERSION` trong state và Service Worker: cùng **44.0.0**.
-- `DATA_SCHEMA_VERSION` giữ nguyên để không ép migration dữ liệu năm học.
+- HTML ID: **371/371 duy nhất**, không phát hiện ID trùng.
+- Hàm JavaScript có tên: **530/530 duy nhất**, không phát hiện khai báo trùng.
+- Tài nguyên nội bộ tham chiếu từ HTML: **34**, thiếu: **0**.
+- PWA app-shell: **38 tài nguyên**, thiếu: **0**.
+- `APP_VERSION`: **45.0.0**; `DATA_SCHEMA_VERSION`: **1** (không đổi schema dữ liệu).
 
-## Smoke test Sổ Công Việc Pro
-Đã chạy runtime test trong Chromium với DOM đầy đủ và các dịch vụ mạng được cô lập:
-- Render Dashboard công việc: **PASS**.
-- Tạo/chuẩn hóa task v44: **PASS**.
-- Hiển thị nhiệm vụ đến hạn hôm nay: **PASS**.
-- Kanban đủ 4 cột và card draggable: **PASS**.
-- Đổi trạng thái task: **PASS**.
-- Nhiệm vụ lặp hàng tuần sinh đúng 1 lượt tiếp theo: **PASS**.
-- Mở lại rồi hoàn thành lần nữa không sinh trùng: **PASS**.
-- “Chuẩn bị tuần mới” tạo 4 việc và bấm lại không nhân bản: **PASS**.
-- Gợi ý hệ thống thêm vào Sổ và chống thêm trùng: **PASS**.
-- Nhiệm vụ kiểu v43 chỉ có `completed=true` được đọc thành `status=done`: **PASS**.
-- Ghi chú cũ vẫn giữ type/pinned: **PASS**.
-- Full init với Firebase được cô lập: **PASS**, `window.__teacherNotebookInitErrors = []`.
+## Kiểm tra Trung Tâm Liên Kết
+- Ba URL mặc định người dùng yêu cầu có mặt chính xác: **PASS**.
+- Nút ngữ cảnh **TKB trường ↗** trong tab Thời khóa biểu: **PASS**.
+- Full-init headless browser: **PASS**, không có `pageerror` và không có init error.
+- Render mặc định: **3** link card + **3** quick card.
+- Thêm liên kết tùy chỉnh: **PASS**.
+- Ghim liên kết tùy chỉnh và hiện ở Truy cập nhanh: **PASS**.
+- Tìm kiếm `TEMIS`: **PASS**, lọc còn đúng 1 kết quả.
+- URL nguy hiểm `javascript:`: **BỊ TỪ CHỐI**, không ghi vào localStorage.
+- Chuyển tab Liên Kết: **PASS**, `aria-selected=true` và panel active.
 
-## An toàn dữ liệu và cloud
-- `completed` vẫn được duy trì song song với `status` để các Dashboard/Báo cáo cũ tiếp tục hoạt động.
-- Work item mới chỉ thêm trường; không đổi cấu trúc workspace năm học.
-- Gợi ý hệ thống không tự tạo task; chỉ tạo khi người dùng bấm **Thêm vào sổ**.
-- Kanban chỉ thay đổi trạng thái khi người có quyền kéo card.
-- Công việc lặp lại không tạo lượt tiếp theo cho task nhóm của người khác khi admin chỉ đang xử lý hộ.
-- Firestore Rules template đã cho phép các trường v44 nhưng giữ quyền: thành viên tạo task của mình; chủ sở hữu hoặc admin được sửa/xóa.
+## An toàn
+- Chỉ chấp nhận URL `http:` / `https:`.
+- Website ngoài mở trong tab mới với `noopener,noreferrer`.
+- Không lưu mật khẩu hoặc phiên đăng nhập website bên ngoài.
+- Liên kết tùy chỉnh lưu ở `localStorage` riêng, không thay đổi workspace năm học/PPCT/TKB/Lịch báo giảng.
+- Service Worker chỉ cache file nội bộ của Trung Tâm Liên Kết; không cache nội dung các website ngoài.
 
-## Giới hạn cần kiểm tra sau deploy
-- Chế độ nhóm cần cập nhật Firestore Rules v44 một lần trước khi lưu các trường Pro mới.
-- Kéo-thả Kanban trên thiết bị cảm ứng phụ thuộc hỗ trợ drag-and-drop của trình duyệt; các nút đổi trạng thái vẫn hoạt động thay thế.
-- Firebase/Gemini/OCR thật vẫn phụ thuộc cấu hình, mạng và quota của tài khoản triển khai.
+## Sửa lỗi nhỏ kèm theo
+- Loại bỏ một ID `refreshYearDashboardBtn` bị lặp trong HTML của bản nguồn trước khi đóng gói v45.

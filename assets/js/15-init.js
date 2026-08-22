@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v44: nền v43 + Sổ Công Việc Pro
+        //  INIT — v45: nền v44 + Trung Tâm Liên Kết & Tích Hợp
         // ================================================================
         function safeInitStage(name, fn) {
             try {
@@ -110,6 +110,10 @@
             });
             safeInitStage('Trung tâm chẩn đoán', () => {
                 initHealthCenter();
+            });
+            safeInitStage('Trung tâm liên kết', () => {
+                if (typeof initLinkCenter === 'function') initLinkCenter();
+                if (typeof renderLinkCenter === 'function') renderLinkCenter();
             });
 
             // Cập nhật lại header/tổng quan sau khi mọi dữ liệu cục bộ đã nạp.
