@@ -30,6 +30,7 @@
         <link rel="stylesheet" href="assets/css/premium-ui.css" />
         <link rel="stylesheet" href="assets/css/pwa.css" />
         <link rel="stylesheet" href="assets/css/health-check.css" />
+        <link rel="stylesheet" href="assets/css/work-pro.css" />
 </head>
 <body class="premium-ui">
 
@@ -43,7 +44,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v43 · Kiểm tra sức khỏe hệ thống</span>
+                        <span>v44 · Sổ Công Việc Pro</span>
                         <i aria-hidden="true"></i>
                         <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
                     </div>
@@ -151,7 +152,7 @@
                         <span class="health-overall-badge" id="healthOverallStatus">Chưa kiểm tra</span>
                     </div>
                     <div class="health-summary-grid">
-                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v43</strong></div>
+                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v44</strong></div>
                         <div class="health-summary-item"><span>Dữ liệu</span><strong id="healthSummaryData">Đang tổng hợp…</strong></div>
                         <div class="health-summary-item"><span>Cloud</span><strong id="healthSummaryCloud">Đang kiểm tra…</strong></div>
                         <div class="health-summary-item"><span>Nhật ký</span><strong id="healthSummaryErrors">0 lỗi</strong></div>
@@ -437,7 +438,7 @@
                 <span class="icon">📑</span> Báo Cáo & Hồ Sơ
             </button>
             <button class="tab-btn" data-tab="workspace" role="tab" aria-selected="false" aria-controls="tab-workspace">
-                <span class="icon">🗂️</span> Sổ Công Việc
+                <span class="icon">🗂️</span> Công Việc Pro
             </button>
         </nav>
 
@@ -836,29 +837,60 @@
         </div>
 
         <!-- ============================================================ -->
-        <!-- TAB 5: SỔ CÔNG VIỆC                                           -->
+        <!-- TAB 5: SỔ CÔNG VIỆC PRO                                      -->
         <!-- ============================================================ -->
         <div class="tab-content" id="tab-workspace" role="tabpanel">
-            <div class="card">
-                <div class="card-header">
+            <div class="card work-pro-shell">
+                <div class="card-header work-pro-header">
                     <div>
-                        <h2>🗂️ Sổ công việc <small>ghi chú · bài soạn · nhiệm vụ</small></h2>
-                        <span class="sub">Lưu theo năm học; dữ liệu cá nhân và nhóm được tách biệt rõ ràng</span>
+                        <span class="work-pro-kicker">WORK MANAGEMENT</span>
+                        <h2>🗂️ Sổ Công Việc <small>PRO</small></h2>
+                        <span class="sub">Hôm nay · quá hạn · Kanban · lặp lại · liên kết trực tiếp với Kế hoạch/TKB/Báo giảng</span>
+                    </div>
+                    <div class="work-pro-header-actions">
+                        <button class="btn btn-outline" id="workWeeklyTemplateBtn" type="button">✨ Chuẩn bị tuần mới</button>
+                        <button class="btn btn-primary" id="addWorkItemBtn" type="button">＋ Thêm công việc</button>
                     </div>
                 </div>
+
                 <div class="work-scope-bar">
                     <div class="work-scope-switch" role="group" aria-label="Phạm vi sổ công việc">
                         <button class="work-scope-btn active" id="personalWorkScopeBtn" type="button" data-work-scope="personal">👤 Của tôi</button>
                         <button class="work-scope-btn" id="sharedWorkScopeBtn" type="button" data-work-scope="shared" hidden>👥 Nhóm giáo viên</button>
                     </div>
                     <div class="work-live-state" id="workLiveState">Dữ liệu đang lưu trên thiết bị này.</div>
+                    <div class="work-view-switch" role="group" aria-label="Kiểu hiển thị công việc">
+                        <button class="work-view-btn active" id="workListViewBtn" type="button" data-work-view="list">☷ Danh sách</button>
+                        <button class="work-view-btn" id="workKanbanViewBtn" type="button" data-work-view="kanban">▦ Kanban</button>
+                    </div>
                 </div>
-                <div class="work-stat-grid" id="workStatGrid">
-                    <div class="work-stat-card"><strong>0</strong><span>Ghi chú</span></div>
-                    <div class="work-stat-card"><strong>0</strong><span>Bài soạn</span></div>
-                    <div class="work-stat-card"><strong>0</strong><span>Nhiệm vụ chưa xong</span></div>
+
+                <div class="work-pro-overview" id="workStatGrid" aria-label="Tổng quan công việc">
+                    <button class="work-pro-stat today" type="button" data-work-smart-filter="today"><span>Hôm nay</span><strong>0</strong><small>Cần xử lý</small></button>
+                    <button class="work-pro-stat overdue" type="button" data-work-smart-filter="overdue"><span>Quá hạn</span><strong>0</strong><small>Cần ưu tiên</small></button>
+                    <button class="work-pro-stat week" type="button" data-work-smart-filter="week"><span>Tuần này</span><strong>0</strong><small>Đến hạn</small></button>
+                    <button class="work-pro-stat progress" type="button" data-work-smart-filter="doing"><span>Đang làm</span><strong>0</strong><small>Đang tiến hành</small></button>
+                    <button class="work-pro-stat done" type="button" data-work-smart-filter="done"><span>Đã xong</span><strong>0</strong><small>Trong năm học</small></button>
                 </div>
-                <div class="work-filter-bar">
+                <div class="work-pro-type-summary" id="workTypeSummary">0 ghi chú · 0 bài soạn · 0 nhiệm vụ</div>
+
+                <section class="work-suggestion-panel" id="workSuggestionPanel" aria-labelledby="workSuggestionTitle">
+                    <div class="work-suggestion-head">
+                        <div><strong id="workSuggestionTitle">🤖 Hệ thống gợi ý</strong><span id="workSuggestionSummary">Đang đối chiếu dữ liệu tuần…</span></div>
+                        <button class="btn btn-outline btn-sm" id="workRefreshSuggestionsBtn" type="button">↻ Làm mới</button>
+                    </div>
+                    <div class="work-suggestion-list" id="workSuggestionList"></div>
+                </section>
+
+                <div class="work-smart-filter-row" id="workSmartFilterRow" aria-label="Bộ lọc nhanh">
+                    <button class="work-smart-chip active" type="button" data-work-smart-filter="all">Tất cả</button>
+                    <button class="work-smart-chip" type="button" data-work-smart-filter="today">Hôm nay</button>
+                    <button class="work-smart-chip" type="button" data-work-smart-filter="overdue">Quá hạn</button>
+                    <button class="work-smart-chip" type="button" data-work-smart-filter="week">Tuần này</button>
+                    <button class="work-smart-chip" type="button" data-work-smart-filter="urgent">🔥 Ưu tiên cao</button>
+                </div>
+
+                <div class="work-filter-bar work-pro-filters">
                     <select id="workTypeFilter" aria-label="Lọc loại công việc">
                         <option value="">Tất cả loại</option>
                         <option value="note">Ghi chú</option>
@@ -867,14 +899,24 @@
                     </select>
                     <select id="workStatusFilter" aria-label="Lọc trạng thái">
                         <option value="">Tất cả trạng thái</option>
-                        <option value="open">Chưa hoàn thành</option>
-                        <option value="completed">Đã hoàn thành</option>
+                        <option value="todo">Chưa làm</option>
+                        <option value="doing">Đang làm</option>
+                        <option value="waiting">Chờ xử lý</option>
+                        <option value="done">Hoàn thành</option>
                         <option value="pinned">Đã ghim</option>
                     </select>
-                    <input id="workSearchInput" type="search" placeholder="Tìm theo tiêu đề hoặc nội dung…" autocomplete="off" />
-                    <button class="btn btn-primary" id="addWorkItemBtn" type="button">＋ Thêm mới</button>
+                    <select id="workPriorityFilter" aria-label="Lọc mức ưu tiên">
+                        <option value="">Tất cả ưu tiên</option>
+                        <option value="urgent">🔥 Gấp</option>
+                        <option value="high">Cao</option>
+                        <option value="normal">Bình thường</option>
+                        <option value="low">Thấp</option>
+                    </select>
+                    <select id="workWeekFilter" aria-label="Lọc tuần liên kết"><option value="">Tất cả tuần</option></select>
+                    <input id="workSearchInput" type="search" placeholder="Tìm tiêu đề, lớp, môn, nội dung…" autocomplete="off" />
                 </div>
                 <div class="work-workspace-notice" id="workWorkspaceNotice" hidden></div>
+                <div class="work-active-filter" id="workActiveFilter" hidden></div>
                 <div class="work-item-list" id="workItemList" aria-live="polite"></div>
             </div>
         </div>
@@ -1022,14 +1064,14 @@
         </section>
     </div>
 
-    <!-- MODAL GHI CHÚ / BÀI SOẠN / NHIỆM VỤ -->
+    <!-- MODAL SỔ CÔNG VIỆC PRO -->
     <div class="app-modal-backdrop" id="workItemModal" hidden>
-        <section class="app-modal" role="dialog" aria-modal="true" aria-labelledby="workItemModalTitle">
+        <section class="app-modal work-pro-modal" role="dialog" aria-modal="true" aria-labelledby="workItemModalTitle">
             <form id="workItemForm" novalidate>
                 <div class="app-modal-header">
                     <div>
                         <h3 class="app-modal-title" id="workItemModalTitle">Thêm mục công việc</h3>
-                        <div class="app-modal-subtitle" id="workItemModalSubtitle">Lưu ghi chú, bài soạn hoặc nhiệm vụ theo năm học.</div>
+                        <div class="app-modal-subtitle" id="workItemModalSubtitle">Lưu theo năm học và liên kết với đúng tuần/lớp/môn.</div>
                     </div>
                     <button class="app-modal-close" type="button" data-close-modal="workItemModal" aria-label="Đóng">✕</button>
                 </div>
@@ -1047,36 +1089,78 @@
                         <div class="app-form-field">
                             <label for="workItemType">Loại nội dung</label>
                             <select id="workItemType" required>
+                                <option value="task">Nhiệm vụ</option>
                                 <option value="note">Ghi chú</option>
                                 <option value="lesson">Bài soạn</option>
-                                <option value="task">Nhiệm vụ</option>
                             </select>
                         </div>
                         <div class="app-form-field span-all">
                             <label for="workItemTitle">Tiêu đề</label>
-                            <input id="workItemTitle" type="text" maxlength="160" placeholder="Ví dụ: Chuẩn bị bài Hàm số mũ" autocomplete="off" required />
+                            <input id="workItemTitle" type="text" maxlength="160" placeholder="Ví dụ: Hoàn thiện lịch báo giảng Tuần 5" autocomplete="off" required />
                         </div>
                         <div class="app-form-field span-all">
-                            <label for="workItemContent">Nội dung</label>
-                            <textarea id="workItemContent" rows="8" maxlength="12000"
-                                      placeholder="Nhập nội dung ghi chú, dàn ý bài soạn hoặc các việc cần làm…"></textarea>
+                            <label for="workItemContent">Nội dung / ghi chú</label>
+                            <textarea id="workItemContent" rows="5" maxlength="12000" placeholder="Mô tả việc cần làm, nội dung bài soạn hoặc ghi chú…"></textarea>
                         </div>
-                        <div class="app-form-field" id="workItemDueDateField">
-                            <label for="workItemDueDate">Hạn hoàn thành</label>
-                            <input id="workItemDueDate" type="date" />
-                        </div>
-                        <div class="app-form-field span-2">
-                            <label>Tùy chọn</label>
-                            <div class="work-form-options">
-                                <label><input id="workItemPinned" type="checkbox" /> Ghim lên đầu</label>
-                                <label id="workItemCompletedLabel"><input id="workItemCompleted" type="checkbox" /> Đã hoàn thành</label>
+
+                        <div class="work-task-fields span-all" id="workTaskFields">
+                            <div class="work-pro-form-grid">
+                                <div class="app-form-field">
+                                    <label for="workItemStatus">Trạng thái</label>
+                                    <select id="workItemStatus"><option value="todo">Chưa làm</option><option value="doing">Đang làm</option><option value="waiting">Chờ xử lý</option><option value="done">Hoàn thành</option></select>
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="workItemPriority">Ưu tiên</label>
+                                    <select id="workItemPriority"><option value="urgent">🔥 Gấp</option><option value="high">Cao</option><option value="normal" selected>Bình thường</option><option value="low">Thấp</option></select>
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="workItemDueDate">Hạn ngày</label>
+                                    <input id="workItemDueDate" type="date" />
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="workItemDueTime">Giờ</label>
+                                    <input id="workItemDueTime" type="time" />
+                                </div>
+                                <div class="app-form-field span-2">
+                                    <label for="workItemRecurrence">Lặp lại</label>
+                                    <select id="workItemRecurrence"><option value="none">Không lặp</option><option value="weekly">Mỗi tuần</option><option value="monthly">Mỗi tháng</option></select>
+                                    <div class="app-form-help">Khi hoàn thành, hệ thống tạo lần tiếp theo mà không nhân bản trùng.</div>
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="app-form-field span-all work-link-section">
+                            <label>🔗 Liên kết nghiệp vụ <small>để mở đúng nơi xử lý chỉ bằng 1 nút</small></label>
+                            <div class="work-pro-form-grid">
+                                <div class="app-form-field">
+                                    <label for="workItemLinkTarget">Khu vực</label>
+                                    <select id="workItemLinkTarget"><option value="">Không liên kết</option><option value="plan">Kế hoạch trường</option><option value="timetable">Thời khóa biểu</option><option value="teaching">Lịch báo giảng</option><option value="reports">Báo cáo & hồ sơ</option><option value="automation">Tự động hóa</option></select>
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="workItemLinkedWeek">Tuần</label>
+                                    <select id="workItemLinkedWeek"><option value="">Không chọn</option></select>
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="workItemClassName">Lớp</label>
+                                    <input id="workItemClassName" type="text" maxlength="40" placeholder="12A1" autocomplete="off" />
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="workItemSubject">Môn</label>
+                                    <input id="workItemSubject" type="text" maxlength="80" placeholder="Toán" autocomplete="off" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="app-form-field span-all">
+                            <label>Tùy chọn</label>
+                            <div class="work-form-options"><label><input id="workItemPinned" type="checkbox" /> Ghim lên đầu</label></div>
+                            <input id="workItemCompleted" type="checkbox" hidden />
+                            <span id="workItemCompletedLabel" hidden></span>
+                            <div id="workItemDueDateField" hidden></div>
                         </div>
                     </div>
                 </div>
                 <div class="app-modal-footer">
-                    <button class="btn btn-outline" type="button" data-close-modal="workItemModal"
-                            style="color:#475569;border-color:#cbd5e1;">Hủy</button>
+                    <button class="btn btn-outline" type="button" data-close-modal="workItemModal" style="color:#475569;border-color:#cbd5e1;">Hủy</button>
                     <button class="btn btn-success" id="saveWorkItemBtn" type="submit">💾 Lưu</button>
                 </div>
             </form>

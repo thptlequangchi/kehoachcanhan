@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v43: nền v42 + Health Check & Diagnostics
+        //  INIT — v44: nền v43 + Sổ Công Việc Pro
         // ================================================================
         function safeInitStage(name, fn) {
             try {
@@ -73,7 +73,7 @@
             safeInitStage('Danh sách PPCT', renderCurriculumProfiles);
             safeInitStage('Danh sách tuần báo giảng', populateWeekSelect);
             safeInitStage('An toàn dữ liệu', updateDataSafetySummary);
-            safeInitStage('Sổ công việc', renderWorkWorkspace);
+            safeInitStage('Sổ Công Việc Pro', () => { initWorkPro(); renderWorkWorkspace(); });
 
             safeInitStage('Khôi phục lịch báo giảng đang chọn', () => {
                 const savedWeek = getActiveYearWorkspace()?.selectedTeachingWeek

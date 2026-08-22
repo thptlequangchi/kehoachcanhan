@@ -1,0 +1,169 @@
+/* ========================================================================
+   SỔ TAY GIÁO VIÊN v44 — SỔ CÔNG VIỆC PRO
+   Lớp giao diện bổ sung, không thay đổi CSS nghiệp vụ cũ.
+   ======================================================================== */
+.premium-ui .work-pro-shell { overflow: visible; }
+.premium-ui .work-pro-header { align-items: flex-start; gap: 18px; }
+.premium-ui .work-pro-kicker {
+    display: inline-flex; margin-bottom: 6px; color: #2563eb; font-size: 10px;
+    font-weight: 900; letter-spacing: .13em;
+}
+.premium-ui .work-pro-header h2 { margin-bottom: 5px; }
+.premium-ui .work-pro-header h2 small {
+    display: inline-flex; align-items: center; padding: 3px 8px; margin-left: 5px;
+    border: 1px solid #bfdbfe; border-radius: 999px; background: #eff6ff;
+    color: #1d4ed8; font-size: 10px; font-weight: 900; letter-spacing: .06em;
+}
+.premium-ui .work-pro-header-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.premium-ui .work-view-switch {
+    display: inline-flex; gap: 4px; padding: 4px; border: 1px solid #dbe4ef;
+    border-radius: 12px; background: rgba(255,255,255,.92);
+}
+.premium-ui .work-view-btn {
+    min-height: 34px; padding: 7px 11px; border: 0; border-radius: 8px;
+    background: transparent; color: #64748b; font: inherit; font-size: 11px;
+    font-weight: 850; cursor: pointer;
+}
+.premium-ui .work-view-btn.active { background: #0f2744; color: #fff; box-shadow: 0 4px 12px rgba(15,39,68,.16); }
+
+.premium-ui .work-pro-overview {
+    display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 10px; margin: 14px 0 8px;
+}
+.premium-ui .work-pro-stat {
+    position: relative; overflow: hidden; min-height: 96px; padding: 13px 14px; text-align: left;
+    border: 1px solid #e2e8f0; border-radius: 16px; background: linear-gradient(145deg,#fff,#f8fafc);
+    color: #334155; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.premium-ui .work-pro-stat::after {
+    content: ''; position: absolute; width: 76px; height: 76px; right: -30px; top: -31px;
+    border-radius: 50%; background: currentColor; opacity: .055;
+}
+.premium-ui .work-pro-stat:hover, .premium-ui .work-pro-stat.active { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(15,23,42,.09); }
+.premium-ui .work-pro-stat.active { border-color: currentColor; }
+.premium-ui .work-pro-stat span, .premium-ui .work-pro-stat small { display: block; }
+.premium-ui .work-pro-stat span { font-size: 11px; font-weight: 850; }
+.premium-ui .work-pro-stat strong { display: block; margin: 8px 0 5px; color: #0f172a; font-size: 27px; line-height: 1; }
+.premium-ui .work-pro-stat small { color: #64748b; font-size: 10px; font-weight: 700; }
+.premium-ui .work-pro-stat.today { color: #2563eb; }
+.premium-ui .work-pro-stat.overdue { color: #dc2626; }
+.premium-ui .work-pro-stat.week { color: #7c3aed; }
+.premium-ui .work-pro-stat.progress { color: #d97706; }
+.premium-ui .work-pro-stat.done { color: #059669; }
+.premium-ui .work-pro-type-summary { margin-bottom: 13px; color: #64748b; font-size: 10px; font-weight: 750; text-align: right; }
+
+.premium-ui .work-suggestion-panel {
+    margin: 14px 0; padding: 14px; border: 1px solid #dbeafe; border-radius: 16px;
+    background: linear-gradient(145deg,rgba(239,246,255,.9),rgba(248,250,252,.92));
+}
+.premium-ui .work-suggestion-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+.premium-ui .work-suggestion-head > div { min-width: 0; }
+.premium-ui .work-suggestion-head strong, .premium-ui .work-suggestion-head span { display: block; }
+.premium-ui .work-suggestion-head strong { color: #173f70; font-size: 13px; }
+.premium-ui .work-suggestion-head span { margin-top: 3px; color: #64748b; font-size: 10px; }
+.premium-ui .work-suggestion-list { display: grid; gap: 8px; }
+.premium-ui .work-suggestion-item {
+    display: grid; grid-template-columns: 30px minmax(0,1fr) auto; align-items: center; gap: 10px;
+    padding: 10px 11px; border: 1px solid #dbeafe; border-radius: 12px; background: rgba(255,255,255,.92);
+}
+.premium-ui .work-suggestion-item.added { opacity: .72; border-color: #d1fae5; background: #f0fdf4; }
+.premium-ui .work-suggestion-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: #eff6ff; }
+.premium-ui .work-suggestion-item strong, .premium-ui .work-suggestion-item small { display: block; }
+.premium-ui .work-suggestion-item strong { color: #1e293b; font-size: 11px; line-height: 1.35; }
+.premium-ui .work-suggestion-item small { margin-top: 3px; color: #64748b; font-size: 10px; line-height: 1.4; }
+.premium-ui .work-suggestion-ok { padding: 11px 12px; border: 1px dashed #86efac; border-radius: 12px; color: #166534; background: #f0fdf4; font-size: 11px; font-weight: 750; }
+
+.premium-ui .work-smart-filter-row { display: flex; gap: 7px; flex-wrap: wrap; margin: 13px 0 10px; }
+.premium-ui .work-smart-chip {
+    padding: 7px 11px; border: 1px solid #dbe4ef; border-radius: 999px; background: #fff;
+    color: #475569; font: inherit; font-size: 10px; font-weight: 800; cursor: pointer;
+}
+.premium-ui .work-smart-chip.active { border-color: #93c5fd; background: #eff6ff; color: #1d4ed8; box-shadow: inset 0 0 0 1px rgba(37,99,235,.05); }
+.premium-ui .work-pro-filters { padding: 10px; border: 1px solid #e2e8f0; border-radius: 14px; background: #f8fafc; }
+.premium-ui .work-pro-filters select { flex: 1 1 150px; min-width: 130px; }
+.premium-ui .work-pro-filters input { flex: 2 1 260px; }
+.premium-ui .work-active-filter {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin: 0 0 12px; padding: 8px 11px; border: 1px solid #bfdbfe; border-radius: 10px;
+    background: #eff6ff; color: #1e40af; font-size: 10px;
+}
+.premium-ui .work-active-filter[hidden] { display: none; }
+.premium-ui .work-clear-filter { border: 0; background: transparent; color: #1d4ed8; font: inherit; font-size: 10px; font-weight: 850; cursor: pointer; }
+
+.premium-ui .work-list-mode { grid-template-columns: repeat(auto-fill,minmax(300px,1fr)); }
+.premium-ui .work-pro-card { min-height: 214px; position: relative; border-radius: 16px; }
+.premium-ui .work-pro-card.today { border-color: #93c5fd; box-shadow: 0 8px 24px rgba(37,99,235,.09); }
+.premium-ui .work-pro-card.overdue { border-color: #fca5a5; box-shadow: 0 8px 24px rgba(220,38,38,.08); }
+.premium-ui .work-pro-card.dragging { opacity: .42; transform: rotate(1deg) scale(.99); }
+.premium-ui .work-badge-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.premium-ui .work-status-badge, .premium-ui .work-priority-badge, .premium-ui .work-context-chip {
+    display: inline-flex; align-items: center; min-height: 23px; padding: 3px 7px; border-radius: 999px;
+    font-size: 9px; font-weight: 850; line-height: 1;
+}
+.premium-ui .work-status-badge.todo { background: #f1f5f9; color: #475569; }
+.premium-ui .work-status-badge.doing { background: #dbeafe; color: #1d4ed8; }
+.premium-ui .work-status-badge.waiting { background: #fef3c7; color: #a16207; }
+.premium-ui .work-status-badge.done { background: #dcfce7; color: #166534; }
+.premium-ui .work-priority-badge.urgent { background: #fee2e2; color: #b91c1c; }
+.premium-ui .work-priority-badge.high { background: #ffedd5; color: #c2410c; }
+.premium-ui .work-priority-badge.normal { background: #f1f5f9; color: #64748b; }
+.premium-ui .work-priority-badge.low { background: #ecfeff; color: #0e7490; }
+.premium-ui .work-context-row { display: flex; gap: 5px; flex-wrap: wrap; min-height: 23px; margin-bottom: 8px; }
+.premium-ui .work-context-chip { border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; }
+.premium-ui .work-due-label { font-weight: 850; }
+.premium-ui .work-due-label.overdue { color: #b91c1c; }
+.premium-ui .work-due-label.today { color: #1d4ed8; }
+.premium-ui .work-due-label.soon { color: #a16207; }
+.premium-ui .work-item-actions .danger { color: #b91c1c; border-color: #fecaca; }
+
+.premium-ui .work-kanban-mode { display: block; overflow: visible; }
+.premium-ui .work-kanban-board {
+    display: grid; grid-template-columns: repeat(4,minmax(245px,1fr)); gap: 10px; overflow-x: auto;
+    padding-bottom: 6px; align-items: start;
+}
+.premium-ui .work-kanban-column {
+    min-width: 245px; min-height: 320px; padding: 9px; border: 1px solid #e2e8f0;
+    border-radius: 15px; background: #f8fafc; transition: border-color .15s ease, background .15s ease;
+}
+.premium-ui .work-kanban-column.drag-over { border-color: #60a5fa; background: #eff6ff; box-shadow: inset 0 0 0 1px #93c5fd; }
+.premium-ui .work-kanban-column > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px 9px; color: #334155; font-size: 11px; font-weight: 900; }
+.premium-ui .work-kanban-column > header b { display: grid; place-items: center; min-width: 23px; height: 23px; padding: 0 6px; border-radius: 999px; background: #fff; border: 1px solid #e2e8f0; font-size: 10px; }
+.premium-ui .work-kanban-column.todo { border-top: 3px solid #94a3b8; }
+.premium-ui .work-kanban-column.doing { border-top: 3px solid #3b82f6; }
+.premium-ui .work-kanban-column.waiting { border-top: 3px solid #f59e0b; }
+.premium-ui .work-kanban-column.done { border-top: 3px solid #10b981; }
+.premium-ui .work-kanban-cards { display: grid; gap: 8px; }
+.premium-ui .work-kanban-cards .work-pro-card { min-height: 190px; padding: 11px; cursor: grab; }
+.premium-ui .work-kanban-cards .work-pro-card:active { cursor: grabbing; }
+.premium-ui .work-kanban-cards .work-item-content { -webkit-line-clamp: 3; }
+.premium-ui .work-kanban-cards .work-item-actions { gap: 5px; }
+.premium-ui .work-kanban-cards .work-item-actions .btn { padding: 5px 7px; font-size: 9px; }
+.premium-ui .work-kanban-empty { padding: 24px 8px; border: 1px dashed #cbd5e1; border-radius: 11px; color: #94a3b8; text-align: center; font-size: 10px; }
+
+.premium-ui .work-pro-modal { max-width: 820px; }
+.premium-ui .work-task-fields[hidden] { display: none; }
+.premium-ui .work-pro-form-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.premium-ui .work-pro-form-grid .span-2 { grid-column: span 2; }
+.premium-ui .work-link-section { margin-top: 3px; padding: 12px; border: 1px solid #dbeafe; border-radius: 13px; background: #f8fbff; }
+.premium-ui .work-link-section > label { margin-bottom: 9px; color: #173f70; }
+
+@media (max-width: 1050px) {
+    .premium-ui .work-pro-overview { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .premium-ui .work-pro-form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 720px) {
+    .premium-ui .work-pro-header { align-items: stretch; }
+    .premium-ui .work-pro-header-actions { width: 100%; justify-content: stretch; }
+    .premium-ui .work-pro-header-actions .btn { flex: 1 1 auto; }
+    .premium-ui .work-scope-bar { align-items: stretch; }
+    .premium-ui .work-view-switch { width: 100%; }
+    .premium-ui .work-view-btn { flex: 1 1 0; }
+    .premium-ui .work-pro-overview { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .premium-ui .work-pro-stat:last-child { grid-column: span 2; }
+    .premium-ui .work-suggestion-item { grid-template-columns: 30px minmax(0,1fr); }
+    .premium-ui .work-suggestion-item .btn { grid-column: 1 / -1; width: 100%; }
+    .premium-ui .work-pro-form-grid { grid-template-columns: 1fr; }
+    .premium-ui .work-pro-form-grid .span-2 { grid-column: span 1; }
+    .premium-ui .work-kanban-board { grid-template-columns: repeat(4, minmax(82vw,1fr)); scroll-snap-type: x proximity; }
+    .premium-ui .work-kanban-column { scroll-snap-align: start; }
+}

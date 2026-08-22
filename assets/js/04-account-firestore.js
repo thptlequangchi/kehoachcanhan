@@ -27,8 +27,9 @@ service cloud.firestore {
     function validSharedWorkItem(academicYear) {
       return request.resource.data.keys().hasOnly([
           'schemaVersion', 'academicYear', 'scope', 'type', 'title', 'content',
-          'dueDate', 'completed', 'pinned', 'createdBy', 'createdByName',
-          'createdAt', 'updatedAt'
+          'dueDate', 'dueTime', 'status', 'priority', 'completed', 'recurrence',
+          'recurrenceSpawnedAt', 'pinned', 'linkedWeek', 'className', 'subject',
+          'linkTarget', 'sourceKey', 'createdBy', 'createdByName', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.academicYear == academicYear
         && request.resource.data.scope == 'shared'

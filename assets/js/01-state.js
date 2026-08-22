@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '43.0.0';
+        const APP_VERSION = '44.0.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -71,7 +71,13 @@
         const SHARED_PLAN_HISTORY_STORAGE = 'teacher_shared_plan_history_v1';
         const SHARED_PLAN_HISTORY_LIMIT = 5;
         const WORK_SCOPE_STORAGE = 'teacher_work_scope_v1';
+        const WORK_VIEW_STORAGE = 'teacher_work_view_v1';
+        const WORK_SMART_FILTER_STORAGE = 'teacher_work_smart_filter_v1';
         const WORK_ITEM_TYPES = ['note', 'lesson', 'task'];
+        const WORK_TASK_STATUSES = ['todo', 'doing', 'waiting', 'done'];
+        const WORK_PRIORITIES = ['urgent', 'high', 'normal', 'low'];
+        const WORK_RECURRENCES = ['none', 'weekly', 'monthly'];
+        const WORK_LINK_TARGETS = ['', 'plan', 'timetable', 'teaching', 'reports', 'automation'];
         const FIREBASE_SDK_VERSION = '12.17.1';
         const ACCOUNT_CONFIG_STORAGE = 'teacher_notebook_firebase_config_v1';
         const ACCOUNT_ACCESS_MODE_STORAGE = 'teacher_notebook_access_mode_v1';
@@ -811,6 +817,14 @@
             const title = cleanText(value.title).slice(0, 160);
             const content = typeof value.content === 'string' ? value.content.trim().slice(0, 12000) : '';
             if (!title && !content) return null;
+            const rawStatus = WORK_TASK_STATUSES.includes(value.status) ? value.status : '';
+            const completed = type === 'task' && (rawStatus === 'done' || (!rawStatus && Boolean(value.completed)));
+            const status = type === 'task' ? (completed ? 'done' : rawStatus || 'todo') : '';
+            const priority = type === 'task' && WORK_PRIORITIES.includes(value.priority) ? value.priority : (type === 'task' ? 'normal' : '');
+            const dueTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value.dueTime || '')) ? String(value.dueTime) : '';
+            const linkedWeek = Number.parseInt(value.linkedWeek, 10);
+            const recurrence = type === 'task' && WORK_RECURRENCES.includes(value.recurrence) ? value.recurrence : 'none';
+            const linkTarget = WORK_LINK_TARGETS.includes(value.linkTarget) ? value.linkTarget : '';
             return {
                 id: cleanText(value.id),
                 academicYear: normalizeAcademicYear(value.academicYear) || '',
@@ -818,9 +832,19 @@
                 type,
                 title: title || (type === 'lesson' ? 'Bài soạn chưa đặt tên' : type === 'task' ? 'Nhiệm vụ chưa đặt tên' : 'Ghi chú chưa đặt tên'),
                 content,
-                dueDate: normalizeISODate(value.dueDate),
-                completed: type === 'task' && Boolean(value.completed),
+                dueDate: type === 'task' ? normalizeISODate(value.dueDate) : '',
+                dueTime: type === 'task' ? dueTime : '',
+                status,
+                priority,
+                completed,
+                recurrence,
+                recurrenceSpawnedAt: type === 'task' ? normalizeWorkTimestamp(value.recurrenceSpawnedAt) : '',
                 pinned: Boolean(value.pinned),
+                linkedWeek: linkedWeek > 0 && linkedWeek <= MAX_SCHOOL_WEEKS ? linkedWeek : null,
+                className: cleanText(value.className).slice(0, 40),
+                subject: cleanText(value.subject).slice(0, 80),
+                linkTarget,
+                sourceKey: cleanText(value.sourceKey).slice(0, 220),
                 createdAt: normalizeWorkTimestamp(value.createdAt),
                 updatedAt: normalizeWorkTimestamp(value.updatedAt),
                 createdBy: cleanText(value.createdBy),
@@ -925,6 +949,8 @@
             workItems: [],
             sharedWorkItems: [],
             workScope: localStorage.getItem(WORK_SCOPE_STORAGE) === 'shared' ? 'shared' : 'personal',
+            workView: localStorage.getItem(WORK_VIEW_STORAGE) === 'kanban' ? 'kanban' : 'list',
+            workSmartFilter: ['today','overdue','week','urgent','doing','done'].includes(localStorage.getItem(WORK_SMART_FILTER_STORAGE)) ? localStorage.getItem(WORK_SMART_FILTER_STORAGE) : 'all',
             workSyncError: '',
             teacherProfile: normalizeTeacherProfile(readStoredJSON('teacher_profile', DEFAULT_TEACHER_PROFILE)),
             recognitionMode: localStorage.getItem('teacher_recognition_mode') || 'auto',
