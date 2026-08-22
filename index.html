@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://generativelanguage.googleapis.com https://cdn.jsdelivr.net https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com; object-src 'none'; base-uri 'none'; form-action 'self';" />
-    <title>Sổ Tay Giáo Viên - Teacher's Notebook</title>
+    <title>Sổ Tay Giáo Viên Pro — Premium Teacher Workspace</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
@@ -15,17 +15,24 @@
     </script>
         <script src="assets/js/config.js"></script>
         <link rel="stylesheet" href="assets/css/app.css" />
+        <link rel="stylesheet" href="assets/css/premium-ui.css" />
 </head>
-<body>
+<body class="premium-ui">
 
     <div class="container">
 
         <!-- HEADER -->
         <header class="app-header">
             <div class="brand">
-                <div>
-                    <h1>📚 Sổ Tay Giáo Viên</h1>
-                    <span>Teacher's Notebook v40 — Báo cáo & xuất hồ sơ giáo viên</span>
+                <div class="brand-mark" aria-hidden="true"><span>Σ</span></div>
+                <div class="brand-copy">
+                    <span class="brand-kicker">TEACHER WORKSPACE</span>
+                    <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
+                    <div class="brand-meta">
+                        <span>v41 Premium UI</span>
+                        <i aria-hidden="true"></i>
+                        <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
+                    </div>
                 </div>
             </div>
             <div class="header-quick-actions" aria-label="Truy cập nhanh">

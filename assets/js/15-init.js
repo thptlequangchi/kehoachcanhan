@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v40: khởi động cô lập lỗi + Dashboard + Tự động hóa + Báo cáo
+        //  INIT — v41: nền v40 ổn định + Premium UI
         // ================================================================
         function safeInitStage(name, fn) {
             try {
@@ -138,4 +138,4 @@
             safeInitStage('Lưu hồ sơ khi đóng', () => writeStoredJSON('teacher_profile', state.teacherProfile));
         });
 
-        console.log(`📚 Sổ Tay Giáo Viên v${APP_VERSION} · Báo cáo & xuất hồ sơ giảng dạy đã sẵn sàng`);
+        console.log(`📚 Sổ Tay Giáo Viên v${APP_VERSION} · Premium Teacher Workspace đã sẵn sàng`);

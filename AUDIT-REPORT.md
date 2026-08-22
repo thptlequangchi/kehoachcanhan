@@ -1,26 +1,38 @@
-# Báo cáo kiểm tra v40.0.0 — Bước 8 Báo cáo & xuất hồ sơ
+# AUDIT REPORT — v41.0.0 Premium UI
 
 ## Phạm vi
+Bước 9 chỉ nâng lớp giao diện trên nền v40. Không thay đổi schema dữ liệu và không refactor logic nghiệp vụ.
 
-Bản v40 phát triển trực tiếp trên v39. Thay đổi chính gồm giao diện tab Báo Cáo & Hồ Sơ, CSS báo cáo, module `19-report-center.js`, khởi tạo module trong `15-init.js` và refresh tab trong `10-tabs.js`.
+## Kết quả kiểm tra tĩnh
+- JavaScript: toàn bộ file trong `assets/js` qua `node --check`.
+- 21 file JavaScript được giữ nguyên/đọc đúng cú pháp.
+- 438 function declaration, 438 tên duy nhất, không phát hiện khai báo hàm trùng.
+- 292 HTML ID, 292 ID duy nhất.
+- 59 button có ID: tất cả đều còn tham chiếu trong JavaScript.
+- 53 input/select/textarea có ID: tất cả đều còn tham chiếu trong JavaScript.
+- 144 `addEventListener` được giữ nguyên.
+- 23 tài nguyên nội bộ HTML/CSS/JS: không thiếu file.
+- `APP_VERSION = 41.0.0`.
+- `DATA_SCHEMA_VERSION` không thay đổi.
 
-## Kiểm tra đã thực hiện
+## Kiến trúc UI
+- `assets/css/app.css`: lớp giao diện/nghiệp vụ cũ.
+- `assets/css/premium-ui.css`: lớp override Premium UI mới, tải sau `app.css`.
+- Không xóa CSS cũ để giảm rủi ro hồi quy.
+- Không đổi ID DOM, tên tab, data attribute hoặc thứ tự script.
 
-- Cú pháp toàn bộ JavaScript bằng `node --check`: PASS.
-- Kiểm tra tất cả file CSS/JS nội bộ được `index.html` tham chiếu: PASS.
-- Kiểm tra ID HTML trùng: không có.
-- Kiểm tra khai báo hàm có tên trùng trên toàn bộ các module JS: không có.
-- Kiểm tra tất cả button/input/select/textarea có ID đều được JavaScript tham chiếu: PASS.
-- Smoke test module Báo cáo với dữ liệu mô phỏng:
-  - đếm tuần;
-  - độ phủ Kế hoạch;
-  - độ phủ TKB;
-  - tuần đã chốt;
-  - số tiết báo giảng;
-  - tiến độ PPCT;
-  - xem trước báo cáo: PASS.
-- Kiểm tra phạm vi theo tháng với tuần giao nhau qua ranh giới tháng: PASS.
+## Những phần được nâng thị giác
+- Header / nhận diện Teacher Workspace.
+- Account bar, Settings Hub, Năm học.
+- Tổng quan giáo viên.
+- Dashboard 37 tuần.
+- Tự động hóa công việc.
+- Trợ lý tuần.
+- Thanh tab sticky.
+- Cards, buttons, forms, upload zones, tables.
+- Report Center, Workspace, modals, toast.
+- Responsive laptop/tablet/mobile.
+- Print/PDF giữ phong cách hồ sơ trang trọng.
 
-## Giới hạn kiểm thử
-
-Các thao tác tải thực tế Firebase/Auth/Firestore, Gemini/OCR CDN và hộp thoại in của trình duyệt phụ thuộc môi trường mạng/trình duyệt khi triển khai. V40 không thay đổi các luồng đó so với v39.
+## Ghi chú
+Kiểm tra tĩnh xác nhận cấu trúc và liên kết code. Các dịch vụ Firebase/Firestore/Gemini/OCR vẫn phụ thuộc kết nối và cấu hình thật khi deploy, nhưng Bước 9 không thay các luồng này.

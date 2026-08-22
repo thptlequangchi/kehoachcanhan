@@ -1,33 +1,16 @@
-# Sổ Tay Giáo Viên v40.0.0 — Bước 8: Báo cáo & xuất hồ sơ
+# Sổ Tay Giáo Viên v41.0.0 — Bước 9: Premium UI
 
-Bản v40 phát triển trực tiếp trên v39. Không viết lại ứng dụng, không đổi schema dữ liệu và giữ nguyên toàn bộ Kế hoạch trường, TKB, PPCT, Lịch báo giảng, Sổ công việc, Dashboard năm học và Tự động hóa.
+Bản v41 phát triển trực tiếp trên v40. Toàn bộ nghiệp vụ và dữ liệu được giữ nguyên; thay đổi tập trung vào giao diện, thứ bậc thông tin và trải nghiệm sử dụng.
 
-## Chức năng mới
-
-- Thêm tab **Báo Cáo & Hồ Sơ**.
-- Lập báo cáo theo:
-  - tuần hiện tại;
-  - tháng;
-  - Học kỳ I (Tuần 1–18);
-  - Học kỳ II (Tuần 19–37);
-  - cả năm học;
-  - khoảng tuần tùy chọn.
-- Lọc theo lớp và môn.
-- Tự tổng hợp từ dữ liệu hiện có:
-  - Kế hoạch trường;
-  - Thời khóa biểu;
-  - Lịch báo giảng;
-  - tiến độ PPCT;
-  - Không học / học bù;
-  - Sổ công việc.
-- Hiển thị độ hoàn thiện hồ sơ theo các nguồn dữ liệu đến mốc hiện tại.
-- Xuất một workbook Excel nhiều sheet.
-- Xuất Word tổng hợp.
-- In hoặc lưu PDF qua hộp thoại in của trình duyệt.
-- Có xem trước dữ liệu trước khi xuất.
+## Điểm mới
+- Header Teacher Workspace cao cấp.
+- Dashboard 37 tuần, Tự động hóa và Trợ lý tuần được nâng cấp về thị giác.
+- Thanh chức năng sticky dạng glass navigation.
+- Card, button, form, bảng, upload zone, modal và Report Center đồng bộ cùng một design system.
+- Responsive tốt hơn cho laptop/tablet/mobile.
+- Lớp giao diện premium nằm riêng tại `assets/css/premium-ui.css`, dễ bảo trì và có thể tắt mà không đụng logic.
 
 ## Cập nhật GitHub Pages
+Giải nén và chép **toàn bộ** `index.html` cùng thư mục `assets` vào repo, chọn Replace, Commit rồi Push origin.
 
-Giải nén gói ZIP rồi chép **toàn bộ** `index.html` và thư mục `assets` vào repo hiện tại, chọn Replace, Commit và Push origin bằng GitHub Desktop.
-
-Không chỉ chép riêng `index.html` vì v40 có thêm `assets/js/19-report-center.js`.
+Không chỉ chép `index.html`, vì v41 có thêm `assets/css/premium-ui.css`.
