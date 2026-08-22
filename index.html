@@ -7,6 +7,17 @@
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://generativelanguage.googleapis.com https://cdn.jsdelivr.net https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com; object-src 'none'; base-uri 'none'; form-action 'self';" />
     <title>Sổ Tay Giáo Viên Pro — Premium Teacher Workspace</title>
+    <meta name="theme-color" content="#173f70" />
+    <meta name="application-name" content="Sổ Tay Giáo Viên Pro" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Sổ Tay GV Pro" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
@@ -16,6 +27,7 @@
         <script src="assets/js/config.js"></script>
         <link rel="stylesheet" href="assets/css/app.css" />
         <link rel="stylesheet" href="assets/css/premium-ui.css" />
+        <link rel="stylesheet" href="assets/css/pwa.css" />
 </head>
 <body class="premium-ui">
 
@@ -29,7 +41,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v41 Premium UI</span>
+                        <span>v42 · PWA &amp; Hiệu năng</span>
                         <i aria-hidden="true"></i>
                         <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
                     </div>
@@ -40,9 +52,29 @@
                     <span class="header-context-label">Đang làm việc</span>
                     <strong id="headerAcademicContext">Đang tải năm học…</strong>
                 </div>
+                <div class="pwa-header-actions" aria-label="Trạng thái ứng dụng">
+                    <span class="pwa-network-badge checking" id="networkStatusBadge" role="status" aria-live="polite">
+                        <span class="pwa-network-dot" aria-hidden="true"></span>
+                        <span id="networkStatusText">Đang kiểm tra mạng…</span>
+                    </span>
+                    <button class="btn pwa-install-btn" id="pwaInstallBtn" type="button" hidden>⬇️ Cài ứng dụng</button>
+                    <button class="btn pwa-update-btn" id="pwaUpdateBtn" type="button" hidden>↻ Cập nhật</button>
+                </div>
                 <button class="btn header-settings-btn" id="openSettingsHubBtn" type="button">⚙️ Cài đặt</button>
             </div>
         </header>
+
+        <section class="pwa-update-bar" id="pwaUpdateBar" role="status" aria-live="polite" hidden>
+            <div class="pwa-update-icon" aria-hidden="true">✨</div>
+            <div class="pwa-update-copy">
+                <strong>Có phiên bản Sổ Tay Giáo Viên mới</strong>
+                <span>Đã tải xong bản cập nhật. Có thể áp dụng ngay mà không ảnh hưởng dữ liệu đang lưu.</span>
+            </div>
+            <div class="pwa-update-actions">
+                <button class="btn btn-primary btn-sm" id="pwaApplyUpdateBtn" type="button">Cập nhật ngay</button>
+                <button class="btn btn-outline btn-sm" id="pwaDismissUpdateBtn" type="button">Để sau</button>
+            </div>
+        </section>
 
         <section class="account-bar" id="accountBar" aria-label="Tài khoản và nhóm giáo viên">
             <div class="account-identity">
@@ -75,6 +107,36 @@
                 <span class="settings-hub-chevron" aria-hidden="true">⌄</span>
             </summary>
             <div class="settings-hub-body">
+                <section class="pwa-settings-card" aria-label="Ứng dụng và chế độ ngoại tuyến">
+                    <div class="pwa-settings-heading">
+                        <div class="pwa-settings-icon" aria-hidden="true">📱</div>
+                        <div>
+                            <strong>Ứng dụng &amp; ngoại tuyến</strong>
+                            <span>Cài Sổ Tay Giáo Viên lên máy, mở nhanh hơn và tiếp tục dùng dữ liệu local khi mạng chập chờn.</span>
+                        </div>
+                    </div>
+                    <div class="pwa-health-grid">
+                        <div class="pwa-health-item">
+                            <span>Chế độ</span>
+                            <strong id="pwaAppModeStatus">Trình duyệt</strong>
+                        </div>
+                        <div class="pwa-health-item">
+                            <span>Bộ nhớ ứng dụng</span>
+                            <strong id="pwaCacheStatus">Đang kiểm tra…</strong>
+                        </div>
+                        <div class="pwa-health-item">
+                            <span>Bảo vệ dữ liệu local</span>
+                            <strong id="pwaStorageStatus">Đang kiểm tra…</strong>
+                        </div>
+                    </div>
+                    <div class="pwa-settings-actions">
+                        <button class="btn btn-primary btn-sm" id="pwaInstallSettingsBtn" type="button" hidden>⬇️ Cài ứng dụng</button>
+                        <button class="btn btn-outline btn-sm" id="pwaCheckUpdateBtn" type="button" style="color:#1d4ed8;border-color:#93c5fd;">↻ Kiểm tra cập nhật</button>
+                        <button class="btn btn-outline btn-sm" id="pwaPersistStorageBtn" type="button" style="color:#166534;border-color:#86efac;">🛡️ Bảo vệ dữ liệu</button>
+                        <button class="btn btn-outline btn-sm" id="pwaRefreshCacheBtn" type="button" style="color:#475569;border-color:#cbd5e1;">🧹 Làm mới ứng dụng</button>
+                    </div>
+                    <p class="pwa-settings-note" id="pwaSettingsNote">PWA hoạt động tốt nhất khi website được mở qua HTTPS trên GitHub Pages.</p>
+                </section>
                 <div class="api-section">
                 <label for="apiKeyInput">🔑 Gemini API</label>
                 <input type="password" id="apiKeyInput" placeholder="Nhập API key..."
@@ -1044,6 +1106,7 @@
     <script src="assets/js/17-year-dashboard.js"></script>
     <script src="assets/js/18-automation-center.js"></script>
     <script src="assets/js/19-report-center.js"></script>
+    <script src="assets/js/20-pwa.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

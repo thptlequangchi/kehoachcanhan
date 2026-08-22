@@ -1,38 +1,29 @@
-# AUDIT REPORT — v41.0.0 Premium UI
+# AUDIT REPORT — v42.0.0 PWA & Hiệu năng
 
-## Phạm vi
-Bước 9 chỉ nâng lớp giao diện trên nền v40. Không thay đổi schema dữ liệu và không refactor logic nghiệp vụ.
+## Kiểm tra tĩnh
+- Toàn bộ JavaScript nội bộ và `service-worker.js`: **PASS `node --check`**.
+- HTML ID: **307/307 duy nhất**, không phát hiện ID trùng.
+- Hàm JavaScript có tên: **450/450 duy nhất**, không phát hiện khai báo trùng.
+- Tài nguyên nội bộ được tham chiếu từ HTML: **28**, không thiếu file.
+- App-shell Service Worker: **32 tài nguyên**, tất cả tồn tại và trả HTTP 200 trong kiểm thử local.
+- Manifest JSON: hợp lệ; đủ icon 192, 512 và maskable 512.
+- `APP_VERSION` trong state và Service Worker: cùng **42.0.0**.
+- Thứ tự script mới: `19-report-center.js` → `20-pwa.js` → `15-init.js`.
 
-## Kết quả kiểm tra tĩnh
-- JavaScript: toàn bộ file trong `assets/js` qua `node --check`.
-- 21 file JavaScript được giữ nguyên/đọc đúng cú pháp.
-- 438 function declaration, 438 tên duy nhất, không phát hiện khai báo hàm trùng.
-- 292 HTML ID, 292 ID duy nhất.
-- 59 button có ID: tất cả đều còn tham chiếu trong JavaScript.
-- 53 input/select/textarea có ID: tất cả đều còn tham chiếu trong JavaScript.
-- 144 `addEventListener` được giữ nguyên.
-- 23 tài nguyên nội bộ HTML/CSS/JS: không thiếu file.
-- `APP_VERSION = 41.0.0`.
+## Kiểm tra an toàn dữ liệu
 - `DATA_SCHEMA_VERSION` không thay đổi.
+- PWA không xóa/chuyển đổi dữ liệu năm học.
+- Nút “Làm mới ứng dụng” chỉ xóa cache có tiền tố `teacher-notebook-app-`; không xóa localStorage/sessionStorage/Firestore.
+- Service Worker chỉ cache GET request; không can thiệp request ghi dữ liệu.
+- Request API Gemini/Firestore không bị Service Worker cache.
 
-## Kiến trúc UI
-- `assets/css/app.css`: lớp giao diện/nghiệp vụ cũ.
-- `assets/css/premium-ui.css`: lớp override Premium UI mới, tải sau `app.css`.
-- Không xóa CSS cũ để giảm rủi ro hồi quy.
-- Không đổi ID DOM, tên tab, data attribute hoặc thứ tự script.
+## Kiểm tra GitHub Pages
+- `start_url`, `scope`, manifest, Service Worker đều dùng đường dẫn tương đối `./`, phù hợp khi website nằm trong repo con như `/education/`.
+- Service Worker chỉ hoạt động trong secure context (HTTPS/localhost); GitHub Pages đáp ứng HTTPS.
+- Navigation dùng network-first; khi mất mạng fallback về bản app-shell đã cache.
 
-## Những phần được nâng thị giác
-- Header / nhận diện Teacher Workspace.
-- Account bar, Settings Hub, Năm học.
-- Tổng quan giáo viên.
-- Dashboard 37 tuần.
-- Tự động hóa công việc.
-- Trợ lý tuần.
-- Thanh tab sticky.
-- Cards, buttons, forms, upload zones, tables.
-- Report Center, Workspace, modals, toast.
-- Responsive laptop/tablet/mobile.
-- Print/PDF giữ phong cách hồ sơ trang trọng.
-
-## Ghi chú
-Kiểm tra tĩnh xác nhận cấu trúc và liên kết code. Các dịch vụ Firebase/Firestore/Gemini/OCR vẫn phụ thuộc kết nối và cấu hình thật khi deploy, nhưng Bước 9 không thay các luồng này.
+## Giới hạn cần kiểm tra sau khi deploy
+- Nút “Cài ứng dụng” phụ thuộc tiêu chí cài PWA của từng trình duyệt/hệ điều hành.
+- Gemini và Firestore vẫn cần Internet.
+- CDN runtime chỉ dùng offline sau khi tài nguyên đó đã tải thành công ít nhất một lần.
+- Việc cấp “lưu trữ bền vững” do trình duyệt quyết định.
