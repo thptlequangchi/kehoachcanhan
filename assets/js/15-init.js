@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v45: nền v44 + Trung Tâm Liên Kết & Tích Hợp
+        //  INIT — v45.1: nền v44 + Trung Tâm Liên Kết & Tích Hợp
         // ================================================================
         function safeInitStage(name, fn) {
             try {

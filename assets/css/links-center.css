@@ -1,4 +1,4 @@
-/* Sổ Tay Giáo Viên v45 — Trung Tâm Liên Kết */
+/* Sổ Tay Giáo Viên v45.1 — Trung Tâm Liên Kết */
 .links-center-shell{overflow:hidden;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%)}
 .links-center-hero{display:flex;justify-content:space-between;gap:24px;align-items:center;padding:26px 28px;border:1px solid #dbeafe;border-radius:20px;background:radial-gradient(circle at 90% 10%,rgba(59,130,246,.16),transparent 34%),linear-gradient(135deg,#eff6ff,#fff 50%,#f5f3ff);box-shadow:0 16px 40px rgba(15,23,42,.07);margin-bottom:18px}
 .links-center-kicker{display:inline-flex;font-size:11px;font-weight:900;letter-spacing:.16em;color:#2563eb;margin-bottom:6px}.links-center-hero h2{margin:0;color:#0f172a;font-size:26px;line-height:1.2}.links-center-hero h2 small{font-weight:700;color:#64748b}.links-center-hero p{max-width:720px;margin:8px 0 0;color:#526072;line-height:1.55}.links-center-hero-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}

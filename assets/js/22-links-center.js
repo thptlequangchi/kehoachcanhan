@@ -39,6 +39,17 @@
             builtIn: true,
             defaultPinned: true,
         },
+        {
+            id: 'builtin-vnedu',
+            name: 'vnEdu.vn - Mạng giáo dục Việt Nam',
+            shortName: 'vnEdu',
+            url: 'https://user.vnedu.vn/sso/?app_id=1&use_cache=1&continue=http://vnedu.vn/security/ssoVnedu',
+            category: 'Nhà trường',
+            icon: '🎓',
+            description: 'Mạng giáo dục Việt Nam vnEdu — truy cập hệ thống dành cho giáo viên và nhà trường.',
+            builtIn: true,
+            defaultPinned: true,
+        },
     ]);
 
     const byId = id => document.getElementById(id);
