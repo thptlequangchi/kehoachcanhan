@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v47: IndexedDB & dữ liệu nhiều năm
+        //  INIT — v48: Hồ sơ giáo viên tự động
         // ================================================================
         function safeInitStage(name, fn) {
             try {
@@ -129,6 +129,10 @@
             safeInitStage('Báo cáo & hồ sơ', () => {
                 initReportCenter();
                 renderReportCenter();
+            });
+            safeInitStage('Hồ sơ giáo viên tự động', () => {
+                if (typeof initProfilePackageCenter === 'function') initProfilePackageCenter();
+                if (typeof renderProfilePackageCenter === 'function') renderProfilePackageCenter();
             });
             safeInitStage('Trung tâm chẩn đoán', () => {
                 initHealthCenter();

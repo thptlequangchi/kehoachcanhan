@@ -34,6 +34,7 @@
         <link rel="stylesheet" href="assets/css/links-center.css" />
         <link rel="stylesheet" href="assets/css/command-palette.css" />
     <link rel="stylesheet" href="assets/css/storage-pro.css" />
+    <link rel="stylesheet" href="assets/css/profile-package.css" />
 </head>
 <body class="premium-ui">
 
@@ -47,7 +48,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v47.1 · IndexedDB &amp; Dữ liệu nhiều năm</span>
+                        <span>v48.0 · Hồ sơ giáo viên tự động</span>
                         <i aria-hidden="true"></i>
                         <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
                     </div>
@@ -874,6 +875,27 @@
                 </div>
                 <div class="report-range-hint" id="reportRangeHint">Đang xác định phạm vi báo cáo…</div>
 
+                <section class="profile-package-card" id="profilePackageCard" aria-labelledby="profilePackageTitle">
+                    <div class="profile-package-head">
+                        <div>
+                            <span class="profile-package-kicker">AUTO DOSSIER · BƯỚC 15</span>
+                            <h3 id="profilePackageTitle">📦 Hồ sơ giáo viên tự động</h3>
+                            <p>Dùng đúng phạm vi, lớp và môn đang chọn ở phía trên để tạo trọn bộ hồ sơ. Hệ thống chỉ đọc dữ liệu hiện có, không sửa Kế hoạch, TKB, PPCT hay Lịch báo giảng.</p>
+                        </div>
+                        <div class="profile-package-readiness" id="profilePackageReadiness" data-state="info">
+                            <strong>Đang kiểm tra…</strong><span>Mức sẵn sàng hồ sơ</span>
+                        </div>
+                    </div>
+                    <div class="profile-package-components" id="profilePackageComponents" aria-label="Thành phần gói hồ sơ"></div>
+                    <div class="profile-package-actions">
+                        <button class="btn btn-primary profile-package-main" id="profilePackageZipBtn" type="button">📦 Tạo gói hồ sơ ZIP</button>
+                        <button class="btn btn-outline btn-sm" id="profilePackageWordBtn" type="button" style="color:#1d4ed8;border-color:#93c5fd;">📝 Word</button>
+                        <button class="btn btn-success btn-sm" id="profilePackageExcelBtn" type="button">📊 Excel</button>
+                        <button class="btn btn-outline btn-sm" id="profilePackagePrintBtn" type="button" style="color:#7c3aed;border-color:#c4b5fd;">🖨️ PDF</button>
+                    </div>
+                    <div class="profile-package-note" id="profilePackageNote">Gói ZIP gồm Word, Excel, bản in sẵn để lưu PDF, dữ liệu JSON và các mục hồ sơ HTML riêng.</div>
+                </section>
+
                 <div class="report-kpi-grid">
                     <div class="report-kpi"><span>🗓️</span><div><strong id="reportKpiWeeks">0</strong><small>Tuần trong báo cáo</small></div></div>
                     <div class="report-kpi"><span>📋</span><div><strong id="reportKpiPlan">0/0</strong><small>Tuần có Kế hoạch</small></div></div>
@@ -1399,6 +1421,7 @@
     <script src="assets/js/17-year-dashboard.js"></script>
     <script src="assets/js/18-automation-center.js"></script>
     <script src="assets/js/19-report-center.js"></script>
+    <script src="assets/js/25-profile-package.js"></script>
     <script src="assets/js/20-pwa.js"></script>
     <script src="assets/js/21-health-check.js"></script>
     <script src="assets/js/22-links-center.js"></script>
