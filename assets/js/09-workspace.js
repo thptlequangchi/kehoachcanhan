@@ -308,8 +308,8 @@
             const dueDate = workWeekEndISO(week);
             const year = state.selectedAcademicYear;
             const weekStatus = getWeekOperationalStatus(week);
-            const add = (key, title, content, priority, linkTarget, linkedWeek = week, className = '', subject = '') => suggestions.push({
-                key, title, content, priority, linkTarget, linkedWeek, className, subject, dueDate,
+            const add = (key, title, content, priority, linkTarget, linkedWeek = week, className = '', subject = '', customDueDate = dueDate) => suggestions.push({
+                key, title, content, priority, linkTarget, linkedWeek, className, subject, dueDate: customDueDate,
             });
             if (!weekStatus.hasPlan) add(`system:${year}:plan:${week}`, `Bổ sung Kế hoạch Tuần ${week}`, 'Tuần hiện tại chưa có Kế hoạch nhà trường.', 'high', 'plan');
             if (!weekStatus.hasTimetable) add(`system:${year}:timetable:${week}`, `Hoàn thiện TKB Tuần ${week}`, 'Tuần hiện tại chưa có Thời khóa biểu.', 'high', 'timetable');
@@ -331,13 +331,29 @@
             }
 
             try {
+                const progress = buildProgressAttentionSnapshot(week);
+                progress.attentionRows.slice(0, 3).forEach(row => {
+                    const className = cleanText(row.className);
+                    const subject = cleanText(row.subject);
+                    const risk = row.status === 'behind' || row.forecastState === 'risk';
+                    add(
+                        `system:${year}:ppct:${className}:${subject}`,
+                        `Rà soát PPCT ${className || 'lớp'} · ${subject || 'môn học'}`,
+                        [cleanText(row.statusLabel), cleanText(row.forecastLabel), cleanText(row.currentTopic)].filter(Boolean).join(' · ') || 'Lớp–môn đang cần chú ý về tiến độ.',
+                        risk ? 'high' : 'normal',
+                        'teaching', week, className, subject, workTodayISO()
+                    );
+                });
+            } catch (_) { /* gợi ý PPCT không được làm gián đoạn sổ */ }
+
+            try {
                 const last = localStorage.getItem('teacher_last_backup_at_v1');
                 const age = last ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000) : 999;
                 if (!last || age > 14) {
                     suggestions.push({ key:`system:${year}:backup`, title:'Sao lưu dữ liệu Sổ Tay Giáo Viên', content:last ? `Đã ${age} ngày chưa xuất file sao lưu.` : 'Chưa ghi nhận file sao lưu gần đây.', priority:'high', linkTarget:'', linkedWeek:null, className:'', subject:'', dueDate:workTodayISO() });
                 }
             } catch (_) { /* noop */ }
-            return suggestions.slice(0, 8);
+            return suggestions;
         }
 
         function renderWorkSuggestions(allItems) {
@@ -704,14 +720,13 @@
             }
         }
 
-        async function addWorkSuggestion(index) {
-            const suggestion = workSuggestionCache[index];
-            if (!suggestion) return;
+        async function addWorkSystemSuggestion(suggestion, options = {}) {
+            if (!suggestion?.key) return false;
             const allItems = normalizeWorkItems(currentWorkItems(), state.workScope);
             const existing = workSuggestionExists(suggestion.key, allItems);
             if (existing || workPendingSourceKeys.has(suggestion.key)) {
-                showToast('ℹ️ Công việc này đã có hoặc đang được thêm vào sổ', 'info');
-                return;
+                if (!options.silent) showToast('ℹ️ Công việc này đã có hoặc đang được thêm vào sổ', 'info');
+                return false;
             }
             workPendingSourceKeys.add(suggestion.key);
             renderWorkSuggestions(allItems);
@@ -727,14 +742,22 @@
             try {
                 if (state.workScope === 'shared') await saveSharedWorkItem(item, null);
                 else await savePersonalWorkItem(item);
-                showToast('✅ Đã thêm gợi ý vào Sổ công việc', 'success');
+                if (!options.silent) showToast(options.successMessage || '✅ Đã thêm gợi ý vào Sổ công việc', 'success');
+                return true;
             } catch (error) {
                 state.workSyncError = translateAccountError(error);
-                showToast('❌ ' + state.workSyncError, 'error');
+                if (!options.silent) showToast('❌ ' + state.workSyncError, 'error');
+                return false;
             } finally {
                 workPendingSourceKeys.delete(suggestion.key);
                 renderWorkWorkspace();
             }
+        }
+
+        async function addWorkSuggestion(index) {
+            const suggestion = workSuggestionCache[index];
+            if (!suggestion) return false;
+            return addWorkSystemSuggestion(suggestion);
         }
 
         async function createWeeklyWorkTemplate() {

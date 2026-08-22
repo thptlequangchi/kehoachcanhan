@@ -1,22 +1,15 @@
-# Kiểm thử v50.1
+# TESTING — v50.2
 
-## Build-time
-Chạy tại thư mục gốc:
+## Tự động
+- `python tests/run-static-audit.py`
+- `node tests/run-state-fixtures.js`
+- `node --check` toàn bộ JS và Service Worker
 
-```bash
-python tests/run-static-audit.py
-node tests/run-state-fixtures.js
-```
+Static Audit buộc: chỉ một listener `teacher-data-changed`, một heartbeat 60 giây, không có `buildPpctAlerts()` riêng, có Shared PPCT snapshot và generic system-suggestion saver.
 
-`run-static-audit.py` kiểm tra thêm hai bất biến kiến trúc của v50.1:
-- chỉ có 1 listener `teacher-data-changed` dùng chung;
-- chỉ có 1 timer UI chu kỳ 60 giây.
-
-Fixture hiện gồm: năm học, Kế hoạch, TKB, Sổ Công Việc cũ, tiết báo giảng và quy tắc `final/finalized`.
-
-## Sau khi deploy
-1. Mở **Cài đặt → Kiểm thử hồi quy**.
-2. Chạy **Kiểm thử đầy đủ**.
-3. Xác nhận Overview hiển thị **Đã chốt** với một tuần đã chốt thật.
-4. Chuyển năm học rồi quay lại để kiểm tra TKB/PPCT/Lịch báo giảng vẫn giữ đúng dữ liệu.
-5. Thử Sao lưu JSON và xuất Word/PDF để xác nhận helper tải/in dùng chung hoạt động trên trình duyệt thực tế.
+## Kiểm tra trình duyệt sau deploy
+1. Mở Dashboard năm học và xác nhận lớp chậm/thiếu/nguy cơ PPCT vẫn hiển thị.
+2. Mở Sổ Công Việc → Hệ thống gợi ý; nếu có PPCT cần chú ý phải xuất hiện tại đây.
+3. Mở Nhắc việc; cùng cảnh báo PPCT không được nhân đôi.
+4. Bấm “Thêm vào sổ” từ Reminder; nhiệm vụ phải xuất hiện một lần với `sourceKey` PPCT.
+5. Chạy Kiểm thử hồi quy đầy đủ và xác nhận 0 lỗi bắt buộc.

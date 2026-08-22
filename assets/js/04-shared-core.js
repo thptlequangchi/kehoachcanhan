@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v50.1 — SHARED CORE
+   SỔ TAY GIÁO VIÊN v50.2 — SHARED CORE
    Hợp nhất các quy tắc dùng chung giữa Overview / Trợ lý tuần / Dashboard /
    Sổ Công Việc / Reminder / Report mà không thay đổi schema dữ liệu.
 ============================================================================ */
@@ -97,6 +97,28 @@ function getPendingWorkTasks(todayIso = '') {
             return ad.localeCompare(bd) || Number(b.pinned) - Number(a.pinned);
         })
         .map(item => ({ ...item, overdue: Boolean(todayIso && item.dueDate && item.dueDate < todayIso) }));
+}
+
+function classifyProgressRows(courseRows) {
+    const rows = Array.isArray(courseRows) ? courseRows : [];
+    const onTrackRows = rows.filter(row => ['ontrack', 'ahead', 'completed'].includes(row?.status));
+    const attentionRows = rows.filter(row => row?.status === 'behind' || row?.status === 'missing' || row?.forecastState === 'risk')
+        .sort((a, b) => {
+            const aDanger = Number(a?.status === 'behind' || a?.forecastState === 'risk');
+            const bDanger = Number(b?.status === 'behind' || b?.forecastState === 'risk');
+            return bDanger - aDanger || (a?.difference ?? 0) - (b?.difference ?? 0);
+        });
+    return { courseRows: rows, onTrackRows, attentionRows };
+}
+
+function buildProgressAttentionSnapshot(referenceWeek) {
+    const normalizedWeek = Math.max(1, Math.min(MAX_SCHOOL_WEEKS, Number.parseInt(referenceWeek, 10) || 1));
+    if (typeof buildProgressCourseCatalog !== 'function' || typeof buildCourseProgressRow !== 'function') {
+        return { referenceWeek: normalizedWeek, catalog: [], courseRows: [], onTrackRows: [], attentionRows: [] };
+    }
+    const catalog = buildProgressCourseCatalog();
+    const classified = classifyProgressRows(catalog.map(course => buildCourseProgressRow(course, normalizedWeek)));
+    return { referenceWeek: normalizedWeek, catalog, ...classified };
 }
 
 function downloadBlobFile(blob, filename, revokeDelay = 1000) {

@@ -1,4 +1,4 @@
-/* Bước 17 · v50.1 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
+/* Bước 17 · v50.2 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
 (() => {
     'use strict';
     const STORAGE_KEY = 'teacher_regression_last_v1';
@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.1.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.2.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -112,6 +112,16 @@
         tests.push(runSync('schedule-final-status','Trạng thái chốt dùng chung','Nghiệp vụ',() => {
             const ok=isScheduleFinalized({status:'final'}) && isScheduleFinalized({status:'finalized'}) && !isScheduleFinalized({status:'final',stale:true}) && !isScheduleFinalized({status:'draft'});
             return ok ? 'final/finalized được hiểu thống nhất; lịch stale không tính là đã chốt.' : {status:'fail',message:'Quy tắc trạng thái chốt đang không đồng nhất.'};
+        }));
+        tests.push(runSync('ppct-suggestion-engine','PPCT dùng chung engine gợi ý','Nghiệp vụ',() => {
+            const sample=classifyProgressRows([
+                {className:'12A1',subject:'Toán',status:'behind',difference:-2,forecastState:'safe'},
+                {className:'12A2',subject:'Toán',status:'ontrack',difference:0,forecastState:'safe'},
+                {className:'12A3',subject:'Toán',status:'ahead',difference:1,forecastState:'risk'},
+                {className:'12A4',subject:'Toán',status:'missing',difference:null,forecastState:'unknown'},
+            ]);
+            const ok=sample.courseRows.length===4 && sample.onTrackRows.length===2 && sample.attentionRows.length===3 && sample.attentionRows[0].className==='12A1';
+            return ok ? 'Dashboard/Sổ Công Việc/Reminder dùng chung quy tắc PPCT cần chú ý.' : {status:'fail',message:'Phân loại PPCT dùng chung không đúng.'};
         }));
         tests.push(runSync('state-shape','Cấu trúc state hiện tại','Dữ liệu',() => {
             const issues=[];

@@ -38,16 +38,10 @@
             const weekStates = [];
             for (let week = 1; week <= MAX_SCHOOL_WEEKS; week++) weekStates.push(getYearWeekState(week, referenceWeek));
             const elapsedStates = weekStates.filter(item => item.week <= referenceWeek);
-            const catalog = typeof buildProgressCourseCatalog === 'function' ? buildProgressCourseCatalog() : [];
-            const courseRows = typeof buildCourseProgressRow === 'function'
-                ? catalog.map(course => buildCourseProgressRow(course, referenceWeek)) : [];
-            const onTrackRows = courseRows.filter(row => ['ontrack', 'ahead', 'completed'].includes(row.status));
-            const attentionRows = courseRows.filter(row => row.status === 'behind' || row.status === 'missing' || row.forecastState === 'risk')
-                .sort((a, b) => {
-                    const aDanger = Number(a.status === 'behind' || a.forecastState === 'risk');
-                    const bDanger = Number(b.status === 'behind' || b.forecastState === 'risk');
-                    return bDanger - aDanger || (a.difference ?? 0) - (b.difference ?? 0);
-                });
+            const progressSnapshot = buildProgressAttentionSnapshot(referenceWeek);
+            const courseRows = progressSnapshot.courseRows;
+            const onTrackRows = progressSnapshot.onTrackRows;
+            const attentionRows = progressSnapshot.attentionRows;
             return {
                 currentWeek,
                 referenceWeek,

@@ -144,25 +144,6 @@
         }).filter(Boolean);
     }
 
-    function buildPpctAlerts(existingSourceKeys) {
-        if (typeof buildYearDashboardSnapshot !== 'function') return [];
-        try {
-            const snapshot = buildYearDashboardSnapshot();
-            return safeArray(snapshot.attentionRows).slice(0, 3).map(row => {
-                const key = `system:${state.selectedAcademicYear}:ppct:${clean(row.className)}:${clean(row.subject)}`;
-                if (existingSourceKeys.has(key)) return null;
-                const risk = row.status === 'behind' || row.forecastState === 'risk';
-                return {
-                    key,
-                    title:`Rà soát PPCT ${clean(row.className) || 'lớp'} · ${clean(row.subject) || 'môn học'}`,
-                    content:[clean(row.statusLabel), clean(row.forecastLabel), clean(row.currentTopic)].filter(Boolean).join(' · ') || 'Lớp–môn đang cần chú ý về tiến độ.',
-                    priority:risk ? 'high' : 'normal', linkTarget:'teaching', linkedWeek:snapshot.referenceWeek,
-                    className:clean(row.className), subject:clean(row.subject), dueDate:alertTodayISO(),
-                };
-            }).filter(Boolean);
-        } catch (_) { return []; }
-    }
-
     function buildSystemAlerts(allItems) {
         const settings = getAlertSettings();
         const now = Date.now();
@@ -171,8 +152,7 @@
         let suggestions = [];
         try { suggestions = typeof buildWorkSystemSuggestions === 'function' ? buildWorkSystemSuggestions() : []; }
         catch (_) { suggestions = []; }
-        suggestions = [...safeArray(suggestions), ...buildPpctAlerts(existingSourceKeys)];
-        return suggestions.map(suggestion => {
+        return safeArray(suggestions).map(suggestion => {
             const category = reminderCategoryFromSuggestion(suggestion);
             if (settings.mutedCategories[category]) return null;
             if (settings.dismissedDate[suggestion.key] === today) return null;
@@ -360,25 +340,11 @@
     }
     async function addSystemAlertToWork(alert) {
         if (alert.kind !== 'system') return;
-        const index = safeArray(window.workSuggestionCache || (typeof workSuggestionCache !== 'undefined' ? workSuggestionCache : [])).findIndex(s => s.key === alert.suggestion.key);
-        if (index >= 0 && typeof addWorkSuggestion === 'function') {
-            await addWorkSuggestion(index);
-            renderSmartReminderCenter();
+        if (typeof addWorkSystemSuggestion !== 'function') {
+            showToast?.('⚠️ Bộ máy gợi ý chưa sẵn sàng', 'error');
             return;
         }
-        // PPCT alert may not originate from the standard suggestion cache.
-        const s = alert.suggestion;
-        const now = new Date().toISOString();
-        const item = normalizeWorkItem({
-            id:createWorkItemId(), academicYear:state.selectedAcademicYear, scope:state.workScope,
-            type:'task', title:s.title, content:s.content, dueDate:s.dueDate || alertTodayISO(), status:'todo',
-            priority:s.priority || 'normal', completed:false, recurrence:'none', pinned:false,
-            linkedWeek:s.linkedWeek || null, className:s.className || '', subject:s.subject || '', linkTarget:s.linkTarget || '',
-            sourceKey:s.key || '', createdAt:now, updatedAt:now, createdBy:state.account.user?.uid || 'local',
-            createdByName:state.account.profile?.displayName || state.teacherProfile?.teacherName || 'Giáo viên',
-        }, state.workScope);
-        if (state.workScope === 'shared') await saveSharedWorkItem(item, null); else await savePersonalWorkItem(item);
-        showToast?.('✅ Đã thêm cảnh báo vào Sổ Công Việc', 'success');
+        await addWorkSystemSuggestion(alert.suggestion, { successMessage:'✅ Đã thêm cảnh báo vào Sổ Công Việc' });
         renderSmartReminderCenter();
     }
 

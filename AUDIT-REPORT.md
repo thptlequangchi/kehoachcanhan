@@ -1,47 +1,47 @@
-# AUDIT REPORT — v50.1.0 Làm sạch & hợp nhất logic
+# AUDIT REPORT — v50.2.0 Hợp nhất engine gợi ý
 
 ## Phạm vi
-- Nền trực tiếp: v50.0.0.
-- APP_VERSION / Service Worker: `50.1.0`.
-- `DATA_SCHEMA_VERSION`: giữ nguyên.
+- Nền trực tiếp: v50.1.0.
+- APP_VERSION / Service Worker: `50.2.0`.
+- `DATA_SCHEMA_VERSION`: giữ nguyên 1.
 - Không migration dữ liệu, không đổi Firestore Rules hay IndexedDB schema.
 
-## Các điểm trùng đã xử lý
-- Quy tắc trạng thái tuần: Overview / Command Center / Year Dashboard / Work Suggestions → dùng chung `getWeekOperationalStatus()`.
-- Quy tắc chốt: dùng chung `isScheduleFinalized()`; hỗ trợ dữ liệu cũ `finalized` nhưng trạng thái chuẩn vẫn là `final`.
-- Tiết dạy hôm nay: dùng chung `getTodayTeachingItems()`.
-- Công việc chưa hoàn thành: dùng chung `getPendingWorkTasks()`.
-- `teacher-data-changed`: từ 8 listener độc lập → 1 dispatcher dùng chung.
-- Timer 60 giây: từ 4 timer độc lập → 1 heartbeat dùng chung.
-- Áp workspace vào state/runtime: dùng chung `applyYearWorkspaceToRuntime()`.
-- Tải Blob: dùng chung `downloadBlobFile()`.
-- In Report/Profile: dùng chung `triggerPrintMode()`.
-- CSS header responsive: bỏ quy tắc order chồng nhau và `!important` không cần thiết.
-
-## Lỗi đã sửa
-- `15-ux.js` từng kiểm tra `meta.status === 'finalized'`, trong khi lịch báo giảng chuẩn lưu `status: 'final'`. Điều này có thể khiến Overview báo “Bản nháp” cho tuần thực tế đã chốt.
+## Kiến trúc gợi ý sau làm sạch
+- Shared Core có `classifyProgressRows()` và `buildProgressAttentionSnapshot()` làm nguồn phân loại tiến độ PPCT dùng chung.
+- Dashboard năm học dùng `buildProgressAttentionSnapshot()` thay vì tự lọc/sắp xếp PPCT riêng.
+- `buildWorkSystemSuggestions()` là engine duy nhất phát hiện các gợi ý Kế hoạch, TKB, Báo giảng, Học bù, PPCT và Sao lưu.
+- Reminder chỉ đọc `buildWorkSystemSuggestions()`; không còn `buildPpctAlerts()` riêng.
+- Mọi cảnh báo hệ thống chuyển thành nhiệm vụ qua `addWorkSystemSuggestion()`; không còn nhánh tạo task PPCT riêng.
+- `sourceKey` PPCT tiếp tục dùng dạng `system:<năm học>:ppct:<lớp>:<môn>` để chống trùng với dữ liệu đã tạo từ v49/v50.1.
 
 ## Kiểm tra tĩnh
+- Toàn bộ JavaScript nội bộ + `service-worker.js`: **PASS `node --check`**.
 - HTML ID: **427/427 duy nhất**.
-- Literal DOM refs: **196/196 hợp lệ**.
-- Hàm JavaScript có tên: **711/711 duy nhất**.
-- Tài nguyên HTML nội bộ: **46**, không thiếu.
-- Service Worker app-shell: **49 tài nguyên**, không thiếu.
-- APP_VERSION state / Service Worker: cùng **50.1.0**.
-- JavaScript nội bộ + Service Worker: **PASS `node --check`**.
-- `teacher-data-changed`: **1 listener dùng chung**.
-- heartbeat 60 giây: **1 timer dùng chung**.
+- Literal DOM references: **196**, không thiếu ID.
+- Hàm JavaScript có tên: **713/713 duy nhất**.
+- Tài nguyên nội bộ từ HTML: **46**, không thiếu file.
+- Service Worker app-shell: **49 tài nguyên**, không thiếu file.
+- Toàn bộ 49 app-shell resource trả **HTTP 200** khi kiểm thử local.
+- APP_VERSION state / Service Worker: cùng **50.2.0**.
+- `teacher-data-changed`: vẫn chỉ **1 listener dùng chung**.
+- Heartbeat UI 60 giây: vẫn chỉ **1 timer dùng chung**.
 
-## Fixture nghiệp vụ
+## Fixture / regression
 - Năm học: PASS.
 - Kế hoạch: PASS.
-- TKB: PASS.
-- Sổ Công Việc legacy: PASS.
+- Thời khóa biểu: PASS.
+- Tương thích Sổ Công Việc cũ: PASS.
 - Lịch báo giảng: PASS.
-- Quy tắc `final/finalized`: PASS.
+- Trạng thái `final/finalized`: PASS.
+- Phân loại PPCT cần chú ý: PASS.
+- Static Audit sẽ FAIL nếu `buildPpctAlerts()` riêng hoặc nhánh fallback PPCT cũ xuất hiện trở lại.
 
-## Kiểm tra app-shell local
-- **49/49** tài nguyên app-shell trả HTTP 200 qua local HTTP server.
+## An toàn nghiệp vụ
+- Hệ thống vẫn **không tự tạo nhiệm vụ** từ gợi ý.
+- PPCT chỉ xuất hiện như gợi ý/cảnh báo; giáo viên phải bấm “Thêm vào sổ”.
+- Khi nhiệm vụ đã tồn tại với cùng `sourceKey`, Sổ Công Việc và Reminder đều không tạo/nhắc cảnh báo hệ thống trùng.
+- Sau khi thêm vào sổ, Reminder chuyển sang nhắc chính nhiệm vụ thật theo hạn và thiết lập nhắc việc.
 
-## Giới hạn
-Chưa tuyên bố E2E trình duyệt thật trong môi trường build. Sau deploy GitHub Pages nên chạy **Kiểm thử hồi quy đầy đủ** trực tiếp trên trình duyệt/PWA đang sử dụng.
+## Giới hạn kiểm thử
+- Không tuyên bố E2E trình duyệt thật trong môi trường build.
+- Sau khi deploy GitHub Pages, nên chạy **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ**, đồng thời kiểm tra một lớp chậm PPCT ở Dashboard → Hệ thống gợi ý → Nhắc việc → Thêm vào sổ.
