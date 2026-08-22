@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v48.0 — Service Worker */
-const APP_VERSION = '48.0.0';
+/* Sổ Tay Giáo Viên v50.0 — Service Worker */
+const APP_VERSION = '50.0.0';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -19,6 +19,8 @@ const APP_SHELL = [
     './assets/css/command-palette.css',
     './assets/css/storage-pro.css',
     './assets/css/profile-package.css',
+    './assets/css/reminder-calendar.css',
+    './assets/css/regression-test.css',
     './assets/icons/apple-touch-icon.png',
     './assets/icons/icon-192.png',
     './assets/icons/icon-512.png',
@@ -51,6 +53,8 @@ const APP_SHELL = [
     './assets/js/23-global-command.js',
     './assets/js/24-storage-center.js',
     './assets/js/25-profile-package.js',
+    './assets/js/26-reminder-calendar.js',
+    './assets/js/27-regression-tests.js',
     './assets/js/config.js'
 ];
 
@@ -108,7 +112,7 @@ self.addEventListener('fetch', event => {
     if (request.method !== 'GET') return;
     const url = new URL(request.url);
     // Health Check cần xác nhận file thật trên server, không dùng lại bản cache cũ.
-    if (url.origin === self.location.origin && url.searchParams.has('__health')) {
+    if (url.origin === self.location.origin && (url.searchParams.has('__health') || url.searchParams.has('__regression'))) {
         event.respondWith(fetch(request, { cache: 'no-store' }));
         return;
     }

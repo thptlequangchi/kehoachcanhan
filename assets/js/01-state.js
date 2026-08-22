@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '48.0.0';
+        const APP_VERSION = '50.0.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -949,7 +949,7 @@
             workItems: [],
             sharedWorkItems: [],
             workScope: localStorage.getItem(WORK_SCOPE_STORAGE) === 'shared' ? 'shared' : 'personal',
-            workView: localStorage.getItem(WORK_VIEW_STORAGE) === 'kanban' ? 'kanban' : 'list',
+            workView: ['kanban','calendar'].includes(localStorage.getItem(WORK_VIEW_STORAGE)) ? localStorage.getItem(WORK_VIEW_STORAGE) : 'list',
             workSmartFilter: ['today','overdue','week','urgent','doing','done'].includes(localStorage.getItem(WORK_SMART_FILTER_STORAGE)) ? localStorage.getItem(WORK_SMART_FILTER_STORAGE) : 'all',
             workSyncError: '',
             teacherProfile: normalizeTeacherProfile(readStoredJSON('teacher_profile', DEFAULT_TEACHER_PROFILE)),

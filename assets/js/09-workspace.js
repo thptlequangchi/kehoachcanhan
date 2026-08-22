@@ -103,7 +103,7 @@
         }
 
         function setWorkView(view) {
-            state.workView = view === 'kanban' ? 'kanban' : 'list';
+            state.workView = ['kanban','calendar'].includes(view) ? view : 'list';
             localStorage.setItem(WORK_VIEW_STORAGE, state.workView);
             renderWorkWorkspace();
         }
@@ -379,13 +379,15 @@
             }
             personalWorkScopeBtn.classList.toggle('active', state.workScope === 'personal');
             sharedWorkScopeBtn.classList.toggle('active', state.workScope === 'shared');
-            document.getElementById('workListViewBtn')?.classList.toggle('active', state.workView !== 'kanban');
+            document.getElementById('workListViewBtn')?.classList.toggle('active', state.workView === 'list');
             document.getElementById('workKanbanViewBtn')?.classList.toggle('active', state.workView === 'kanban');
+            document.getElementById('workCalendarViewBtn')?.classList.toggle('active', state.workView === 'calendar');
 
             const allItems = normalizeWorkItems(currentWorkItems(), state.workScope);
             renderWorkStats(allItems);
             renderWorkActiveFilter();
             renderWorkSuggestions(allItems);
+            if (typeof window.renderSmartReminderCenter === 'function') window.renderSmartReminderCenter(allItems);
 
             workWorkspaceNotice.hidden = true;
             workWorkspaceNotice.className = 'work-workspace-notice';
@@ -407,7 +409,17 @@
 
             const items = filteredWorkItems(allItems);
             const filtered = Boolean(workTypeFilter?.value || workStatusFilter?.value || document.getElementById('workPriorityFilter')?.value || document.getElementById('workWeekFilter')?.value || workSearchInput?.value || state.workSmartFilter !== 'all');
-            if (state.workView === 'kanban') renderWorkKanban(items);
+            const calendarMode = state.workView === 'calendar';
+            const smartRow = document.getElementById('workSmartFilterRow');
+            const filterBar = document.querySelector('.work-pro-filters');
+            if (smartRow) smartRow.hidden = calendarMode;
+            if (filterBar) filterBar.hidden = calendarMode;
+            if (calendarMode) {
+                const activeFilter = document.getElementById('workActiveFilter');
+                if (activeFilter) activeFilter.hidden = true;
+                if (typeof window.renderWorkCalendar === 'function') window.renderWorkCalendar(allItems);
+                else renderWorkList(items, filtered);
+            } else if (state.workView === 'kanban') renderWorkKanban(items);
             else renderWorkList(items, filtered);
         }
 
@@ -445,6 +457,7 @@
             document.getElementById('workItemClassName').value = seed?.className || '';
             document.getElementById('workItemSubject').value = seed?.subject || '';
             workItemPinned.checked = Boolean(seed?.pinned);
+            if (typeof window.populateWorkReminderEditor === 'function') window.populateWorkReminderEditor(seed);
             updateWorkItemFormByType();
             openAppModal(workItemModal, workItemTitle);
         }
@@ -548,8 +561,11 @@
             saveWorkItemBtn.disabled = true;
             saveWorkItemBtn.textContent = 'Đang lưu…';
             try {
-                if (scope === 'shared') await saveSharedWorkItem(item, existing);
+                let persistedId = item.id;
+                if (scope === 'shared') persistedId = await saveSharedWorkItem(item, existing);
                 else await savePersonalWorkItem(item);
+                if (persistedId) item.id = persistedId;
+                if (typeof window.saveWorkReminderEditorPreference === 'function') window.saveWorkReminderEditorPreference(item);
                 closeAppModal(workItemModal);
                 showToast(`✅ Đã lưu ${workTypeInfo(type).label.toLowerCase()}`, 'success');
             } catch (error) {
@@ -680,6 +696,7 @@
                         persistActiveYearWorkspace();
                         renderWorkWorkspace();
                     }
+                    if (typeof window.removeWorkReminderPreference === 'function') window.removeWorkReminderPreference(item);
                     showToast('Đã xóa mục công việc', 'info');
                 }
             } catch (error) {
@@ -767,6 +784,7 @@
             populateWorkWeekOptions();
             document.getElementById('workListViewBtn')?.addEventListener('click', () => setWorkView('list'));
             document.getElementById('workKanbanViewBtn')?.addEventListener('click', () => setWorkView('kanban'));
+            document.getElementById('workCalendarViewBtn')?.addEventListener('click', () => setWorkView('calendar'));
             document.getElementById('workPriorityFilter')?.addEventListener('change', renderWorkWorkspace);
             document.getElementById('workWeekFilter')?.addEventListener('change', renderWorkWorkspace);
             document.getElementById('workSmartFilterRow')?.addEventListener('click', event => {

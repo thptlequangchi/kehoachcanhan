@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v48: Hồ sơ giáo viên tự động
+        //  INIT — v49: Nhắc việc thông minh & Lịch công việc
         // ================================================================
         function safeInitStage(name, fn) {
             try {
@@ -96,6 +96,7 @@
             safeInitStage('Danh sách tuần báo giảng', populateWeekSelect);
             safeInitStage('An toàn dữ liệu', updateDataSafetySummary);
             safeInitStage('Sổ Công Việc Pro', () => { initWorkPro(); renderWorkWorkspace(); });
+            safeInitStage('Nhắc việc & Lịch công việc', () => { if (typeof initSmartReminderCenter === 'function') initSmartReminderCenter(); });
 
             safeInitStage('Khôi phục lịch báo giảng đang chọn', () => {
                 const savedWeek = getActiveYearWorkspace()?.selectedTeachingWeek
@@ -146,6 +147,9 @@
             });
             safeInitStage('Trung tâm lưu trữ nhiều năm', () => {
                 if (typeof initStorageCenter === 'function') initStorageCenter();
+            });
+            safeInitStage('Kiểm thử hồi quy tự động', () => {
+                if (typeof initRegressionTestCenter === 'function') initRegressionTestCenter();
             });
 
             // Cập nhật lại header/tổng quan sau khi mọi dữ liệu cục bộ đã nạp.

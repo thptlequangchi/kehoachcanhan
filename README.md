@@ -1,23 +1,29 @@
-# Sổ Tay Giáo Viên v48.0.0 — Bước 15: Hồ sơ giáo viên tự động
+# Sổ Tay Giáo Viên v50.0.0 — Bước 17: Kiểm thử hồi quy tự động
 
-Bản v48 phát triển trực tiếp từ v47.1 và giữ nguyên toàn bộ IndexedDB/Storage Pro, Firebase, Gemini/OCR, Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc Pro, Dashboard, Automation, Report Center, PWA, Health Check, Trung tâm Liên kết và Ctrl+K.
+Bản v50 phát triển trực tiếp từ v49.0.0. Toàn bộ Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc Pro, Nhắc việc, Dashboard, Automation, Báo cáo/Hồ sơ, IndexedDB, PWA, Health Check, Liên kết và Ctrl+K được giữ nguyên.
 
-## Điểm mới Bước 15
-- Thêm khối **Hồ sơ giáo viên tự động** ngay trong tab **Báo cáo & Hồ sơ**.
-- Dùng trực tiếp phạm vi báo cáo hiện tại: tuần, tháng, học kỳ, cả năm hoặc khoảng tuần tùy chọn; hỗ trợ lọc lớp/môn.
-- Theo dõi mức sẵn sàng hồ sơ và số lượng dữ liệu của 7 thành phần: Kế hoạch, TKB, Lịch báo giảng, Tiến độ PPCT, Không học/Học bù, Sổ công việc, Tổng hợp.
-- Một nút **Tạo gói hồ sơ ZIP** tạo bộ hồ sơ theo tên giáo viên/năm học/phạm vi.
-- ZIP gồm: danh mục TXT, 7 tệp HTML theo từng mục hồ sơ, 1 Word `.doc`, 1 Excel `.xlsx` khi thư viện XLSX sẵn sàng, bản in HTML để **In → Lưu dưới dạng PDF**, và JSON manifest thống kê.
-- Có nút xuất riêng **Word**, **Excel**, **PDF (qua hộp thoại In)**.
-- Excel có 7 sheet tương ứng 7 nhóm hồ sơ.
-- Bổ sung lệnh **Tạo gói hồ sơ giáo viên** trong Ctrl+K.
-- ZIP được tạo bằng bộ đóng gói thuần JavaScript, không thêm CDN mới.
+## Điểm mới
+- Thêm **Trung tâm Kiểm thử hồi quy tự động** trong **Cài đặt & an toàn**.
+- Tự chạy **Kiểm thử nhanh** sau khi ứng dụng khởi động để phát hiện lỗi lõi sau nâng cấp.
+- Có **Kiểm thử đầy đủ** theo yêu cầu, kiểm tra thêm LocalStorage tạm, IndexedDB tạm, tài nguyên triển khai, PWA và các module báo cáo/nhắc việc.
+- Bộ kiểm thử dùng fixture riêng, không ghi đè Kế hoạch/TKB/PPCT/Lịch báo giảng/Sổ Công Việc thật.
+- IndexedDB được kiểm thử bằng database tạm có tên riêng rồi xóa ngay sau phép thử.
+- Không tự gọi Gemini, không ghi Firestore và không gửi dữ liệu người dùng ra ngoài.
+- Lưu kết quả kiểm thử gần nhất trên máy để đánh dấu **hồi quy mới** khi một test trước đây đạt nhưng lần sau bị lỗi.
+- Có nút **Sao chép báo cáo** và **Tải báo cáo JSON** để gửi khi cần phân tích lỗi.
+- Ctrl+K có lệnh **Kiểm thử hồi quy**.
+- Thêm `tests/run-static-audit.py`, `tests/run-state-fixtures.js` và GitHub Actions `.github/workflows/regression.yml` để tự kiểm tra mỗi lần Push/Pull Request.
 
-## Nguyên tắc an toàn
-- Chức năng chỉ đọc dữ liệu hiện có; không sửa Kế hoạch, TKB, PPCT, Lịch báo giảng hay Sổ Công Việc.
-- `DATA_SCHEMA_VERSION` giữ nguyên.
-- Không ghi Firestore khi xuất hồ sơ.
-- Nếu XLSX CDN chưa tải được, các định dạng còn lại vẫn dùng được; nút Excel sẽ báo rõ.
+## Hai chế độ kiểm thử
+### Kiểm thử nhanh
+Kiểm tra phiên bản, init, lỗi module, ID giao diện, hàm lõi, quy tắc 37 tuần, normalizer Kế hoạch/TKB/Báo giảng/Sổ Công Việc, state, liên kết và phân quyền giao diện hiện tại.
+
+### Kiểm thử đầy đủ
+Bao gồm toàn bộ kiểm thử nhanh và thêm: LocalStorage roundtrip bằng key tạm, IndexedDB roundtrip bằng DB tạm, Storage Pro, backup fixture, tài nguyên nội bộ trên server, Service Worker, Notification API, Report Center, Hồ sơ tự động, Reminder Center và Health Check.
 
 ## Cập nhật GitHub Pages
-Chép toàn bộ gói v48 vào repo và Push. Service Worker v48 bổ sung `assets/js/25-profile-package.js` và `assets/css/profile-package.css` vào app-shell.
+Chép toàn bộ gói vào repo rồi Push. Service Worker v50 sẽ nhận thêm `assets/js/27-regression-tests.js` và `assets/css/regression-test.css`.
+
+## Lưu ý
+- Kiểm thử tự động làm giảm mạnh nguy cơ lỗi sau nâng cấp nhưng không thay thế hoàn toàn việc thử một vài luồng thật trên trình duyệt đang dùng.
+- Kiểm thử đầy đủ không gọi Gemini/Firestore nên không tốn quota AI và không tạo dữ liệu cloud rác.

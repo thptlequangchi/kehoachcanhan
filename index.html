@@ -35,6 +35,8 @@
         <link rel="stylesheet" href="assets/css/command-palette.css" />
     <link rel="stylesheet" href="assets/css/storage-pro.css" />
     <link rel="stylesheet" href="assets/css/profile-package.css" />
+    <link rel="stylesheet" href="assets/css/reminder-calendar.css" />
+    <link rel="stylesheet" href="assets/css/regression-test.css" />
 </head>
 <body class="premium-ui">
 
@@ -48,7 +50,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v48.0 · Hồ sơ giáo viên tự động</span>
+                        <span>v50.0 · Kiểm thử hồi quy tự động</span>
                         <i aria-hidden="true"></i>
                         <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
                     </div>
@@ -63,6 +65,11 @@
                     <span class="header-command-icon" aria-hidden="true">🔍</span>
                     <span class="header-command-label">Tìm nhanh</span>
                     <kbd class="header-command-kbd">Ctrl K</kbd>
+                </button>
+                <button class="header-reminder-trigger" id="smartReminderHeaderBtn" type="button" title="Mở Nhắc việc thông minh">
+                    <span class="header-reminder-icon" aria-hidden="true">🔔</span>
+                    <span class="header-reminder-label">Nhắc việc</span>
+                    <span class="header-reminder-badge" id="smartReminderHeaderBadge" hidden>0</span>
                 </button>
                 <nav class="header-favorite-links" aria-label="Liên kết dùng thường xuyên">
                     <a class="header-favorite-link timetable"
@@ -133,7 +140,7 @@
         <details class="settings-hub" id="settingsHub">
             <summary>
                 <span class="settings-hub-title">⚙️ Cài đặt &amp; an toàn</span>
-                <span class="settings-hub-summary">Chẩn đoán · Gemini · OCR · Sao lưu dữ liệu</span>
+                <span class="settings-hub-summary">Chẩn đoán · Kiểm thử · Gemini · OCR · Sao lưu dữ liệu</span>
                 <span class="settings-hub-chevron" aria-hidden="true">⌄</span>
             </summary>
             <div class="settings-hub-body">
@@ -192,6 +199,36 @@
                     </div>
                     <p class="storage-pro-note" id="storageProStatus"><strong>Nguyên tắc an toàn:</strong> không xóa dữ liệu năm học; chỉ chuyển nơi lưu các phần dung lượng lớn và luôn có fallback nếu IndexedDB không khả dụng.</p>
                 </section>
+                <section class="regression-center-card" id="regressionCenterCard" aria-label="Kiểm thử hồi quy tự động">
+                    <div class="regression-center-heading">
+                        <div class="regression-center-title">
+                            <div class="regression-center-icon" aria-hidden="true">🧪</div>
+                            <div>
+                                <strong>Kiểm thử hồi quy tự động</strong>
+                                <span>Kiểm tra các chức năng lõi sau mỗi lần nâng cấp mà không sửa dữ liệu thật của giáo viên.</span>
+                            </div>
+                        </div>
+                        <span class="regression-overall-badge" id="regressionOverallStatus">Chưa chạy</span>
+                    </div>
+                    <div class="regression-summary-grid">
+                        <div class="regression-summary-item"><span>Đạt</span><strong id="regressionPassCount">0</strong></div>
+                        <div class="regression-summary-item"><span>Cảnh báo</span><strong id="regressionWarnCount">0</strong></div>
+                        <div class="regression-summary-item"><span>Lỗi</span><strong id="regressionFailCount">0</strong></div>
+                        <div class="regression-summary-item"><span>Hồi quy mới</span><strong id="regressionNewFailCount">0</strong></div>
+                    </div>
+                    <div class="regression-center-actions">
+                        <button class="btn btn-primary btn-sm" id="runRegressionQuickBtn" type="button">⚡ Kiểm thử nhanh</button>
+                        <button class="btn btn-outline btn-sm" id="runRegressionFullBtn" type="button" style="color:#6d28d9;border-color:#c4b5fd;">🧪 Kiểm thử đầy đủ</button>
+                        <button class="btn btn-outline btn-sm" id="downloadRegressionReportBtn" type="button" style="color:#475569;border-color:#cbd5e1;">⬇️ Tải báo cáo</button>
+                        <button class="btn btn-outline btn-sm" id="copyRegressionReportBtn" type="button" style="color:#1d4ed8;border-color:#93c5fd;">📋 Sao chép báo cáo</button>
+                    </div>
+                    <div class="regression-run-meta" id="regressionRunMeta">Sau khi khởi động, trang tự chạy bộ kiểm thử nhanh. Kiểm thử đầy đủ chỉ chạy khi thầy chủ động bấm và không gọi Gemini/Firestore.</div>
+                    <div class="regression-results" id="regressionResults"></div>
+                    <details class="regression-details" id="regressionDetails">
+                        <summary>📋 Xem toàn bộ kết quả kiểm thử</summary>
+                        <div class="regression-result-list" id="regressionResultList"></div>
+                    </details>
+                </section>
                 <section class="health-center-card" id="healthCenterCard" aria-label="Kiểm tra sức khỏe và chẩn đoán hệ thống">
                     <div class="health-center-heading">
                         <div class="health-center-title-wrap">
@@ -204,7 +241,7 @@
                         <span class="health-overall-badge" id="healthOverallStatus">Chưa kiểm tra</span>
                     </div>
                     <div class="health-summary-grid">
-                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v47.1</strong></div>
+                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v50.0</strong></div>
                         <div class="health-summary-item"><span>Dữ liệu</span><strong id="healthSummaryData">Đang tổng hợp…</strong></div>
                         <div class="health-summary-item"><span>Cloud</span><strong id="healthSummaryCloud">Đang kiểm tra…</strong></div>
                         <div class="health-summary-item"><span>Nhật ký</span><strong id="healthSummaryErrors">0 lỗi</strong></div>
@@ -926,9 +963,10 @@
                     <div>
                         <span class="work-pro-kicker">WORK MANAGEMENT</span>
                         <h2>🗂️ Sổ Công Việc <small>PRO</small></h2>
-                        <span class="sub">Hôm nay · quá hạn · Kanban · lặp lại · liên kết trực tiếp với Kế hoạch/TKB/Báo giảng</span>
+                        <span class="sub">Nhắc việc thông minh · lịch tuần/tháng · Kanban · lặp lại · liên kết Kế hoạch/TKB/Báo giảng</span>
                     </div>
                     <div class="work-pro-header-actions">
+                        <button class="btn btn-outline" id="workExportIcsBtn" type="button">📤 Xuất lịch .ics</button>
                         <button class="btn btn-outline" id="workWeeklyTemplateBtn" type="button">✨ Chuẩn bị tuần mới</button>
                         <button class="btn btn-primary" id="addWorkItemBtn" type="button">＋ Thêm công việc</button>
                     </div>
@@ -943,6 +981,7 @@
                     <div class="work-view-switch" role="group" aria-label="Kiểu hiển thị công việc">
                         <button class="work-view-btn active" id="workListViewBtn" type="button" data-work-view="list">☷ Danh sách</button>
                         <button class="work-view-btn" id="workKanbanViewBtn" type="button" data-work-view="kanban">▦ Kanban</button>
+                        <button class="work-view-btn" id="workCalendarViewBtn" type="button" data-work-view="calendar">📅 Lịch</button>
                     </div>
                 </div>
 
@@ -954,6 +993,29 @@
                     <button class="work-pro-stat done" type="button" data-work-smart-filter="done"><span>Đã xong</span><strong>0</strong><small>Trong năm học</small></button>
                 </div>
                 <div class="work-pro-type-summary" id="workTypeSummary">0 ghi chú · 0 bài soạn · 0 nhiệm vụ</div>
+
+                <section class="smart-reminder-panel" id="smartReminderCenter" aria-labelledby="smartReminderTitle">
+                    <div class="smart-reminder-head">
+                        <div>
+                            <span class="smart-reminder-kicker">SMART REMINDERS</span>
+                            <strong id="smartReminderTitle">🔔 Nhắc việc thông minh</strong>
+                            <span id="smartReminderSummary">Đang kiểm tra việc đến hạn và cảnh báo hệ thống…</span>
+                        </div>
+                        <div class="smart-reminder-actions">
+                            <button class="btn btn-outline btn-sm" id="smartReminderPermissionBtn" type="button">🔔 Bật thông báo</button>
+                            <button class="btn btn-outline btn-sm" id="smartReminderRestoreBtn" type="button" hidden>↺ Bật lại cảnh báo</button>
+                            <button class="btn btn-primary btn-sm" id="smartReminderRefreshBtn" type="button">↻ Làm mới</button>
+                        </div>
+                    </div>
+                    <div class="smart-reminder-stats" id="smartReminderStats">
+                        <button type="button" data-reminder-filter="urgent"><span>Khẩn cấp</span><strong>0</strong></button>
+                        <button type="button" data-reminder-filter="today"><span>Hôm nay</span><strong>0</strong></button>
+                        <button type="button" data-reminder-filter="upcoming"><span>Sắp tới</span><strong>0</strong></button>
+                        <button type="button" data-reminder-filter="system"><span>Hệ thống</span><strong>0</strong></button>
+                    </div>
+                    <div class="smart-reminder-note" id="smartReminderPermissionNote">Thông báo trình duyệt chỉ được gửi khi ứng dụng đang mở/hoạt động; lịch vẫn hiển thị đầy đủ ngay trong Sổ Tay.</div>
+                    <div class="smart-reminder-list" id="smartReminderList" aria-live="polite"></div>
+                </section>
 
                 <section class="work-suggestion-panel" id="workSuggestionPanel" aria-labelledby="workSuggestionTitle">
                     <div class="work-suggestion-head">
@@ -1281,10 +1343,23 @@
                                     <label for="workItemDueTime">Giờ</label>
                                     <input id="workItemDueTime" type="time" />
                                 </div>
-                                <div class="app-form-field span-2">
+                                <div class="app-form-field">
                                     <label for="workItemRecurrence">Lặp lại</label>
                                     <select id="workItemRecurrence"><option value="none">Không lặp</option><option value="weekly">Mỗi tuần</option><option value="monthly">Mỗi tháng</option></select>
-                                    <div class="app-form-help">Khi hoàn thành, hệ thống tạo lần tiếp theo mà không nhân bản trùng.</div>
+                                    <div class="app-form-help">Hoàn thành sẽ tạo lần tiếp theo, chống trùng.</div>
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="workItemReminderLead">Nhắc trước hạn</label>
+                                    <select id="workItemReminderLead">
+                                        <option value="auto">✨ Tự động theo ưu tiên</option>
+                                        <option value="none">Không nhắc</option>
+                                        <option value="0">Đúng thời điểm</option>
+                                        <option value="30">30 phút</option>
+                                        <option value="120">2 giờ</option>
+                                        <option value="1440">1 ngày</option>
+                                        <option value="2880">2 ngày</option>
+                                    </select>
+                                    <div class="app-form-help">Thiết lập nhắc là cá nhân trên thiết bị này, kể cả công việc nhóm.</div>
                                 </div>
                             </div>
                         </div>
@@ -1422,11 +1497,13 @@
     <script src="assets/js/18-automation-center.js"></script>
     <script src="assets/js/19-report-center.js"></script>
     <script src="assets/js/25-profile-package.js"></script>
+    <script src="assets/js/26-reminder-calendar.js"></script>
     <script src="assets/js/20-pwa.js"></script>
     <script src="assets/js/21-health-check.js"></script>
     <script src="assets/js/22-links-center.js"></script>
     <script src="assets/js/23-global-command.js"></script>
     <script src="assets/js/24-storage-center.js"></script>
+    <script src="assets/js/27-regression-tests.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>
