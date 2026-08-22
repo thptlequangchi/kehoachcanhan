@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v45.2 — TRUNG TÂM KIỂM TRA SỨC KHỎE & CHẨN ĐOÁN
+   SỔ TAY GIÁO VIÊN v45.3 — TRUNG TÂM KIỂM TRA SỨC KHỎE & CHẨN ĐOÁN
    Chỉ đọc trạng thái hệ thống. Không tự sửa hoặc gửi dữ liệu ra ngoài.
    ============================================================================ */
 (() => {

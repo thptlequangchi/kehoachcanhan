@@ -574,3 +574,24 @@ body.premium-ui::before {
     body.premium-ui::before { display:none !important; }
     .premium-ui .app-header, .premium-ui .card, .premium-ui .year-dashboard, .premium-ui .automation-center, .premium-ui .teacher-command-center { box-shadow:none !important; }
 }
+
+
+/* ================================================================
+   v45.3 — GIAO DIỆN GỌN THEO VAI TRÒ
+   Các công cụ quản trị/kỹ thuật không xuất hiện với giáo viên thường.
+   ================================================================ */
+body[data-account-role="teacher"] #teamAdminBtn,
+body[data-account-role="teacher"] #accountSetupBtn,
+body[data-account-role="personal"] #teamAdminBtn,
+body[data-account-role="personal"] #accountSetupBtn,
+body[data-account-role="guest"] #teamAdminBtn {
+    display: none !important;
+}
+
+.account-actions:empty { display: none; }
+.role-admin-tools {
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+}

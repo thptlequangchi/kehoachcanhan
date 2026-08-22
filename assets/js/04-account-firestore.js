@@ -222,6 +222,13 @@ service cloud.firestore {
                 && state.account.profile?.status === 'active');
         }
 
+        function accountCanManageGroup() {
+            return Boolean(state.account.accessMode === 'group'
+                && state.account.user
+                && state.account.profile?.status === 'active'
+                && state.account.profile?.role === 'admin');
+        }
+
         function updateAccountPresentation() {
             const account = state.account;
             const configured = isValidFirebaseConfig(account.config);
@@ -237,7 +244,9 @@ service cloud.firestore {
             teamAdminBtn.hidden = true;
             accountPersonalModeBtn.hidden = true;
             accountSignOutBtn.hidden = true;
-            accountSetupBtn.hidden = false;
+            // v45.3: nút thiết lập/kiểm tra nhóm không chiếm chỗ trên thanh công cụ.
+            // Khi cần thiết lập, nút chính sẽ mở đúng màn hình; admin kiểm tra nhóm từ Quản trị nhóm.
+            accountSetupBtn.hidden = true;
             accountSetupBtn.textContent = configured ? '🩺 Kiểm tra nhóm' : '⚙️ Thiết lập';
             accountPrimaryBtn.hidden = false;
             cloudSyncBadge.hidden = true;
@@ -254,7 +263,7 @@ service cloud.firestore {
                 accountRoleBadge.textContent = 'Cá nhân';
                 accountRoleBadge.className = 'account-role-badge personal';
                 accountPrimaryBtn.textContent = account.user ? '👥 Vào nhóm giáo viên' : '👥 Dùng cùng nhóm';
-                accountSetupBtn.textContent = configured ? '🩺 Kiểm tra nhóm' : '⚙️ Thiết lập';
+                accountSetupBtn.hidden = true;
                 document.body.dataset.accountMode = 'personal';
                 document.body.dataset.accountRole = 'personal';
                 return;
@@ -355,7 +364,8 @@ service cloud.firestore {
             }
 
             accountProfileBtn.hidden = false;
-            accountSetupBtn.hidden = role !== 'admin';
+            // Giáo viên không thấy chức năng kỹ thuật/quản trị nhóm. Admin cũng dùng một điểm vào duy nhất là “Quản trị nhóm”.
+            accountSetupBtn.hidden = true;
             accountRoleBadge.textContent = accountRoleLabel(role);
             accountRoleBadge.className = `account-role-badge ${role}`;
             document.body.dataset.accountRole = role;
@@ -379,7 +389,8 @@ service cloud.firestore {
             } else {
                 accountBar.classList.add('group-active');
                 accountStatusText.textContent = `${account.group?.name || 'Nhóm giáo viên'} · ${account.user.email}`;
-                teamAdminBtn.hidden = role !== 'admin';
+                teamAdminBtn.hidden = !accountCanManageGroup();
+                if (!accountCanManageGroup() && !teamAdminModal.hidden) closeAppModal(teamAdminModal);
                 cloudSyncBadge.hidden = false;
                 setCloudSyncStatus(account.cloudStatus || 'syncing', account.cloudStatusMessage || 'Đang kết nối dữ liệu');
             }
@@ -624,8 +635,15 @@ service cloud.firestore {
         }
 
         function openAccountModal(view = '') {
-            const requested = view || (!isValidFirebaseConfig(state.account.config)
+            let requested = view || (!isValidFirebaseConfig(state.account.config)
                 ? 'setup' : state.account.user ? 'profile' : 'signin');
+            const activeTeacher = state.account.accessMode === 'group'
+                && state.account.profile?.status === 'active'
+                && state.account.profile?.role !== 'admin';
+            if (requested === 'setup' && activeTeacher && isValidFirebaseConfig(state.account.config)) {
+                requested = 'profile';
+                showToast('Thiết lập và kiểm tra nhóm chỉ dành cho quản trị viên', 'info');
+            }
             if (requested === 'setup') renderAccountSetupView();
             else if (requested === 'profile') renderAccountProfileView();
             else renderAccountAuthView(requested);
@@ -633,7 +651,7 @@ service cloud.firestore {
         }
 
         function renderTeamAdminView() {
-            if (state.account.profile?.role !== 'admin' || state.account.profile?.status !== 'active') {
+            if (!accountCanManageGroup()) {
                 closeAppModal(teamAdminModal);
                 showToast('Chỉ admin đang hoạt động mới được quản trị thành viên', 'error');
                 return;
@@ -674,6 +692,11 @@ service cloud.firestore {
                     <div class="team-summary-item"><strong>${counts.pending}</strong><span>Chờ duyệt</span></div>
                     <div class="team-summary-item"><strong>${counts.admin}</strong><span>Quản trị viên</span></div>
                 </div>
+                <div class="account-setup-actions role-admin-tools" style="margin:0 0 14px;">
+                    <button class="btn btn-outline btn-sm" type="button" data-team-action="check-group"
+                            style="color:#1d4ed8;border-color:#93c5fd;">🩺 Kiểm tra kết nối nhóm</button>
+                    <span class="text-muted" style="font-size:12px;">Công cụ kỹ thuật chỉ hiển thị với quản trị viên.</span>
+                </div>
                 <div class="account-form-stack" style="margin-bottom:14px;">
                     <div><label for="teamNameInput">Tên nhóm giáo viên</label>
                         <div class="flex-center" style="justify-content:flex-start;">
@@ -690,7 +713,7 @@ service cloud.firestore {
 
         function openTeamAdminModal() {
             renderTeamAdminView();
-            if (state.account.profile?.role === 'admin' && state.account.profile?.status === 'active') {
+            if (accountCanManageGroup()) {
                 openAppModal(teamAdminModal, teamAdminModalBody.querySelector('button,input,select'));
             }
         }
@@ -1837,7 +1860,13 @@ service cloud.firestore {
         });
         accountProfileBtn.addEventListener('click', () => openAccountModal('profile'));
         teamAdminBtn.addEventListener('click', openTeamAdminModal);
-        accountSetupBtn.addEventListener('click', () => openAccountModal('setup'));
+        accountSetupBtn.addEventListener('click', () => {
+            if (isValidFirebaseConfig(state.account.config) && !accountCanManageGroup()) {
+                showToast('Kiểm tra nhóm chỉ dành cho quản trị viên', 'info');
+                return;
+            }
+            openAccountModal('setup');
+        });
         acceptSharedServerBtn.addEventListener('click', acceptSharedServerVersion);
         keepSharedLocalBtn.addEventListener('click', keepSharedLocalVersion);
         restoreSharedPlanBtn.addEventListener('click', restoreLatestSharedPlanVersion);
@@ -1906,6 +1935,12 @@ service cloud.firestore {
         teamAdminModalBody.addEventListener('click', event => {
             const teamAction = event.target.closest('[data-team-action]')?.dataset.teamAction;
             if (teamAction === 'save-name') saveTeamName();
+            if (teamAction === 'check-group') {
+                if (!accountCanManageGroup()) return;
+                closeAppModal(teamAdminModal);
+                openAccountModal('setup');
+                return;
+            }
             const button = event.target.closest('[data-member-action][data-member-uid]');
             if (!button) return;
             if (button.dataset.memberAction === 'approve') {

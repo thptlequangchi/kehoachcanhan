@@ -1,27 +1,31 @@
-# AUDIT REPORT — v45.2.0
+# AUDIT REPORT — v45.3.0 Giao diện gọn theo vai trò
 
-## Phạm vi thay đổi
-- Thêm 2 nút cố định trên header: **TKB Trường** và **vnEdu**.
-- Không đổi schema dữ liệu hay logic nghiệp vụ.
-- Tăng APP_VERSION / Service Worker cache lên 45.2.0.
-- Sửa một lỗi markup nhỏ còn sót: thẻ `</head>` bị lặp trong bản nguồn.
+## Phạm vi nâng cấp
+- Giao diện tài khoản cá nhân / nhóm giáo viên / admin nhóm.
+- Ẩn các công cụ quản trị và kỹ thuật không cần thiết đối với giáo viên thường.
+- Chuyển “Kiểm tra kết nối nhóm” vào cửa sổ Quản trị nhóm của admin.
+- Không thay đổi schema dữ liệu hoặc Firestore Rules.
 
 ## Kiểm tra tĩnh
 - Toàn bộ JavaScript nội bộ và `service-worker.js`: **PASS `node --check`**.
 - HTML ID: **371/371 duy nhất**.
+- Hàm JavaScript có tên: **531/531 duy nhất**, không phát hiện khai báo trùng.
 - Tài nguyên nội bộ tham chiếu từ HTML: **34**, không thiếu file.
-- PWA app-shell: **38 tài nguyên**, không thiếu file.
-- HTML có đúng **1 `<head>` và 1 `<body>`** sau khi sửa markup.
-- APP_VERSION trong state và Service Worker: **45.2.0**.
+- App-shell Service Worker: **38 tài nguyên**, không thiếu file.
+- `APP_VERSION` trong state và Service Worker: cùng **45.3.0**.
 
-## Kiểm tra hai nút nhanh
-- `TKB Trường` mở: `https://thptlequangchi.hatinh.edu.vn/thoi-khoa-bieu`.
-- `vnEdu` mở đúng URL SSO đã cấu hình trong Trung Tâm Liên Kết.
-- Cả hai dùng `target="_blank"` + `rel="noopener noreferrer"`.
-- CSS responsive đã có riêng cho desktop/tablet/mobile; khi in, hai nút được ẩn.
+## Kiểm tra logic theo vai trò
+- Chế độ cá nhân: `accountSetupBtn` và `teamAdminBtn` được ẩn; nút chính vẫn dẫn vào luồng dùng nhóm khi cần.
+- Role `teacher` đang hoạt động trong chế độ nhóm: ẩn `teamAdminBtn` và `accountSetupBtn` bằng cả JS và CSS dự phòng.
+- Role `admin` đang hoạt động: hiện `teamAdminBtn`; không hiện nút “Kiểm tra nhóm” riêng trên thanh tài khoản.
+- Admin có nút **Kiểm tra kết nối nhóm** bên trong cửa sổ Quản trị nhóm.
+- Màn hình thiết lập/kiểm tra nhóm có guard: giáo viên thường đang hoạt động không được mở màn hình kỹ thuật nhóm.
+- Nếu quyền admin bị hạ khi modal quản trị đang mở, modal được đóng ở lần cập nhật giao diện kế tiếp.
 
 ## An toàn dữ liệu
-- `DATA_SCHEMA_VERSION` không thay đổi.
-- Không thêm migration.
-- Không thay localStorage/Firestore payload.
-- Không thay logic TEMIS/VN ERP/Trung Tâm Liên Kết hiện có.
+- `DATA_SCHEMA_VERSION` giữ nguyên.
+- Không đổi cấu trúc workspace, Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ công việc hoặc liên kết.
+- Không đổi Firestore Rules hoặc quyền server; đây chỉ là tối ưu giao diện + guard phía client.
+
+## Giới hạn kiểm thử
+- Chưa thực hiện đăng nhập Firebase thật với hai tài khoản admin/teacher trong môi trường này. Sau deploy nên kiểm tra nhanh bằng tài khoản thật để xác nhận trạng thái role từ Firestore đúng như cấu hình của nhóm.

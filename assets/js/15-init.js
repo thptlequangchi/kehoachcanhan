@@ -1,5 +1,5 @@
         // ================================================================
-        //  INIT — v45.2: nền v45.1 + nút nhanh TKB/vnEdu trên thanh công cụ
+        //  INIT — v45.3: giao diện theo vai trò, ẩn chức năng quản trị không cần thiết
         // ================================================================
         function safeInitStage(name, fn) {
             try {
