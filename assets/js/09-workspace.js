@@ -361,12 +361,18 @@
             const summary = document.getElementById('workSuggestionSummary');
             const panel = document.getElementById('workSuggestionPanel');
             if (!list || !summary || !panel) return;
-            workSuggestionCache = buildWorkSystemSuggestions();
+            const allSuggestions = buildWorkSystemSuggestions();
+            const reminderManagedKeys = typeof window.getSmartReminderManagedSuggestionKeys === 'function'
+                ? window.getSmartReminderManagedSuggestionKeys()
+                : new Set();
+            workSuggestionCache = allSuggestions.filter(item => !reminderManagedKeys.has(item.key));
             if (!workSuggestionCache.length) {
-                summary.textContent = 'Không phát hiện việc hệ thống nào cần bổ sung.';
-                list.innerHTML = '<div class="work-suggestion-ok">✓ Kế hoạch công việc đang gọn. Không có cảnh báo cần chuyển thành nhiệm vụ.</div>';
+                panel.hidden = true;
+                summary.textContent = 'Các gợi ý cần chú ý đã được chuyển lên Nhắc việc thông minh.';
+                list.innerHTML = '';
                 return;
             }
+            panel.hidden = false;
             const pending = workSuggestionCache.filter(item => !workSuggestionExists(item.key, allItems)).length;
             summary.textContent = pending ? `${pending} gợi ý chưa có trong Sổ công việc` : 'Các gợi ý hiện tại đã có trong Sổ công việc';
             list.innerHTML = workSuggestionCache.map((suggestion, index) => {

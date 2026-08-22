@@ -1,4 +1,4 @@
-/* Bước 17 · v50.2 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
+/* Bước 17 · v50.3 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
 (() => {
     'use strict';
     const STORAGE_KEY = 'teacher_regression_last_v1';
@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.2.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.3.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -86,7 +86,7 @@
             return missing.length ? {status:'fail',message:`Thiếu: ${missing.join(', ')}`} : `Đủ ${ids.length}/${ids.length} vùng lõi.`;
         }));
         tests.push(runSync('core-globals','Các hàm nghiệp vụ lõi đã nạp','Khởi động',() => {
-            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','getWeekOperationalStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter'];
+            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','getWeekOperationalStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter','getSmartReminderManagedSuggestionKeys'];
             const missing=names.filter(name=>typeof globalThis[name] !== 'function');
             return missing.length ? {status:'fail',message:`Thiếu hàm: ${missing.join(', ')}`} : `Đủ ${names.length} hàm lõi.`;
         }));
@@ -122,6 +122,20 @@
             ]);
             const ok=sample.courseRows.length===4 && sample.onTrackRows.length===2 && sample.attentionRows.length===3 && sample.attentionRows[0].className==='12A1';
             return ok ? 'Dashboard/Sổ Công Việc/Reminder dùng chung quy tắc PPCT cần chú ý.' : {status:'fail',message:'Phân loại PPCT dùng chung không đúng.'};
+        }));
+        tests.push(runSync('reminder-suggestion-dedupe','Nhắc việc không lặp Hệ thống gợi ý','Nghiệp vụ',() => {
+            if (typeof getSmartReminderManagedSuggestionKeys !== 'function' || typeof buildWorkSystemSuggestions !== 'function') return {status:'fail',message:'Thiếu API engine gợi ý/khử trùng lặp.'};
+            const original=buildWorkSystemSuggestions;
+            try {
+                window.buildWorkSystemSuggestions=() => [
+                    {key:'fixture:urgent',priority:'urgent'},
+                    {key:'fixture:high',priority:'high'},
+                    {key:'fixture:normal',priority:'normal'},
+                ];
+                const keys=getSmartReminderManagedSuggestionKeys();
+                const ok=keys instanceof Set && keys.has('fixture:urgent') && keys.has('fixture:high') && !keys.has('fixture:normal');
+                return ok ? 'Gợi ý ưu tiên cao/khẩn cấp do Reminder quản lý; gợi ý bình thường chỉ để lại ở Hệ thống gợi ý.' : {status:'fail',message:'Quy tắc khử trùng lặp Reminder/Gợi ý bị thay đổi.'};
+            } finally { window.buildWorkSystemSuggestions=original; }
         }));
         tests.push(runSync('state-shape','Cấu trúc state hiện tại','Dữ liệu',() => {
             const issues=[];

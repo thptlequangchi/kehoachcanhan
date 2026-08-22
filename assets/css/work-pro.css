@@ -56,6 +56,7 @@
     margin: 14px 0; padding: 14px; border: 1px solid #dbeafe; border-radius: 16px;
     background: linear-gradient(145deg,rgba(239,246,255,.9),rgba(248,250,252,.92));
 }
+.premium-ui .work-suggestion-panel[hidden] { display: none !important; }
 .premium-ui .work-suggestion-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
 .premium-ui .work-suggestion-head > div { min-width: 0; }
 .premium-ui .work-suggestion-head strong, .premium-ui .work-suggestion-head span { display: block; }

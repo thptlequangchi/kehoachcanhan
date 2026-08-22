@@ -1,17 +1,22 @@
-# Sổ Tay Giáo Viên v50.2.0 — Hợp nhất engine gợi ý
+# Sổ Tay Giáo Viên v50.3.0 — Khử trùng lặp Nhắc việc & Gợi ý
 
-Bản v50.2 phát triển trực tiếp từ v50.1, không thêm một hệ thống cảnh báo mới. Mục tiêu là làm sạch kiến trúc: **Hệ thống gợi ý** trở thành nguồn duy nhất cho các vấn đề Kế hoạch, TKB, Báo giảng, Học bù, PPCT và Sao lưu; **Nhắc việc thông minh** chỉ quyết định vấn đề nào cần nhắc lúc này.
+Bản v50.3 phát triển trực tiếp từ v50.2 và không thêm nghiệp vụ mới. Mục tiêu là làm giao diện **Sổ Công Việc Pro** gọn hơn: một vấn đề không còn xuất hiện đồng thời ở **Nhắc việc thông minh** và **Hệ thống gợi ý**.
 
-## Luồng mới
-`Shared Core → buildWorkSystemSuggestions() → Sổ Công Việc / Nhắc việc thông minh → addWorkSystemSuggestion()`
+## Quy tắc hiển thị mới
+- Gợi ý **Khẩn cấp / Quan trọng** (`urgent`, `high`) được quản lý tại **Nhắc việc thông minh**.
+- Gợi ý **Bình thường** tiếp tục hiển thị ở **Hệ thống gợi ý** nếu còn nội dung bổ sung.
+- Nếu không còn gợi ý bổ sung, khối **Hệ thống gợi ý** tự ẩn hoàn toàn.
+- Hai khu vực vẫn dùng chung `buildWorkSystemSuggestions()` và cùng pipeline `addWorkSystemSuggestion()`, nên không sinh hai hệ thống nghiệp vụ riêng.
+- Các thiết lập Snooze / tắt loại cảnh báo của Reminder không làm xuất hiện lại cùng cảnh báo ở khu vực gợi ý phía dưới.
 
-PPCT chậm, thiếu PPCT hoặc có nguy cơ hoàn thành muộn được phân loại chung trong Shared Core; Dashboard năm học cũng dùng cùng quy tắc này. Khi bấm “Thêm vào sổ” từ Reminder hay Hệ thống gợi ý, cả hai đi qua một pipeline chống trùng duy nhất.
+## Sửa lỗi nhỏ
+- Loại bỏ một dòng mô tả `alert.detail` bị render lặp hai lần trong markup của Reminder.
 
-## An toàn
-- `DATA_SCHEMA_VERSION` giữ nguyên 1.
-- Không migration dữ liệu.
-- Không sửa Firestore Rules hay IndexedDB schema.
-- Không tự tạo công việc; hệ thống vẫn chỉ gợi ý/nhắc và chờ giáo viên chọn thêm vào Sổ.
+## An toàn dữ liệu
+- Không đổi `DATA_SCHEMA_VERSION`.
+- Không đổi IndexedDB schema.
+- Không đổi Firestore Rules.
+- Không thay dữ liệu Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc hay Báo cáo.
 
 ## Cập nhật GitHub Pages
-Chép toàn bộ gói và Push. Service Worker đã tăng lên 50.2.0 để PWA nhận mã mới. Sau deploy nên chạy **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ** một lần.
+Chép toàn bộ gói và Push. Service Worker / APP_VERSION đã tăng lên **50.3.0** để PWA nhận mã mới. Sau deploy nên chạy **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ** một lần.

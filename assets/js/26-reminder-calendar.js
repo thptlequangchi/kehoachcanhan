@@ -112,6 +112,19 @@
     function alertPriorityRank(priority) {
         return ({urgent:4,high:3,normal:2,low:1}[priority] || 2);
     }
+    function isSystemSuggestionReminderWorthy(suggestion) {
+        return ['urgent','high'].includes(clean(suggestion?.priority));
+    }
+    function getSmartReminderManagedSuggestionKeys() {
+        let suggestions = [];
+        try { suggestions = typeof buildWorkSystemSuggestions === 'function' ? buildWorkSystemSuggestions() : []; }
+        catch (_) { suggestions = []; }
+        return new Set(safeArray(suggestions)
+            .filter(isSystemSuggestionReminderWorthy)
+            .map(item => clean(item?.key))
+            .filter(Boolean));
+    }
+    window.getSmartReminderManagedSuggestionKeys = getSmartReminderManagedSuggestionKeys;
 
     function buildTaskAlerts(allItems, now = new Date()) {
         const today = alertTodayISO();
@@ -152,7 +165,7 @@
         let suggestions = [];
         try { suggestions = typeof buildWorkSystemSuggestions === 'function' ? buildWorkSystemSuggestions() : []; }
         catch (_) { suggestions = []; }
-        return safeArray(suggestions).map(suggestion => {
+        return safeArray(suggestions).filter(isSystemSuggestionReminderWorthy).map(suggestion => {
             const category = reminderCategoryFromSuggestion(suggestion);
             if (settings.mutedCategories[category]) return null;
             if (settings.dismissedDate[suggestion.key] === today) return null;
