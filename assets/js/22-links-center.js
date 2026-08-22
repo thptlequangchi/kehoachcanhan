@@ -50,6 +50,17 @@
             builtIn: true,
             defaultPinned: true,
         },
+        {
+            id: 'builtin-moet-csdl',
+            name: 'CƠ SỞ DỮ LIỆU NGÀNH GIÁO DỤC VÀ ĐÀO TẠO',
+            shortName: 'CSDL ngành GD&ĐT',
+            url: 'https://csdl.moet.gov.vn/',
+            category: 'Hành chính',
+            icon: '🗃️',
+            description: 'Cổng Cơ sở dữ liệu ngành Giáo dục và Đào tạo của Bộ Giáo dục và Đào tạo.',
+            builtIn: true,
+            defaultPinned: true,
+        },
     ]);
 
     const byId = id => document.getElementById(id);

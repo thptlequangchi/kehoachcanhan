@@ -1,6 +1,6 @@
-# Sổ Tay Giáo Viên v47.0.0 — Bước 14: IndexedDB & dữ liệu nhiều năm
+# Sổ Tay Giáo Viên v47.1.0 — Bước 14: IndexedDB & dữ liệu nhiều năm
 
-Bản v47 phát triển trực tiếp từ v46. Toàn bộ Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc Pro, Dashboard, Automation, Báo cáo, PWA, Health Check, Liên kết và Ctrl+K được giữ nguyên.
+Bản v47.1 phát triển trực tiếp từ v47.0; giữ nguyên toàn bộ Bước 14 và bổ sung liên kết CSDL ngành GD&ĐT. Toàn bộ Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc Pro, Dashboard, Automation, Báo cáo, PWA, Health Check, Liên kết và Ctrl+K được giữ nguyên.
 
 ## Điểm mới
 - Thêm **Storage Pro** dùng IndexedDB cho dữ liệu dung lượng lớn.
@@ -20,3 +20,10 @@ Bản v47 phát triển trực tiếp từ v46. Toàn bộ Kế hoạch, TKB, PP
 
 ## Cập nhật GitHub Pages
 Chép toàn bộ gói v47 vào repo và Push. Service Worker v47 sẽ cập nhật app-shell, gồm thêm `assets/js/01-indexeddb-storage.js`, `assets/js/24-storage-center.js` và `assets/css/storage-pro.css`.
+
+
+## Cập nhật v47.1
+- Thêm liên kết mặc định **CƠ SỞ DỮ LIỆU NGÀNH GIÁO DỤC VÀ ĐÀO TẠO**: `https://csdl.moet.gov.vn/`.
+- Xếp vào nhóm **Hành chính** và ghim sẵn trong Trung tâm Liên kết.
+- Bổ sung từ khóa tìm kiếm `CSDL ngành`, `MOET`, `cơ sở dữ liệu` trong Ctrl+K.
+- APP_VERSION/Service Worker tăng lên **47.1.0**; không đổi schema dữ liệu.
