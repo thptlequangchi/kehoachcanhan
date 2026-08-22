@@ -25,7 +25,7 @@
             <div class="brand">
                 <div>
                     <h1>📚 Sổ Tay Giáo Viên</h1>
-                    <span>Teacher's Notebook v38 — Dashboard năm học chuyên nghiệp</span>
+                    <span>Teacher's Notebook v39 — Tự động hóa công việc giáo viên</span>
                 </div>
             </div>
             <div class="header-quick-actions" aria-label="Truy cập nhanh">
@@ -246,6 +246,41 @@
                         <div class="year-action-list" id="yearCourseAttentionList"></div>
                     </article>
                 </aside>
+            </div>
+        </section>
+
+        <section class="automation-center" id="automationCenter" aria-label="Tự động hóa công việc giáo viên">
+            <div class="automation-heading">
+                <div>
+                    <span class="overview-eyebrow">TỰ ĐỘNG HÓA CÔNG VIỆC</span>
+                    <h2>Kế hoạch → Báo giảng → Học bù</h2>
+                    <p id="automationSubtitle">Đang quét dữ liệu tuần và các tiết cần xử lý…</p>
+                </div>
+                <div class="automation-heading-actions">
+                    <label class="automation-week-field" for="automationWeekSelect"><span>Tuần</span><select id="automationWeekSelect" aria-label="Tuần tự động hóa"></select></label>
+                    <button class="overview-action" id="refreshAutomationBtn" type="button">↻ Quét lại</button>
+                </div>
+            </div>
+            <div class="automation-safety-note"><span>🛡️</span><div><strong>Tự động gợi ý, không tự sửa dữ liệu</strong><small>Kế hoạch trường được dùng để phát hiện ảnh hưởng; đánh dấu Không học, kiểm tra tuần và thêm tiết học bù vẫn cần thầy xác nhận.</small></div></div>
+            <div class="automation-kpis">
+                <div class="automation-kpi"><span>📋</span><div><strong id="automationKpiPlan">0</strong><small>Tiết có thể bị ảnh hưởng</small></div></div>
+                <div class="automation-kpi"><span>☑️</span><div><strong id="automationKpiConfirm">0</strong><small>Tiết chờ xác nhận</small></div></div>
+                <div class="automation-kpi"><span>🔁</span><div><strong id="automationKpiMakeup">0</strong><small>Tiết chưa học bù</small></div></div>
+                <div class="automation-kpi"><span>✅</span><div><strong id="automationKpiResolved">0</strong><small>Tiết đã cân bằng</small></div></div>
+            </div>
+            <div class="automation-grid">
+                <article class="automation-panel">
+                    <div class="automation-panel-heading"><div><strong>📣 Ảnh hưởng từ Kế hoạch trường</strong><small id="automationPlanImpactSummary">Đang đối chiếu ngày và buổi…</small></div></div>
+                    <div class="automation-list" id="automationPlanImpactList"></div>
+                </article>
+                <article class="automation-panel">
+                    <div class="automation-panel-heading"><div><strong>🔁 Tiết chưa học bù</strong><small id="automationMakeupSummary">Đang đối chiếu tiết Không học và học bù…</small></div></div>
+                    <div class="automation-list" id="automationMakeupList"></div>
+                </article>
+                <article class="automation-panel automation-panel-workflow">
+                    <div class="automation-panel-heading"><div><strong>⚙️ Luồng hoàn thiện tuần</strong><small id="automationWorkflowSummary">Đang kiểm tra các bước…</small></div></div>
+                    <div class="automation-workflow-list" id="automationWorkflowList"></div>
+                </article>
             </div>
         </section>
 
@@ -930,6 +965,7 @@
     <script src="assets/js/15-ux.js"></script>
     <script src="assets/js/16-command-center.js"></script>
     <script src="assets/js/17-year-dashboard.js"></script>
+    <script src="assets/js/18-automation-center.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

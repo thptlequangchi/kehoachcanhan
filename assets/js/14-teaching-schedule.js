@@ -254,6 +254,10 @@
                 level: 'review', label: 'Hoạt động chung',
                 terms: ['hoatdongtrainghiem', 'ngoaikhoa', 'sinhhoattapthe', 'lekhaigiang', 'lebeigiang', 'daingayhoi'],
             },
+            {
+                level: 'review', label: 'Lao động / tập trung học sinh',
+                terms: ['hocsinhlaodong', 'hsld', 'laodongtheokehoach', 'taptrunghocsinh', 'taphocsinh'],
+            },
         ];
 
         function detectPlanScheduleSignal(value) {
