@@ -1,0 +1,828 @@
+/* ============================================================================
+   SỔ TAY GIÁO VIÊN v51 — PROFESSIONAL WORKSPACE UI
+   Lớp giao diện thuần CSS, tải sau toàn bộ stylesheet cũ.
+   Không thay đổi DOM nghiệp vụ, schema dữ liệu hay luồng Firebase/IndexedDB.
+   ============================================================================ */
+:root {
+    --pro-canvas: #edf2f8;
+    --pro-canvas-top: #f8fafc;
+    --pro-surface: #ffffff;
+    --pro-surface-muted: #f7f9fc;
+    --pro-surface-blue: #f3f7fc;
+    --pro-line: #dde5ef;
+    --pro-line-strong: #c9d5e3;
+    --pro-ink: #142235;
+    --pro-ink-2: #33445a;
+    --pro-muted: #6b7a90;
+    --pro-faint: #8d9aab;
+    --pro-navy-950: #081b31;
+    --pro-navy-900: #0c2745;
+    --pro-navy-800: #12385f;
+    --pro-blue-700: #1d4ed8;
+    --pro-blue-600: #2563eb;
+    --pro-blue-500: #3b82f6;
+    --pro-sky-500: #0ea5e9;
+    --pro-success: #15803d;
+    --pro-warning: #b45309;
+    --pro-danger: #b91c1c;
+    --pro-purple: #6d28d9;
+    --pro-r-xl: 22px;
+    --pro-r-lg: 17px;
+    --pro-r-md: 12px;
+    --pro-r-sm: 9px;
+    --pro-shadow-1: 0 1px 2px rgba(15, 23, 42, .03), 0 5px 16px rgba(15, 23, 42, .045);
+    --pro-shadow-2: 0 12px 32px rgba(15, 23, 42, .075);
+    --pro-shadow-3: 0 24px 60px rgba(8, 27, 49, .16);
+    --pro-focus: 0 0 0 3px rgba(37, 99, 235, .14);
+}
+
+html { background: var(--pro-canvas); }
+body.premium-ui {
+    padding: 18px;
+    color: var(--pro-ink);
+    background:
+        radial-gradient(ellipse 54% 31% at 7% 0%, rgba(37,99,235,.09), transparent 72%),
+        radial-gradient(ellipse 42% 25% at 96% 2%, rgba(14,165,233,.06), transparent 72%),
+        linear-gradient(180deg, var(--pro-canvas-top) 0, var(--pro-canvas) 38rem, #edf2f8 100%);
+    font-family: "Segoe UI Variable", "Segoe UI", Inter, Roboto, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+body.premium-ui::before {
+    opacity: .24;
+    background-image:
+        linear-gradient(rgba(100,116,139,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(100,116,139,.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.35) 30rem, transparent 54rem);
+}
+.premium-ui .container {
+    width: min(100%, 1560px);
+    max-width: 1560px;
+    margin-inline: auto;
+}
+
+/* ---------- App header: compact executive command bar ---------- */
+.premium-ui .app-header {
+    display: grid;
+    grid-template-columns: minmax(360px, .85fr) minmax(620px, 1.55fr);
+    align-items: center;
+    gap: 22px;
+    min-height: 104px;
+    margin-bottom: 12px;
+    padding: 20px 22px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 84% 18%, rgba(56,189,248,.18), transparent 24rem),
+        radial-gradient(circle at 58% 120%, rgba(59,130,246,.18), transparent 27rem),
+        linear-gradient(118deg, var(--pro-navy-950) 0%, var(--pro-navy-900) 43%, #174773 100%);
+    box-shadow: 0 18px 46px rgba(8,27,49,.19), inset 0 1px rgba(255,255,255,.08);
+}
+.premium-ui .app-header::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(147,197,253,.8), rgba(255,255,255,.65), transparent);
+    opacity: .72;
+}
+.premium-ui .app-header::after {
+    width: 390px;
+    height: 390px;
+    right: -160px;
+    top: -245px;
+    border-color: rgba(255,255,255,.10);
+    box-shadow: 0 0 0 52px rgba(255,255,255,.018), 0 0 0 104px rgba(255,255,255,.012);
+}
+.premium-ui .app-header .brand { align-items: center; gap: 14px; }
+.premium-ui .brand-mark {
+    width: 56px;
+    height: 56px;
+    flex-basis: 56px;
+    border-radius: 16px;
+    border-color: rgba(191,219,254,.26);
+    background: linear-gradient(145deg, rgba(255,255,255,.17), rgba(255,255,255,.055));
+    box-shadow: inset 0 1px rgba(255,255,255,.2), 0 12px 28px rgba(0,0,0,.16);
+}
+.premium-ui .brand-mark span { font-size: 26px; }
+.premium-ui .brand-kicker {
+    margin-bottom: 3px;
+    color: #a9d2ff;
+    font-size: 9px !important;
+    letter-spacing: .22em;
+}
+.premium-ui .app-header .brand h1 {
+    font-size: clamp(23px, 1.9vw, 29px);
+    letter-spacing: -.035em;
+}
+.premium-ui .app-header .brand h1 em {
+    margin-left: 6px;
+    padding: 3px 7px;
+    border-color: rgba(191,219,254,.30);
+    background: rgba(37,99,235,.18);
+}
+.premium-ui .brand-meta { margin-top: 6px; gap: 7px; }
+.premium-ui .brand-meta span { font-size: 10.5px !important; color: rgba(226,232,240,.76) !important; }
+.premium-ui .brand-meta i { background: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,.08); }
+
+.premium-ui .header-quick-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+.premium-ui .header-context {
+    min-width: 190px;
+    max-width: 240px;
+    padding: 8px 11px;
+    border-color: rgba(255,255,255,.13);
+    border-radius: 11px;
+    background: rgba(255,255,255,.07);
+    box-shadow: inset 0 1px rgba(255,255,255,.045);
+}
+.premium-ui .header-context-label { font-size: 8.5px; color: rgba(191,219,254,.74); letter-spacing: .11em; }
+.premium-ui .header-context strong { color: #fff; font-size: 12.5px; }
+.premium-ui .header-command-trigger,
+.premium-ui .header-reminder-trigger,
+.premium-ui .header-favorite-link,
+.premium-ui .header-settings-btn,
+.premium-ui .pwa-network-badge {
+    min-height: 39px;
+    border: 1px solid rgba(255,255,255,.13) !important;
+    border-radius: 11px !important;
+    background: rgba(255,255,255,.075) !important;
+    box-shadow: inset 0 1px rgba(255,255,255,.055) !important;
+    backdrop-filter: blur(10px);
+}
+.premium-ui .header-command-trigger:hover,
+.premium-ui .header-reminder-trigger:hover,
+.premium-ui .header-favorite-link:hover,
+.premium-ui .header-settings-btn:hover {
+    background: rgba(255,255,255,.13) !important;
+    border-color: rgba(191,219,254,.28) !important;
+    transform: translateY(-1px);
+}
+.premium-ui .header-command-kbd {
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(5,17,31,.24);
+    color: rgba(255,255,255,.78);
+}
+.premium-ui .header-favorite-links { gap: 6px; }
+.premium-ui .header-favorite-link { padding-inline: 10px; }
+.premium-ui .pwa-header-actions { gap: 6px; }
+.premium-ui .pwa-network-badge { padding: 7px 9px; color: #dcecff; }
+.premium-ui .header-settings-btn { color: #fff !important; padding-inline: 12px; }
+
+/* ---------- Context controls: account, settings, academic year ---------- */
+.premium-ui .account-bar,
+.premium-ui .settings-hub,
+.premium-ui .school-year-bar {
+    border: 1px solid rgba(201,213,227,.88);
+    background: rgba(255,255,255,.94);
+    box-shadow: var(--pro-shadow-1);
+    backdrop-filter: blur(14px) saturate(125%);
+}
+.premium-ui .account-bar {
+    min-height: 58px;
+    padding: 9px 12px;
+    border-radius: 15px;
+}
+.premium-ui .account-avatar {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+    border-radius: 11px;
+    border-color: #cfe0f3;
+    background: linear-gradient(145deg, #f5f9ff, #e7f0fb);
+    color: #173f70;
+}
+.premium-ui .account-copy strong { color: #1c2d43; font-size: 12.5px; }
+.premium-ui .account-copy span { color: #7a889b; font-size: 10.5px; }
+.premium-ui .account-role-badge,
+.premium-ui .cloud-sync-badge { border-radius: 999px; font-size: 9px; letter-spacing: .035em; }
+.premium-ui .account-actions .btn { min-height: 34px; }
+
+.premium-ui .settings-hub {
+    margin-bottom: 12px;
+    border-radius: 15px;
+}
+.premium-ui .settings-hub > summary {
+    min-height: 48px;
+    padding: 10px 13px;
+    background: linear-gradient(180deg, #fff, #fbfcfe);
+}
+.premium-ui .settings-hub > summary:hover { background: #f7faff; }
+.premium-ui .settings-hub-title { color: #183958; font-size: 12.5px; }
+.premium-ui .settings-hub-summary { color: #8491a2; font-size: 10.5px; }
+.premium-ui .settings-hub-body { padding: 0 11px 11px; background: #f6f9fc; }
+.premium-ui .settings-hub-body > section,
+.premium-ui .settings-hub-body > div {
+    box-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+
+.premium-ui .school-year-bar {
+    position: relative;
+    grid-template-columns: minmax(165px, .78fr) minmax(270px, 1.05fr) auto minmax(300px, 1.22fr);
+    gap: 11px;
+    margin-bottom: 14px;
+    padding: 13px 14px 13px 17px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+.premium-ui .school-year-bar::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--pro-blue-600), var(--pro-sky-500));
+}
+.premium-ui .school-year-bar label {
+    color: #5d6f84;
+    font-size: 9px;
+    letter-spacing: .075em;
+}
+.premium-ui .school-year-bar select,
+.premium-ui .school-year-bar input {
+    min-height: 41px;
+    border: 1px solid var(--pro-line);
+    border-radius: 10px;
+    color: #213247;
+    background: #fff;
+}
+.premium-ui .school-year-week-info {
+    border-left: 0;
+    border-radius: 10px;
+    background: #f3f7fc;
+    color: #53677f;
+}
+
+/* ---------- Primary nav: professional dock ---------- */
+.premium-ui .tabs {
+    top: 8px;
+    z-index: 90;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0 0 16px;
+    padding: 5px;
+    overflow: visible;
+    border: 1px solid rgba(201,213,227,.92);
+    border-radius: 15px;
+    background: rgba(255,255,255,.93);
+    box-shadow: 0 10px 28px rgba(15,23,42,.075);
+    backdrop-filter: blur(18px) saturate(145%);
+}
+.premium-ui .tab-btn {
+    position: relative;
+    min-width: 0;
+    min-height: 45px;
+    padding: 9px 9px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #67778b;
+    background: transparent;
+    font-size: 11.5px;
+    font-weight: 760;
+    letter-spacing: -.01em;
+}
+.premium-ui .tab-btn:hover {
+    border-color: #e5ebf2;
+    background: #f6f8fb;
+    color: #1c3e61;
+}
+.premium-ui .tab-btn.active {
+    border-color: #cfe0f6;
+    background: linear-gradient(180deg, #f8fbff, #edf5ff);
+    color: #16406b;
+    box-shadow: inset 0 -2px 0 #2563eb, 0 2px 7px rgba(37,99,235,.07);
+}
+.premium-ui .tab-btn.active::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -5px;
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: #2563eb;
+    transform: translateX(-50%);
+    opacity: 0;
+}
+.premium-ui .tab-btn .icon {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-right: 4px;
+    border-radius: 8px;
+    background: rgba(148,163,184,.09);
+    font-size: 14px;
+    vertical-align: middle;
+}
+.premium-ui .tab-btn.active .icon { background: rgba(37,99,235,.10); }
+.premium-ui .tab-content.active { animation: proTabIn .22s ease-out both; }
+@keyframes proTabIn { from { opacity: .55; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Executive dashboards ---------- */
+.premium-ui .teacher-overview,
+.premium-ui .year-dashboard,
+.premium-ui .automation-center,
+.premium-ui .teacher-command-center {
+    border: 1px solid rgba(201,213,227,.9);
+    border-radius: 20px;
+    background: rgba(255,255,255,.965);
+    box-shadow: var(--pro-shadow-2);
+}
+.premium-ui .teacher-overview::before,
+.premium-ui .year-dashboard::before,
+.premium-ui .automation-center::before,
+.premium-ui .teacher-command-center::before {
+    height: 3px;
+    background: linear-gradient(90deg, #2563eb, #38bdf8 42%, rgba(56,189,248,.08) 82%, transparent);
+}
+.premium-ui .teacher-overview { margin-bottom: 14px; padding: 17px; }
+.premium-ui .year-dashboard,
+.premium-ui .automation-center,
+.premium-ui .teacher-command-center { margin-bottom: 15px; padding: 18px; }
+.premium-ui .overview-eyebrow {
+    color: #2563eb;
+    font-size: 8.5px;
+    letter-spacing: .13em;
+}
+.premium-ui .overview-heading h2,
+.premium-ui .year-dashboard-heading h2,
+.premium-ui .command-center-heading h2,
+.premium-ui .automation-heading h2 {
+    color: #152940;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+.premium-ui .overview-heading p,
+.premium-ui .year-dashboard-heading p,
+.premium-ui .command-center-heading p,
+.premium-ui .automation-heading p { color: #718095; }
+
+.premium-ui .overview-grid { gap: 9px; }
+.premium-ui .overview-card,
+.premium-ui .year-kpi,
+.premium-ui .automation-kpi,
+.premium-ui .command-panel,
+.premium-ui .year-panel,
+.premium-ui .automation-panel {
+    border: 1px solid #e2e9f1;
+    background: linear-gradient(180deg, #fff 0%, #fbfcfe 100%);
+    box-shadow: 0 3px 12px rgba(15,23,42,.035);
+}
+.premium-ui .overview-card {
+    min-height: 74px;
+    padding: 11px;
+    border-radius: 13px;
+}
+.premium-ui .overview-card:hover,
+.premium-ui .command-panel:hover,
+.premium-ui .year-panel:hover,
+.premium-ui .automation-panel:hover {
+    border-color: #c8dbef;
+    box-shadow: 0 10px 24px rgba(30,64,175,.075);
+    transform: translateY(-1px);
+}
+.premium-ui .overview-card-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+    border: 1px solid #d9e8fa;
+    border-radius: 10px;
+    background: #f0f6fd;
+}
+.premium-ui .overview-card-body strong { color: #1e3148; font-size: 16px; }
+.premium-ui .overview-card-body small { color: #7c899a; }
+.premium-ui .year-dashboard-kpis,
+.premium-ui .automation-kpis { gap: 8px; }
+.premium-ui .year-kpi,
+.premium-ui .automation-kpi { border-radius: 13px; }
+.premium-ui .year-kpi strong,
+.premium-ui .automation-kpi strong { color: #172b43; letter-spacing: -.03em; }
+.premium-ui .command-panel,
+.premium-ui .year-panel,
+.premium-ui .automation-panel { border-radius: 14px; }
+
+/* ---------- Cards: consistent product surfaces ---------- */
+.premium-ui .card {
+    position: relative;
+    margin-bottom: 15px;
+    padding: 21px 22px;
+    border: 1px solid rgba(218,227,237,.96);
+    border-radius: 18px;
+    background: var(--pro-surface);
+    box-shadow: var(--pro-shadow-1);
+}
+.premium-ui .card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    border-radius: 18px 0 0 18px;
+    background: linear-gradient(180deg, rgba(37,99,235,.72), rgba(14,165,233,.06) 50%, transparent 82%);
+    opacity: .55;
+}
+.premium-ui .card:hover { border-color: #d2deeb; }
+.premium-ui .card-header {
+    gap: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid #edf1f5;
+}
+.premium-ui .card-header h2 {
+    color: #182b42;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+.premium-ui .card-header h2 small,
+.premium-ui .card-header .sub { color: #7b899b; font-size: 10.5px; }
+.premium-ui .card-header .sub { line-height: 1.45; }
+
+/* ---------- Buttons: sober, consistent, tactile ---------- */
+.premium-ui .btn,
+.premium-ui .overview-action,
+.premium-ui .command-link {
+    border-radius: 9px;
+    font-weight: 760;
+    letter-spacing: -.006em;
+}
+.premium-ui .btn { min-height: 37px; }
+.premium-ui .btn-sm { min-height: 32px; padding: 5px 10px; font-size: 10.5px; }
+.premium-ui .btn-primary:not(.header-settings-btn) {
+    border-color: #174477;
+    background: linear-gradient(180deg, #23568b, #173f70);
+    box-shadow: 0 4px 10px rgba(23,63,112,.16);
+}
+.premium-ui .btn-primary:not(.header-settings-btn):hover {
+    background: linear-gradient(180deg, #2b659f, #194675);
+    box-shadow: 0 7px 16px rgba(23,63,112,.21);
+}
+.premium-ui .btn-success {
+    border-color: #147437;
+    background: linear-gradient(180deg, #1d9148, #157a3a);
+    box-shadow: 0 4px 10px rgba(21,128,61,.14);
+}
+.premium-ui .btn-danger { box-shadow: 0 4px 10px rgba(185,28,28,.10); }
+.premium-ui .btn-outline { background: #fff; border-color: #d5dee8; }
+.premium-ui .btn-outline:hover { background: #f7f9fc; border-color: #b9c9da; }
+.premium-ui .overview-action,
+.premium-ui .command-link {
+    min-height: 34px;
+    border-color: #dae3ed;
+    background: #fff;
+    color: #4a5d74;
+}
+.premium-ui .overview-action:hover,
+.premium-ui .command-link:hover { color: #164e83; background: #f5f9fe; border-color: #bdd4ec; }
+.premium-ui button:focus-visible,
+.premium-ui a:focus-visible,
+.premium-ui input:focus-visible,
+.premium-ui select:focus-visible,
+.premium-ui textarea:focus-visible,
+.premium-ui summary:focus-visible { outline: none; box-shadow: var(--pro-focus) !important; }
+
+/* ---------- Forms / filters / toolbars ---------- */
+.premium-ui select,
+.premium-ui input[type="text"],
+.premium-ui input[type="password"],
+.premium-ui input[type="number"],
+.premium-ui input[type="date"],
+.premium-ui input[type="time"],
+.premium-ui input[type="search"],
+.premium-ui textarea {
+    min-height: 40px;
+    border: 1px solid var(--pro-line);
+    border-radius: 9px;
+    color: #213349;
+    background: #fff;
+    box-shadow: inset 0 1px 2px rgba(15,23,42,.018);
+}
+.premium-ui textarea { min-height: 92px; }
+.premium-ui select:hover,
+.premium-ui input:hover,
+.premium-ui textarea:hover { border-color: #bac8d8; }
+.premium-ui select:focus,
+.premium-ui input:focus,
+.premium-ui textarea:focus { border-color: #5b9aec; box-shadow: var(--pro-focus); }
+.premium-ui label { color: #40546b; font-weight: 700; }
+.premium-ui .document-toolbar,
+.premium-ui .schedule-pro-toolbar,
+.premium-ui .work-toolbar,
+.premium-ui .report-filter-grid,
+.premium-ui .progress-dashboard-filters,
+.premium-ui .curriculum-target-panel,
+.premium-ui .work-scope-bar {
+    border-color: #e0e7ef;
+    border-radius: 12px;
+    background: #f7f9fc;
+}
+
+/* ---------- Upload zones ---------- */
+.premium-ui .upload-zone {
+    padding: 31px 18px;
+    border: 1.5px dashed #b8c8da;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fbfdff, #f5f8fc);
+}
+.premium-ui .upload-zone::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: radial-gradient(circle at 50% -20%, rgba(59,130,246,.11), transparent 48%);
+}
+.premium-ui .upload-zone:hover {
+    border-color: #6aa6e9;
+    background: linear-gradient(180deg, #fbfdff, #f1f7ff);
+    box-shadow: 0 8px 20px rgba(37,99,235,.065);
+}
+.premium-ui .upload-zone .icon-big {
+    width: 50px;
+    height: 50px;
+    border-radius: 13px;
+    border-color: #d4e3f5;
+    background: #f3f8fe;
+    box-shadow: 0 5px 14px rgba(37,99,235,.07);
+}
+
+/* ---------- Tables: spreadsheet precision ---------- */
+.premium-ui .table-wrap,
+.premium-ui .plan-week-list-scroll,
+.premium-ui .report-table-wrap {
+    border: 1px solid #dfe7ef;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 7px rgba(15,23,42,.025);
+}
+.premium-ui table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+.premium-ui table th {
+    padding: 10px 11px;
+    border-bottom: 1px solid #d8e2ec;
+    background: #f3f6fa;
+    color: #43556b;
+    font-size: 10px;
+    font-weight: 820;
+    letter-spacing: .035em;
+    text-transform: none;
+}
+.premium-ui .table-wrap table thead th,
+.premium-ui .plan-week-list-scroll table thead th,
+.premium-ui .report-table-wrap table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    box-shadow: 0 1px 0 #d8e2ec;
+}
+.premium-ui table td {
+    padding: 9px 11px;
+    border-bottom: 1px solid #edf1f5;
+    color: #314258;
+    vertical-align: middle;
+}
+.premium-ui table tbody tr:nth-child(even) td { background: #fbfcfe; }
+.premium-ui table tbody tr:hover td { background: #f3f8fe; }
+.premium-ui table tbody tr:last-child td { border-bottom: 0; }
+.premium-ui .schedule-table th {
+    background: linear-gradient(180deg, #194b7b, #123b64);
+    color: #f4f9ff;
+    border-bottom-color: #0f3155;
+}
+.premium-ui .schedule-table td { line-height: 1.45; }
+
+/* ---------- Status and information language ---------- */
+.premium-ui .status-badge,
+.premium-ui .runtime-badge,
+.premium-ui .cloud-sync-badge,
+.premium-ui .account-role-badge,
+.premium-ui .member-status-badge,
+.premium-ui .report-status,
+.premium-ui [class*="badge"] {
+    border-radius: 999px;
+}
+.premium-ui .overview-alert,
+.premium-ui .recognition-note,
+.premium-ui .finalized-note,
+.premium-ui .stale-warning,
+.premium-ui .work-workspace-notice,
+.premium-ui .shared-sync-protection {
+    border-radius: 11px;
+}
+
+/* ---------- Report / profile package / work / links ---------- */
+.premium-ui .report-center-card,
+.premium-ui .profile-package-card { border-top: 0; }
+.premium-ui .report-center-card::after,
+.premium-ui .profile-package-card::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    border-radius: 18px 18px 0 0;
+    background: linear-gradient(90deg, #4f46e5, #60a5fa, transparent 72%);
+}
+.premium-ui .report-filter-grid,
+.premium-ui .report-guide { background: #f6f8fc; }
+.premium-ui .report-kpi,
+.premium-ui .work-stat-card,
+.premium-ui .progress-stat-card,
+.premium-ui .storage-pro-item,
+.premium-ui .regression-summary-item,
+.premium-ui .pwa-health-item {
+    border-color: #e1e8f0;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fff, #fafcfe);
+    box-shadow: 0 2px 8px rgba(15,23,42,.025);
+}
+.premium-ui .work-item-card,
+.premium-ui .link-card {
+    border-color: #e0e7ef;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(15,23,42,.035);
+}
+.premium-ui .work-item-card:hover,
+.premium-ui .link-card:hover {
+    border-color: #c5d9ed;
+    box-shadow: 0 10px 23px rgba(37,99,235,.07);
+}
+
+/* ---------- Settings centers ---------- */
+.premium-ui .pwa-settings-card,
+.premium-ui .storage-pro-card,
+.premium-ui .regression-center-card,
+.premium-ui .health-center-card {
+    border-radius: 14px;
+    border-color: #dfe7ef;
+    box-shadow: 0 4px 14px rgba(15,23,42,.035);
+}
+.premium-ui .pwa-settings-heading,
+.premium-ui .storage-pro-heading,
+.premium-ui .regression-center-heading,
+.premium-ui .health-center-heading { padding-bottom: 10px; border-bottom: 1px solid #edf1f5; }
+
+/* ---------- Modals / command palette / toast ---------- */
+.premium-ui .app-modal-backdrop,
+.premium-ui .account-gate,
+.premium-ui .global-command-backdrop {
+    background: rgba(7,20,36,.66);
+    backdrop-filter: blur(11px) saturate(115%);
+}
+.premium-ui .app-modal,
+.premium-ui .account-gate-card,
+.premium-ui .global-command-dialog {
+    border: 1px solid rgba(255,255,255,.48);
+    border-radius: 19px;
+    background: rgba(255,255,255,.985);
+    box-shadow: var(--pro-shadow-3);
+}
+.premium-ui .global-command-dialog { overflow: hidden; }
+.premium-ui .global-command-head { background: linear-gradient(180deg, #fff, #f8fafc); }
+.premium-ui .global-command-search-wrap { border-color: #cbd8e6; box-shadow: 0 3px 12px rgba(15,23,42,.04); }
+.premium-ui .toast {
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 11px;
+    box-shadow: 0 18px 44px rgba(8,27,49,.20);
+}
+
+/* ---------- Micro polish ---------- */
+.premium-ui a,
+.premium-ui button,
+.premium-ui summary { -webkit-tap-highlight-color: transparent; }
+.premium-ui .btn,
+.premium-ui .tab-btn,
+.premium-ui .overview-card,
+.premium-ui .command-panel,
+.premium-ui .year-panel,
+.premium-ui .automation-panel,
+.premium-ui .work-item-card,
+.premium-ui .link-card {
+    transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background-color .14s ease, color .14s ease;
+}
+.premium-ui .btn:active,
+.premium-ui .tab-btn:active,
+.premium-ui .overview-card:active { transform: translateY(0) scale(.99); }
+.premium-ui ::selection { background: rgba(37,99,235,.18); color: #10253d; }
+.premium-ui hr { border: 0; border-top: 1px solid #e7edf4; }
+
+/* ---------- Responsive: laptop ---------- */
+@media (max-width: 1320px) {
+    body.premium-ui { padding: 14px; }
+    .premium-ui .app-header { grid-template-columns: minmax(330px,.75fr) minmax(560px,1.45fr); gap: 16px; padding: 18px; }
+    .premium-ui .brand-meta span:last-child { display: none; }
+    .premium-ui .header-context { min-width: 165px; max-width: 205px; }
+    .premium-ui .header-command-kbd { display: none; }
+    .premium-ui .school-year-bar { grid-template-columns: minmax(150px,.75fr) minmax(245px,1fr) auto; }
+    .premium-ui .school-year-week-info { grid-column: 1 / -1; }
+}
+
+/* ---------- Responsive: tablet ---------- */
+@media (max-width: 1020px) {
+    .premium-ui .app-header { grid-template-columns: 1fr; align-items: stretch; min-height: 0; }
+    .premium-ui .header-quick-actions { justify-content: flex-start; }
+    .premium-ui .header-context { min-width: 220px; margin-right: auto; align-items: flex-start; }
+    .premium-ui .tabs { grid-template-columns: repeat(3, minmax(0,1fr)); position: sticky; top: 5px; }
+    .premium-ui .tab-btn { min-height: 42px; }
+    .premium-ui .school-year-bar { grid-template-columns: 1fr 1fr; }
+    .premium-ui .school-year-week-info { grid-column: 1 / -1; }
+    .premium-ui .card { padding: 18px; }
+}
+
+/* ---------- Responsive: phone ---------- */
+@media (max-width: 700px) {
+    body.premium-ui { padding: 7px; background: #edf2f8; }
+    body.premium-ui::before { display: none; }
+    .premium-ui .app-header {
+        gap: 13px;
+        margin-bottom: 8px;
+        padding: 14px;
+        border-radius: 17px;
+        background: linear-gradient(145deg, #0a223d, #174773);
+    }
+    .premium-ui .brand-mark { width: 43px; height: 43px; flex-basis: 43px; border-radius: 12px; }
+    .premium-ui .brand-mark span { font-size: 21px; }
+    .premium-ui .brand-kicker { font-size: 7.5px !important; }
+    .premium-ui .app-header .brand h1 { font-size: 20px; }
+    .premium-ui .brand-meta { display: block; }
+    .premium-ui .brand-meta i,
+    .premium-ui .brand-meta span:last-child { display: none; }
+    .premium-ui .header-quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
+    .premium-ui .header-context { grid-column: 1 / -1; min-width: 0; max-width: none; width: auto; }
+    .premium-ui .header-command-trigger,
+    .premium-ui .header-reminder-trigger,
+    .premium-ui .header-settings-btn { width: 100%; justify-content: center; }
+    .premium-ui .header-favorite-links { display: grid; grid-template-columns: 1fr 1fr; grid-column: 1 / -1; width: 100%; }
+    .premium-ui .header-favorite-link { justify-content: center; }
+    .premium-ui .pwa-header-actions { grid-column: 1 / -1; justify-content: flex-start; }
+    .premium-ui .pwa-network-badge { min-height: 34px; }
+    .premium-ui .account-bar { padding: 9px; border-radius: 12px; }
+    .premium-ui .account-actions { width: 100%; gap: 5px; }
+    .premium-ui .account-actions .btn { flex: 1 1 auto; }
+    .premium-ui .settings-hub { border-radius: 12px; }
+    .premium-ui .school-year-bar { grid-template-columns: 1fr; padding: 11px 10px 11px 14px; border-radius: 12px; }
+    .premium-ui .teacher-overview,
+    .premium-ui .year-dashboard,
+    .premium-ui .automation-center,
+    .premium-ui .teacher-command-center { padding: 12px; border-radius: 14px; }
+    .premium-ui .tabs {
+        display: flex;
+        top: 4px;
+        gap: 4px;
+        padding: 4px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        border-radius: 12px;
+        scrollbar-width: none;
+    }
+    .premium-ui .tabs::-webkit-scrollbar { display: none; }
+    .premium-ui .tab-btn { flex: 0 0 auto; min-width: 126px; min-height: 40px; scroll-snap-align: start; font-size: 10.5px; }
+    .premium-ui .tab-btn .icon { width: 23px; height: 23px; font-size: 13px; }
+    .premium-ui .card { padding: 14px 12px; border-radius: 14px; }
+    .premium-ui .card::before { border-radius: 14px 0 0 14px; }
+    .premium-ui .card-header { align-items: flex-start; margin-bottom: 13px; padding-bottom: 10px; }
+    .premium-ui .card-header h2 { font-size: 15px; }
+    .premium-ui .overview-grid { gap: 6px; }
+    .premium-ui .overview-card { min-height: 66px; padding: 8px; }
+    .premium-ui .overview-card-icon { width: 31px; height: 31px; flex-basis: 31px; }
+    .premium-ui table { font-size: 11.5px; }
+    .premium-ui table th { padding: 8px 9px; font-size: 9px; }
+    .premium-ui table td { padding: 8px 9px; }
+    .premium-ui .upload-zone { padding: 24px 10px; }
+}
+
+@media (max-width: 430px) {
+    .premium-ui .header-command-label,
+    .premium-ui .header-reminder-label { font-size: 10.5px; }
+    .premium-ui .header-favorite-external { display: none; }
+    .premium-ui .overview-grid { grid-template-columns: 1fr 1fr; }
+    .premium-ui .overview-card-body strong { font-size: 13px; }
+    .premium-ui .overview-card-body small { font-size: 9px; }
+}
+
+/* ---------- Reduced motion / print ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .premium-ui .tab-content.active { animation: none; }
+}
+@media print {
+    body.premium-ui { background: #fff !important; padding: 0 !important; }
+    .premium-ui .app-header,
+    .premium-ui .teacher-overview,
+    .premium-ui .year-dashboard,
+    .premium-ui .automation-center,
+    .premium-ui .teacher-command-center,
+    .premium-ui .card { box-shadow: none !important; }
+    .premium-ui .card::before,
+    .premium-ui .report-center-card::after,
+    .premium-ui .profile-package-card::after { display: none !important; }
+    .premium-ui .table-wrap table thead th,
+    .premium-ui .plan-week-list-scroll table thead th,
+    .premium-ui .report-table-wrap table thead th { position: static !important; }
+}

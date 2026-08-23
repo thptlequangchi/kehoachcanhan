@@ -1,22 +1,25 @@
-# TESTING — v50.7
+# TESTING — v51.0 Professional Workspace UI
 
 ## Kiểm tra bắt buộc
 - `node --check` toàn bộ JavaScript và Service Worker.
 - HTML ID không trùng, DOM reference đầy đủ, app-shell không thiếu tài nguyên.
-- Fixture nghiệp vụ cũ vẫn PASS.
+- `pro-workspace-v51.css` phải là stylesheet nội bộ tải cuối cùng.
+- CSS v51 parse không lỗi.
+- Fixture nghiệp vụ v50.7 tiếp tục PASS.
 
-## Fixture mới v50.7
-1. `MAX_SCHOOL_WEEKS = 37`.
-2. `MAX_AUXILIARY_WEEKS = 2`.
-3. `TOTAL_ACADEMIC_CALENDAR_WEEKS = 39`.
-4. Chuỗi lịch có 39 vị trí: hai tuần phụ trước Tuần 1 và Tuần 1–37.
-5. Vị trí cuối cùng của Tuần 37 trong timeline là 39.
-6. Quy tắc học kỳ vẫn giữ HKI 1–18, HKII 19–37.
+## Kiểm tra giao diện trên trình duyệt thật sau deploy
+1. **Desktop 1366/1440px**: header không tràn; Ctrl+K, Nhắc việc, TKB trường, vnEdu, PWA và Cài đặt hiển thị gọn.
+2. **Thanh 6 tab**: sticky khi cuộn; active state rõ; không che nội dung.
+3. **Dashboard**: KPI/panel thẳng hàng, không cắt chữ ở dữ liệu dài.
+4. **Bảng dài**: header bảng sticky trong vùng cuộn; dòng không bị lệch cột.
+5. **Form / modal / Ctrl+K**: focus rõ, nút không tràn.
+6. **Điện thoại 390–430px**: header xếp 2 cột hợp lý, tab cuộn ngang, không có horizontal overflow toàn trang.
+7. **In / Save as PDF**: nền trắng, không shadow/accent UI và header bảng trở về static.
 
-## Kiểm tra trên trình duyệt thật
-Sau deploy:
-- Nhập Thứ 2 của Tuần 1 và bấm **Áp dụng lịch 39 tuần**.
-- Xem phần thông tin năm học: phải hiện 2 tuần phụ trước Tuần 1 và Tuần 37 cuối năm.
-- Dashboard phải hiển thị đủ 39 ô.
-- Nhấn một ô tuần phụ: phải mở Kế hoạch trường, không mở TKB/Lịch báo giảng.
-- Chọn Tuần 18 và Tuần 19 ở Tiến độ: ranh giới học kỳ vẫn đúng như trước.
+## Kiểm tra nghiệp vụ giữ nguyên
+- Lịch năm học: 2 tuần phụ + 37 tuần chính.
+- HKI 1–18, HKII 19–37.
+- Mốc HKI do giáo viên xác nhận.
+- Trạng thái số tiết còn lại theo học kỳ.
+- Reminder / Hệ thống gợi ý không lặp.
+- IndexedDB / Firebase / Report / Hồ sơ không thay schema.
