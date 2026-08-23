@@ -2146,11 +2146,13 @@ service cloud.firestore {
         function updateSchoolYearWeekInfo() {
             const workspace = getActiveYearWorkspace();
             week1StartDateInput.value = formatISODateForDisplay(workspace?.week1Start);
+            const firstAuxiliaryWeek = getWeekDateInfo(-2);
+            const lastAuxiliaryWeek = getWeekDateInfo(-1);
             const week1 = getWeekDateInfo(1);
             const lastWeek = getWeekDateInfo(MAX_SCHOOL_WEEKS);
             schoolYearWeekInfo.textContent = week1 && lastWeek
-                ? `37 tuần chính, từ Thứ 2 đến Chủ nhật · Tuần 1: ${week1.rangeText} · Tuần 37: ${lastWeek.rangeText} · Kế hoạch trường có thể thêm 2 tuần phụ trước khai giảng.`
-                : 'Nhập ngày Thứ 2 bắt đầu Tuần 1 theo định dạng ngày/tháng/năm để tự tính 37 tuần chính; Kế hoạch trường có thể thêm tối đa 2 tuần phụ trước khai giảng.';
+                ? `Lịch năm học tối đa ${TOTAL_ACADEMIC_CALENDAR_WEEKS} tuần = ${MAX_AUXILIARY_WEEKS} tuần phụ trước khai giảng + ${MAX_SCHOOL_WEEKS} tuần chính · 2 tuần phụ: ${firstAuxiliaryWeek?.startText || '—'} – ${lastAuxiliaryWeek?.endText || '—'} · Tuần 1: ${week1.rangeText} · Tuần ${MAX_SCHOOL_WEEKS}: ${lastWeek.rangeText}.`
+                : `Nhập ngày Thứ 2 bắt đầu Tuần 1 để hệ thống tự tính lịch tối đa ${TOTAL_ACADEMIC_CALENDAR_WEEKS} tuần (${MAX_AUXILIARY_WEEKS} tuần phụ + ${MAX_SCHOOL_WEEKS} tuần chính).`;
         }
 
         function activateAcademicYearWorkspace(academicYear, notify = true) {

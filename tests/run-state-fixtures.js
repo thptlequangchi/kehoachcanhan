@@ -6,6 +6,7 @@ const ctx={console,localStorage,sessionStorage:localStorage,window:null,globalTh
 ctx.window=ctx;ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync(root+'/01-state.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'/04-shared-core.js','utf8'),ctx);
 const ev=x=>vm.runInContext(x,ctx), tests=[];
 tests.push(['year',ev("normalizeAcademicYear('2026 - 2027')")==='2026-2027']);
+tests.push(['academic calendar 39 weeks',ev("(()=>{const a=getAcademicCalendarWeekSequence();return MAX_SCHOOL_WEEKS===37&&MAX_AUXILIARY_WEEKS===2&&TOTAL_ACADEMIC_CALENDAR_WEEKS===39&&a.length===39&&a[0]===-2&&a[1]===-1&&a[2]===1&&a[38]===37&&getAcademicCalendarWeekPosition(-2)===1&&getAcademicCalendarWeekPosition(37)===39})()")]);
 tests.push(['plan',ev("(()=>{const d=normalizePlanWeek({week:5,dateRange:'24/08/2026 - 30/08/2026',days:[{day:'Thứ 2',date:'24/08',morning:'Chào cờ'}]});return d.week===5&&d.days[0].morning==='Chào cờ'})()")]);
 tests.push(['timetable',ev("(()=>{const d=normalizeTimetable({week:5,sessions:[{key:'morning',periods:[{period:1,cells:[{day:'Thứ 2',className:'12A1',subject:'Toán'}]}]},{key:'afternoon',periods:[]}]});const c=d.sessions[0].periods[0].cells[0];return d.sessions.length===2&&c.className==='12A1'})()")]);
 tests.push(['work legacy',ev("(()=>{const i=normalizeWorkItems([{id:'x',type:'task',title:'T',completed:true}],'personal')[0];return i.status==='done'&&i.completed===true})()")]);

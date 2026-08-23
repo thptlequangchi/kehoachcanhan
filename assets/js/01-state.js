@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '50.6.0';
+        const APP_VERSION = '50.7.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -58,6 +58,10 @@
         const PLAN_DAYS = [...SCHOOL_DAYS, 'Chủ nhật'];
         const MAX_SCHOOL_WEEKS = 37;
         const AUXILIARY_PLAN_WEEKS = [-1, -2];
+        // Lịch năm học có thể kéo dài tối đa 39 tuần: 2 tuần phụ trước khai giảng + 37 tuần chính.
+        // MAX_SCHOOL_WEEKS vẫn giữ 37 vì PPCT, TKB và Lịch báo giảng chỉ tính trên 37 tuần học chính.
+        const MAX_AUXILIARY_WEEKS = AUXILIARY_PLAN_WEEKS.length;
+        const TOTAL_ACADEMIC_CALENDAR_WEEKS = MAX_SCHOOL_WEEKS + MAX_AUXILIARY_WEEKS;
         const RECOGNITION_CACHE_KEY = 'teacher_recognition_cache_v1';
         const RECOGNITION_ENGINE_VERSION = 4;
         const CURRICULUM_PROFILES_STORAGE = 'teacher_curriculum_profiles_v2';
@@ -237,6 +241,28 @@
             if (normalizedWeek === -1) return 'Tuần phụ 1';
             if (normalizedWeek === -2) return 'Tuần phụ 2';
             return `Tuần ${normalizedWeek}`;
+        }
+
+        function getAcademicCalendarWeekSequence() {
+            // Sắp theo thời gian thực: tuần cách Tuần 1 hai tuần (-2), một tuần (-1), rồi Tuần 1–37.
+            // Giữ nguyên mã tuần phụ cũ để không làm thay đổi dữ liệu đã lưu ở các phiên bản trước.
+            const auxiliaryChronological = [...AUXILIARY_PLAN_WEEKS].sort((a, b) => a - b);
+            const mainWeeks = Array.from({ length: MAX_SCHOOL_WEEKS }, (_, index) => index + 1);
+            return [...auxiliaryChronological, ...mainWeeks];
+        }
+
+        function getAcademicCalendarWeekPosition(week) {
+            const normalizedWeek = Number.parseInt(week, 10);
+            const index = getAcademicCalendarWeekSequence().indexOf(normalizedWeek);
+            return index >= 0 ? index + 1 : 0;
+        }
+
+        function getAcademicCalendarWeekShortLabel(week) {
+            const normalizedWeek = Number.parseInt(week, 10);
+            if (isAuxiliaryPlanWeek(normalizedWeek)) {
+                return getPlanWeekLabel(normalizedWeek).replace('Tuần phụ ', 'P');
+            }
+            return `T${normalizedWeek}`;
         }
 
         function normalizePlanCellText(value) {

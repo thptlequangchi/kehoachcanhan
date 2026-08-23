@@ -1,9 +1,12 @@
         // ================================================================
         //  v34 UX OVERVIEW — Hôm nay / Tuần này / Cảnh báo nhanh
         // ================================================================
-        function getOverviewCurrentWeek(today = new Date()) {
+        function getOverviewCurrentCalendarWeek(today = new Date()) {
             const point = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            for (let week = 1; week <= MAX_SCHOOL_WEEKS; week++) {
+            const weeks = typeof getAcademicCalendarWeekSequence === 'function'
+                ? getAcademicCalendarWeekSequence()
+                : Array.from({ length: MAX_SCHOOL_WEEKS }, (_, index) => index + 1);
+            for (const week of weeks) {
                 const info = getWeekDateInfo(week);
                 if (!info) continue;
                 const start = new Date(info.start.getFullYear(), info.start.getMonth(), info.start.getDate());
@@ -11,6 +14,11 @@
                 if (point >= start && point <= end) return week;
             }
             return null;
+        }
+
+        function getOverviewCurrentWeek(today = new Date()) {
+            const calendarWeek = getOverviewCurrentCalendarWeek(today);
+            return isMainSchoolWeek(calendarWeek) ? calendarWeek : null;
         }
 
         function overviewDayLabel(date = new Date()) {
@@ -22,7 +30,8 @@
             const title = document.getElementById('overviewTitle');
             if (!title) return;
             const today = new Date();
-            const week = getOverviewCurrentWeek(today);
+            const calendarWeek = getOverviewCurrentCalendarWeek(today);
+            const week = isMainSchoolWeek(calendarWeek) ? calendarWeek : null;
             const dayLabel = overviewDayLabel(today);
             const context = document.getElementById('headerAcademicContext');
             const weekValue = document.getElementById('overviewWeekValue');
@@ -40,12 +49,15 @@
 
             const dateText = today.toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
             title.textContent = `${dayLabel} · ${today.toLocaleDateString('vi-VN')}`;
-            subtitle.textContent = week ? `Năm học ${state.selectedAcademicYear} · đang ở Tuần ${week}` : `Năm học ${state.selectedAcademicYear} · ngoài khoảng 37 tuần đã thiết lập`;
-            if (context) context.textContent = week ? `${state.selectedAcademicYear} · Tuần ${week}` : state.selectedAcademicYear;
+            const calendarWeekLabel = calendarWeek ? getPlanWeekLabel(calendarWeek) : '';
+            subtitle.textContent = calendarWeek
+                ? `Năm học ${state.selectedAcademicYear} · đang ở ${calendarWeekLabel} trong lịch ${TOTAL_ACADEMIC_CALENDAR_WEEKS} tuần`
+                : `Năm học ${state.selectedAcademicYear} · ngoài lịch tối đa ${TOTAL_ACADEMIC_CALENDAR_WEEKS} tuần đã thiết lập`;
+            if (context) context.textContent = calendarWeek ? `${state.selectedAcademicYear} · ${calendarWeekLabel}` : state.selectedAcademicYear;
 
-            if (week) {
-                const info = getWeekDateInfo(week);
-                weekValue.textContent = `Tuần ${week}`;
+            if (calendarWeek) {
+                const info = getWeekDateInfo(calendarWeek);
+                weekValue.textContent = calendarWeekLabel;
                 weekMeta.textContent = info?.rangeText || 'Tuần hiện tại';
             } else {
                 weekValue.textContent = 'Ngoài kỳ';
@@ -54,12 +66,17 @@
 
             const lessonCount = week ? getTodayTeachingItems(week, dayLabel).length : 0;
             lessonValue.textContent = lessonCount ? `${lessonCount} tiết` : 'Chưa có';
-            lessonMeta.textContent = lessonCount ? `${dayLabel} theo TKB tuần ${week}` : 'Không thấy tiết trong TKB hôm nay';
+            lessonMeta.textContent = lessonCount
+                ? `${dayLabel} theo TKB tuần ${week}`
+                : (calendarWeek && isAuxiliaryPlanWeek(calendarWeek) ? 'Tuần phụ trước khai giảng · chưa tính TKB' : 'Không thấy tiết trong TKB hôm nay');
 
             const weekStatus = week ? getWeekOperationalStatus(week) : null;
             const scheduleItems = weekStatus?.schedule || [];
             const meta = weekStatus?.meta || {};
-            if (!weekStatus?.hasSchedule) {
+            if (calendarWeek && isAuxiliaryPlanWeek(calendarWeek)) {
+                scheduleValue.textContent = 'Tuần phụ';
+                scheduleMetaEl.textContent = 'Không tính PPCT / lịch báo giảng';
+            } else if (!weekStatus?.hasSchedule) {
                 scheduleValue.textContent = 'Chưa tạo';
                 scheduleMetaEl.textContent = week ? `Lịch báo giảng Tuần ${week}` : 'Lịch báo giảng';
             } else if (weekStatus.stale) {
@@ -81,6 +98,10 @@
 
             const issues = [];
             let level = 'ok';
+            if (calendarWeek && isAuxiliaryPlanWeek(calendarWeek)) {
+                const hasAuxPlan = state.planData?.some(item => Number.parseInt(item?.week, 10) === calendarWeek);
+                if (!hasAuxPlan) issues.push(`chưa có kế hoạch ${getPlanWeekLabel(calendarWeek).toLowerCase()}`);
+            }
             if (weekStatus && !weekStatus.hasPlan) issues.push('chưa có kế hoạch trường');
             if (weekStatus && !weekStatus.hasTimetable) issues.push('chưa có TKB tuần');
             if (weekStatus?.stale) { issues.push('lịch báo giảng cần tạo lại'); level = 'danger'; }

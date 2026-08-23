@@ -122,7 +122,7 @@
             populateTimetableWeekSelect();
             populateWeekSelect();
             const week1 = getWeekDateInfo(1);
-            showToast(`✅ Đã tính 37 tuần chính, bắt đầu từ Thứ 2 ngày ${week1.startText}`, 'success');
+            showToast(`✅ Đã tính lịch ${TOTAL_ACADEMIC_CALENDAR_WEEKS} tuần (${MAX_AUXILIARY_WEEKS} tuần phụ + ${MAX_SCHOOL_WEEKS} tuần chính), Tuần 1 bắt đầu ${week1.startText}`, 'success');
         });
 
         function getScheduleMeta(week) {

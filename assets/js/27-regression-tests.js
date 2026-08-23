@@ -1,4 +1,4 @@
-/* Bước 17 · v50.6 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
+/* Bước 17 · v50.7 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
 (() => {
     'use strict';
     const STORAGE_KEY = 'teacher_regression_last_v1';
@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.6.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.7.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -90,7 +90,7 @@
             const missing=names.filter(name=>typeof globalThis[name] !== 'function');
             return missing.length ? {status:'fail',message:`Thiếu hàm: ${missing.join(', ')}`} : `Đủ ${names.length} hàm lõi.`;
         }));
-        tests.push(runSync('school-week-invariant','Quy tắc 37 tuần','Nghiệp vụ',() => MAX_SCHOOL_WEEKS === 37 && SCHOOL_DAYS.length === 6 && PLAN_DAYS.length === 7 ? '37 tuần · 6 ngày học · 7 ngày kế hoạch.' : {status:'fail',message:'Hằng số năm học/ngày không còn đúng cấu hình.'}));
+        tests.push(runSync('school-week-invariant','Quy tắc lịch 39 tuần','Nghiệp vụ',() => MAX_SCHOOL_WEEKS === 37 && MAX_AUXILIARY_WEEKS === 2 && TOTAL_ACADEMIC_CALENDAR_WEEKS === 39 && getAcademicCalendarWeekSequence().length === 39 && SCHOOL_DAYS.length === 6 && PLAN_DAYS.length === 7 ? '39 tuần lịch = 2 tuần phụ + 37 tuần chính · 6 ngày học · 7 ngày kế hoạch.' : {status:'fail',message:'Hằng số năm học/tuần phụ/ngày không còn đúng cấu hình.'}));
         tests.push(runSync('academic-year-normalizer','Chuẩn hóa năm học','Nghiệp vụ',() => normalizeAcademicYear('2026 - 2027') === '2026-2027' ? 'Chuẩn hóa 2026 - 2027 → 2026-2027.' : {status:'fail',message:'normalizeAcademicYear trả kết quả không mong đợi.'}));
         tests.push(runSync('plan-normalizer','Chuẩn hóa Kế hoạch tuần','Nghiệp vụ',() => {
             const data=normalizePlanWeek({week:5,dateRange:'24/08/2026 - 30/08/2026',days:[{day:'Thứ 2',date:'24/08',morning:'Chào cờ'}]});

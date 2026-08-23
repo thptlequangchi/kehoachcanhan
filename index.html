@@ -50,9 +50,9 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v50.6 · Trạng thái còn lại theo học kỳ</span>
+                        <span>v50.7 · Lịch năm học tối đa 39 tuần</span>
                         <i aria-hidden="true"></i>
-                        <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
+                        <span>39 tuần lịch · 37 tuần PPCT · Báo giảng · Hồ sơ</span>
                     </div>
                 </div>
             </div>
@@ -241,7 +241,7 @@
                         <span class="health-overall-badge" id="healthOverallStatus">Chưa kiểm tra</span>
                     </div>
                     <div class="health-summary-grid">
-                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v50.6</strong></div>
+                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v50.7</strong></div>
                         <div class="health-summary-item"><span>Dữ liệu</span><strong id="healthSummaryData">Đang tổng hợp…</strong></div>
                         <div class="health-summary-item"><span>Cloud</span><strong id="healthSummaryCloud">Đang kiểm tra…</strong></div>
                         <div class="health-summary-item"><span>Nhật ký</span><strong id="healthSummaryErrors">0 lỗi</strong></div>
@@ -346,9 +346,9 @@
                     <span class="date-format-badge" aria-hidden="true">dd/mm/yyyy</span>
                 </div>
             </div>
-            <button class="btn btn-success btn-sm save-week-start-btn" id="saveWeek1StartBtn" type="button">✓ Áp dụng 37 tuần</button>
+            <button class="btn btn-success btn-sm save-week-start-btn" id="saveWeek1StartBtn" type="button">✓ Áp dụng lịch 39 tuần</button>
             <div class="school-year-week-info" id="schoolYearWeekInfo">
-                Nhập ngày Thứ 2 bắt đầu Tuần 1 để hệ thống tự tính đủ 37 tuần chính.
+                Nhập ngày Thứ 2 bắt đầu Tuần 1 để hệ thống tự tính 2 tuần phụ trước khai giảng + 37 tuần chính (tối đa 39 tuần).
             </div>
         </section>
 
@@ -396,7 +396,7 @@
             <div class="year-dashboard-heading">
                 <div>
                     <span class="overview-eyebrow">DASHBOARD NĂM HỌC</span>
-                    <h2>Toàn cảnh 37 tuần</h2>
+                    <h2>Toàn cảnh 39 tuần</h2>
                     <p id="yearDashboardSubtitle">Đang tổng hợp kế hoạch, thời khóa biểu, lịch báo giảng và tiến độ PPCT…</p>
                 </div>
                 <div class="year-dashboard-actions">
@@ -416,7 +416,7 @@
             </div>
 
             <div class="year-progress-strip" aria-label="Tiến trình năm học">
-                <div class="year-progress-copy"><strong id="yearProgressTitle">Tiến trình 37 tuần</strong><span id="yearProgressMeta">Đang tính…</span></div>
+                <div class="year-progress-copy"><strong id="yearProgressTitle">Tiến trình 39 tuần</strong><span id="yearProgressMeta">Đang tính…</span></div>
                 <div class="year-progress-track"><span id="yearProgressBar" style="width:0%"></span></div>
             </div>
 
@@ -424,9 +424,9 @@
                 <div class="year-dashboard-main">
                     <article class="year-panel year-panel-timeline">
                         <div class="year-panel-heading">
-                            <div><strong>🗓️ Trạng thái 37 tuần</strong><small>Nhấn vào một tuần để mở dữ liệu liên quan</small></div>
+                            <div><strong>🗓️ Trạng thái 39 tuần</strong><small>2 tuần phụ trước khai giảng + 37 tuần chính; PPCT vẫn tính Tuần 1–37</small></div>
                             <div class="year-week-legend" aria-label="Chú thích trạng thái tuần">
-                                <span><i class="finalized"></i>Đã chốt</span><span><i class="draft"></i>Bản nháp</span><span><i class="ready"></i>Đủ nguồn</span><span><i class="partial"></i>Thiếu dữ liệu</span><span><i class="stale"></i>Cần tạo lại</span>
+                                <span><i class="auxiliary"></i>Tuần phụ</span><span><i class="finalized"></i>Đã chốt</span><span><i class="draft"></i>Bản nháp</span><span><i class="ready"></i>Đủ nguồn</span><span><i class="partial"></i>Thiếu dữ liệu</span><span><i class="stale"></i>Cần tạo lại</span>
                             </div>
                         </div>
                         <div class="year-week-grid" id="yearWeekGrid"></div>
@@ -591,7 +591,7 @@
                 <div class="card-header">
                     <div>
                         <h2>📅 Danh sách kế hoạch các tuần</h2>
-                        <span class="sub" id="planWeekListSummary">37 tuần chính · tối đa 2 tuần phụ trước khai giảng</span>
+                        <span class="sub" id="planWeekListSummary">39 tuần tối đa · 2 tuần phụ + 37 tuần chính</span>
                     </div>
                     <div class="flex-center">
                         <button class="btn btn-success btn-sm" id="addAuxiliaryPlanWeekBtn" type="button">＋ Thêm tuần phụ</button>

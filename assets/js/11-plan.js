@@ -186,7 +186,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
         function updatePlanListControls() {
             const mainCount = state.planData.filter(item => isMainSchoolWeek(item.week)).length;
             const auxiliaryCount = state.planData.filter(item => isAuxiliaryPlanWeek(item.week)).length;
-            planWeekListSummary.textContent = `Đã có ${mainCount}/${MAX_SCHOOL_WEEKS} tuần chính · ${auxiliaryCount}/2 tuần phụ trước khai giảng`;
+            planWeekListSummary.textContent = `Đã có ${auxiliaryCount}/${MAX_AUXILIARY_WEEKS} tuần phụ + ${mainCount}/${MAX_SCHOOL_WEEKS} tuần chính · lịch tối đa ${TOTAL_ACADEMIC_CALENDAR_WEEKS} tuần`;
             const nextAuxiliaryWeek = AUXILIARY_PLAN_WEEKS.find(week => !state.planData.some(item => item.week === week));
             addAuxiliaryPlanWeekBtn.disabled = !canEditSharedPlan() || typeof nextAuxiliaryWeek === 'undefined';
             addAuxiliaryPlanWeekBtn.textContent = typeof nextAuxiliaryWeek === 'undefined'

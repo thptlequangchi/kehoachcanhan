@@ -293,7 +293,7 @@
             let xlsxBytes = null;
             if (workbook) xlsxBytes = new Uint8Array(XLSX.write(workbook, { bookType:'xlsx', type:'array' }));
             const manifest = {
-                application:'Sổ Tay Giáo Viên Pro', version:typeof APP_VERSION !== 'undefined' ? APP_VERSION : '50.6.0', createdAt:snapshot.packageCreatedAt,
+                application:'Sổ Tay Giáo Viên Pro', version:typeof APP_VERSION !== 'undefined' ? APP_VERSION : '50.7.0', createdAt:snapshot.packageCreatedAt,
                 academicYear:snapshot.academicYear,
                 range:{ label:snapshot.range.label, startWeek:snapshot.range.startWeek, endWeek:snapshot.range.endWeek, dateRange:snapshot.range.text },
                 teacher:{ school:snapshot.profile?.schoolName || '', name:snapshot.profile?.teacherName || '', subject:snapshot.profile?.subject || '' },

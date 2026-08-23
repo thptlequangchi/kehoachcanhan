@@ -1,14 +1,19 @@
 
         // ================================================================
-        //  v38 YEAR DASHBOARD — Toàn cảnh 37 tuần
+        //  v50.7 YEAR DASHBOARD — Toàn cảnh 39 tuần lịch (2 tuần phụ + 37 tuần chính)
         // ================================================================
         function yearDashboardEscape(value) {
             if (typeof commandEscape === 'function') return commandEscape(value);
             return escapeHTML(cleanText(value));
         }
 
+        function getYearDashboardCurrentCalendarWeek(today = new Date()) {
+            return typeof getOverviewCurrentCalendarWeek === 'function' ? getOverviewCurrentCalendarWeek(today) : null;
+        }
+
         function getYearDashboardCurrentWeek(today = new Date()) {
-            return typeof getOverviewCurrentWeek === 'function' ? getOverviewCurrentWeek(today) : null;
+            const calendarWeek = getYearDashboardCurrentCalendarWeek(today);
+            return isMainSchoolWeek(calendarWeek) ? calendarWeek : null;
         }
 
         function getLatestYearDataWeek() {
@@ -26,27 +31,64 @@
             return getYearDashboardCurrentWeek(today) || getLatestYearDataWeek() || 1;
         }
 
-        function getYearWeekState(week, referenceWeek) {
+        function getYearWeekState(week, referenceWeek, currentCalendarWeek = null) {
             const status = getWeekOperationalStatus(week);
-            const future = week > referenceWeek && !status.hasPlan && !status.hasTimetable && !status.hasSchedule;
+            const currentPosition = getAcademicCalendarWeekPosition(currentCalendarWeek);
+            const weekPosition = getAcademicCalendarWeekPosition(week);
+            const calendarFuture = Boolean(currentPosition && weekPosition > currentPosition);
+            const future = (calendarFuture || week > referenceWeek) && !status.hasPlan && !status.hasTimetable && !status.hasSchedule;
             return { ...status, week:Number(week), future };
         }
 
+        function getYearAuxiliaryWeekState(week, currentCalendarWeek) {
+            const normalizedWeek = Number.parseInt(week, 10);
+            const hasPlan = Boolean(state.planData?.some(item => Number.parseInt(item?.week, 10) === normalizedWeek));
+            const currentPosition = getAcademicCalendarWeekPosition(currentCalendarWeek);
+            const weekPosition = getAcademicCalendarWeekPosition(normalizedWeek);
+            return {
+                week: normalizedWeek,
+                auxiliary: true,
+                hasPlan,
+                hasTimetable: false,
+                hasSchedule: false,
+                finalized: false,
+                stale: false,
+                stateKey: hasPlan ? 'aux-ready' : 'aux-empty',
+                label: hasPlan ? 'Có kế hoạch tuần phụ' : 'Chưa có kế hoạch tuần phụ',
+                future: Boolean(currentPosition && weekPosition > currentPosition),
+            };
+        }
+
         function buildYearDashboardSnapshot(today = new Date()) {
-            const currentWeek = getYearDashboardCurrentWeek(today);
+            const currentCalendarWeek = getYearDashboardCurrentCalendarWeek(today);
+            const currentWeek = isMainSchoolWeek(currentCalendarWeek) ? currentCalendarWeek : null;
             const referenceWeek = getYearDashboardReferenceWeek(today);
-            const weekStates = [];
-            for (let week = 1; week <= MAX_SCHOOL_WEEKS; week++) weekStates.push(getYearWeekState(week, referenceWeek));
-            const elapsedStates = weekStates.filter(item => item.week <= referenceWeek);
+            const auxiliaryWeeks = getAcademicCalendarWeekSequence().filter(isAuxiliaryPlanWeek);
+            const auxiliaryStates = auxiliaryWeeks.map(week => getYearAuxiliaryWeekState(week, currentCalendarWeek));
+            const mainWeekStates = [];
+            for (let week = 1; week <= MAX_SCHOOL_WEEKS; week++) mainWeekStates.push(getYearWeekState(week, referenceWeek, currentCalendarWeek));
+            const weekStates = [...auxiliaryStates, ...mainWeekStates];
+            const elapsedStates = mainWeekStates.filter(item => item.week <= referenceWeek);
             const progressSnapshot = buildProgressAttentionSnapshot(referenceWeek);
             const courseRows = progressSnapshot.courseRows;
             const onTrackRows = progressSnapshot.onTrackRows;
             const attentionRows = progressSnapshot.attentionRows;
+            const calendarPosition = getAcademicCalendarWeekPosition(currentCalendarWeek);
+            const calendarElapsedCount = calendarPosition || Math.min(TOTAL_ACADEMIC_CALENDAR_WEEKS, referenceWeek + MAX_AUXILIARY_WEEKS);
+            const elapsedAuxiliaryStates = calendarPosition
+                ? auxiliaryStates.filter(item => getAcademicCalendarWeekPosition(item.week) <= calendarPosition)
+                : auxiliaryStates;
+            const auxiliaryPlanCount = elapsedAuxiliaryStates.filter(item => item.hasPlan).length;
             return {
+                currentCalendarWeek,
                 currentWeek,
                 referenceWeek,
                 weekStates,
+                mainWeekStates,
+                auxiliaryStates,
                 elapsedStates,
+                auxiliaryPlanCount,
+                calendarElapsedCount,
                 planCount: elapsedStates.filter(item => item.hasPlan).length,
                 timetableCount: elapsedStates.filter(item => item.hasTimetable).length,
                 scheduleCount: elapsedStates.filter(item => item.hasSchedule).length,
@@ -56,31 +98,38 @@
                 courseRows,
                 onTrackRows,
                 attentionRows,
-                schoolProgressPercent: currentWeek ? Math.min(100, Math.round(currentWeek * 100 / MAX_SCHOOL_WEEKS)) : 0,
+                schoolProgressPercent: calendarPosition ? Math.min(100, Math.round(calendarPosition * 100 / TOTAL_ACADEMIC_CALENDAR_WEEKS)) : 0,
             };
         }
 
         function renderYearDashboardKpis(snapshot) {
             const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-            setText('yearKpiCurrentWeek', snapshot.currentWeek ? `Tuần ${snapshot.currentWeek}` : 'Ngoài kỳ');
-            setText('yearKpiSchoolProgress', snapshot.currentWeek ? `${snapshot.schoolProgressPercent}%` : `T${snapshot.referenceWeek}`);
-            setText('yearKpiPlanCoverage', `${snapshot.planCount}/${snapshot.referenceWeek}`);
+            const currentLabel = snapshot.currentCalendarWeek ? getPlanWeekLabel(snapshot.currentCalendarWeek) : 'Ngoài kỳ';
+            const planCoverage = snapshot.auxiliaryPlanCount + snapshot.planCount;
+            setText('yearKpiCurrentWeek', currentLabel);
+            setText('yearKpiSchoolProgress', snapshot.currentCalendarWeek ? `${snapshot.schoolProgressPercent}%` : `T${snapshot.referenceWeek}`);
+            setText('yearKpiPlanCoverage', `${planCoverage}/${snapshot.calendarElapsedCount}`);
             setText('yearKpiTimetableCoverage', `${snapshot.timetableCount}/${snapshot.referenceWeek}`);
             setText('yearKpiFinalized', `${snapshot.finalizedCount}/${snapshot.referenceWeek}`);
             setText('yearKpiOnTrack', snapshot.courseRows.length ? `${snapshot.onTrackRows.length}/${snapshot.courseRows.length}` : '—');
             const bar = document.getElementById('yearProgressBar');
             if (bar) bar.style.width = `${snapshot.schoolProgressPercent}%`;
-            setText('yearProgressTitle', snapshot.currentWeek ? `Đang ở Tuần ${snapshot.currentWeek}/${MAX_SCHOOL_WEEKS}` : `Năm học ${state.selectedAcademicYear}`);
-            setText('yearProgressMeta', snapshot.currentWeek
-                ? `Đã đi qua khoảng ${snapshot.schoolProgressPercent}% số tuần chính của năm học.`
-                : `Chưa nằm trong khoảng 37 tuần đã thiết lập; số liệu đang đối chiếu đến Tuần ${snapshot.referenceWeek}.`);
+            setText('yearProgressTitle', snapshot.currentCalendarWeek
+                ? `Đang ở ${currentLabel} · vị trí ${getAcademicCalendarWeekPosition(snapshot.currentCalendarWeek)}/${TOTAL_ACADEMIC_CALENDAR_WEEKS}`
+                : `Năm học ${state.selectedAcademicYear}`);
+            setText('yearProgressMeta', snapshot.currentCalendarWeek
+                ? (isAuxiliaryPlanWeek(snapshot.currentCalendarWeek)
+                    ? `Đang trong giai đoạn tuần phụ trước khai giảng; PPCT/TKB/Lịch báo giảng vẫn tính trên ${MAX_SCHOOL_WEEKS} tuần chính.`
+                    : `Đã đi qua khoảng ${snapshot.schoolProgressPercent}% lịch năm học ${TOTAL_ACADEMIC_CALENDAR_WEEKS} tuần (${MAX_AUXILIARY_WEEKS} phụ + ${MAX_SCHOOL_WEEKS} chính).`)
+                : `Chưa nằm trong lịch ${TOTAL_ACADEMIC_CALENDAR_WEEKS} tuần đã thiết lập; số liệu chuyên môn đang đối chiếu đến Tuần ${snapshot.referenceWeek}.`);
             const subtitle = document.getElementById('yearDashboardSubtitle');
             if (subtitle) {
                 const notes = [];
                 if (snapshot.staleCount) notes.push(`${snapshot.staleCount} tuần cần tạo lại báo giảng`);
                 if (snapshot.attentionRows.length) notes.push(`${snapshot.attentionRows.length} lớp–môn cần chú ý`);
-                if (snapshot.finalizedCount < snapshot.referenceWeek) notes.push(`${snapshot.referenceWeek - snapshot.finalizedCount} tuần chưa chốt hoàn chỉnh`);
-                subtitle.textContent = `Năm học ${state.selectedAcademicYear} · đối chiếu đến Tuần ${snapshot.referenceWeek}${notes.length ? ' · ' + notes.join(' · ') : ' · dữ liệu hiện đang ổn'}`;
+                if (snapshot.finalizedCount < snapshot.referenceWeek) notes.push(`${snapshot.referenceWeek - snapshot.finalizedCount} tuần chính chưa chốt hoàn chỉnh`);
+                const calendarContext = snapshot.currentCalendarWeek ? ` · hiện tại ${currentLabel}` : '';
+                subtitle.textContent = `Năm học ${state.selectedAcademicYear}${calendarContext} · chuyên môn đối chiếu đến Tuần ${snapshot.referenceWeek}${notes.length ? ' · ' + notes.join(' · ') : ' · dữ liệu hiện đang ổn'}`;
             }
         }
 
@@ -89,13 +138,17 @@
             if (!grid) return;
             grid.innerHTML = snapshot.weekStates.map(item => {
                 const classes = ['year-week-chip', item.stateKey];
+                if (item.auxiliary) classes.push('auxiliary');
                 if (item.future) classes.push('future');
-                if (snapshot.currentWeek === item.week) classes.push('current');
-                const parts = [`Tuần ${item.week}`, item.label];
+                if (snapshot.currentCalendarWeek === item.week) classes.push('current');
+                const label = item.auxiliary ? getPlanWeekLabel(item.week) : `Tuần ${item.week}`;
+                const parts = [label, item.label];
                 if (item.hasPlan) parts.push('Có kế hoạch');
                 if (item.hasTimetable) parts.push('Có TKB');
                 if (item.hasSchedule) parts.push(item.finalized ? 'Báo giảng đã chốt' : 'Có báo giảng');
-                return `<button class="${classes.join(' ')}" type="button" data-year-week="${item.week}" title="${yearDashboardEscape(parts.join(' · '))}"><span>T${item.week}</span>${item.stateKey !== 'empty' ? '<i class="week-dot"></i>' : ''}</button>`;
+                const shortLabel = getAcademicCalendarWeekShortLabel(item.week);
+                const hasDot = item.auxiliary ? item.hasPlan : item.stateKey !== 'empty';
+                return `<button class="${classes.join(' ')}" type="button" data-year-week="${item.week}" title="${yearDashboardEscape(parts.join(' · '))}"><span>${yearDashboardEscape(shortLabel)}</span>${hasDot ? '<i class="week-dot"></i>' : ''}</button>`;
             }).join('');
         }
 
@@ -195,6 +248,13 @@
 
         function openYearDashboardWeek(week, target = '') {
             const normalizedWeek = Number.parseInt(week, 10);
+            if (isAuxiliaryPlanWeek(normalizedWeek)) {
+                activateOverviewTab('plan');
+                const hasPlan = state.planData?.some(item => Number.parseInt(item?.week, 10) === normalizedWeek);
+                if (typeof showPlanWeek === 'function' && hasPlan) showPlanWeek(normalizedWeek, true);
+                else document.getElementById('planTableCard')?.scrollIntoView({ behavior:'smooth', block:'start' });
+                return;
+            }
             if (!(normalizedWeek > 0 && normalizedWeek <= MAX_SCHOOL_WEEKS)) return;
             const stateInfo = getYearWeekState(normalizedWeek, getYearDashboardReferenceWeek());
             const resolvedTarget = target || (stateInfo.hasSchedule ? 'teaching' : stateInfo.hasTimetable ? 'teaching' : stateInfo.hasPlan ? 'timetable' : 'plan');

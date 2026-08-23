@@ -1,15 +1,22 @@
-# TESTING — v50.6
+# TESTING — v50.7
 
 ## Kiểm tra bắt buộc
-- `node --check` toàn bộ JS và Service Worker.
+- `node --check` toàn bộ JavaScript và Service Worker.
 - HTML ID không trùng, DOM reference đầy đủ, app-shell không thiếu tài nguyên.
 - Fixture nghiệp vụ cũ vẫn PASS.
 
-## Fixture mới v50.6
-1. 140 tiết cả năm, HKI kết thúc tiết 54, đã học 28 → **Còn 26 tiết HKI**.
-2. Sang HKII, 140 tiết cả năm, đã học 80 → **Còn 60 tiết đến hết năm**.
-3. HKI chưa xác nhận mốc → **Chưa xác nhận mốc HKI** và không tự suy đoán số còn lại.
-4. Dự báo nhanh/chậm/thiếu cuối học kỳ vẫn dùng `forecastState`/`forecastShortfall` và không bị thay đổi bởi nhãn Trạng thái mới.
+## Fixture mới v50.7
+1. `MAX_SCHOOL_WEEKS = 37`.
+2. `MAX_AUXILIARY_WEEKS = 2`.
+3. `TOTAL_ACADEMIC_CALENDAR_WEEKS = 39`.
+4. Chuỗi lịch có 39 vị trí: hai tuần phụ trước Tuần 1 và Tuần 1–37.
+5. Vị trí cuối cùng của Tuần 37 trong timeline là 39.
+6. Quy tắc học kỳ vẫn giữ HKI 1–18, HKII 19–37.
 
 ## Kiểm tra trên trình duyệt thật
-Sau deploy, chọn một lớp có PPCT đã xác nhận mốc HKI; mở bảng Tiến độ ở một tuần HKI và một tuần HKII để đối chiếu trực tiếp số tiết còn lại.
+Sau deploy:
+- Nhập Thứ 2 của Tuần 1 và bấm **Áp dụng lịch 39 tuần**.
+- Xem phần thông tin năm học: phải hiện 2 tuần phụ trước Tuần 1 và Tuần 37 cuối năm.
+- Dashboard phải hiển thị đủ 39 ô.
+- Nhấn một ô tuần phụ: phải mở Kế hoạch trường, không mở TKB/Lịch báo giảng.
+- Chọn Tuần 18 và Tuần 19 ở Tiến độ: ranh giới học kỳ vẫn đúng như trước.

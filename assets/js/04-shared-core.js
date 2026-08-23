@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v50.6 — SHARED CORE
+   SỔ TAY GIÁO VIÊN v50.7 — SHARED CORE
    Hợp nhất các quy tắc dùng chung giữa Overview / Trợ lý tuần / Dashboard /
    Sổ Công Việc / Reminder / Report mà không thay đổi schema dữ liệu.
 ============================================================================ */

@@ -2949,6 +2949,10 @@
 .year-week-chip.ready { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
 .year-week-chip.partial { background: #f8fafc; border-color: #cbd5e1; color: #475569; }
 .year-week-chip.stale { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+.year-week-chip.auxiliary { border-style: dashed; background: #faf5ff; border-color: #d8b4fe; color: #7e22ce; }
+.year-week-chip.auxiliary.aux-ready { background: #f3e8ff; border-color: #c084fc; color: #6b21a8; }
+.year-week-chip.auxiliary.current { outline-color: #9333ea; }
+.year-week-legend i.auxiliary { background: #a855f7; }
 .year-week-chip.future { opacity: .58; }
 .year-week-chip .week-dot { position: absolute; right: 4px; top: 4px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .65; }
 .year-action-list { display: grid; gap: 7px; }

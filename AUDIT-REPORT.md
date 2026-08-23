@@ -1,40 +1,37 @@
-# AUDIT REPORT — v50.6.0 Trạng thái số tiết còn lại theo học kỳ
+# AUDIT REPORT — v50.7.0 Lịch năm học tối đa 39 tuần
 
 ## Phạm vi nâng cấp
-- Nền trực tiếp: v50.5.0.
-- Không thay đổi schema dữ liệu nghiệp vụ, Firestore Rules hoặc IndexedDB schema.
-- APP_VERSION / Service Worker: `50.6.0`.
+- Nền trực tiếp: v50.6.0.
+- APP_VERSION / Service Worker: `50.7.0`.
 - `DATA_SCHEMA_VERSION`: giữ nguyên `1`.
+- Không thay Firestore Rules hoặc IndexedDB schema.
 
-## Quy tắc Trạng thái mới
-- HKI: `Còn lại = mốc PPCT kết thúc HKI đã xác nhận - PPCT thực tế`.
-- HKII: `Còn lại = tiết PPCT cuối cùng cả năm - PPCT thực tế`.
-- HKI chưa xác nhận mốc: hiển thị `Chưa xác nhận mốc HKI`.
-- Đạt mốc HKI: `Đã hoàn thành mốc HKI`.
-- Đạt tiết cuối năm: `Đã hoàn thành PPCT cả năm`.
-- `status` nhanh/chậm/đúng tiến độ vẫn giữ nội bộ để tô màu, cảnh báo và dự báo; cột `Chênh lệch` vẫn cho biết nhanh/chậm.
+## Quy tắc năm học
+- **2 tuần phụ trước khai giảng + 37 tuần chính = tối đa 39 tuần lịch**.
+- PPCT, TKB, Lịch báo giảng, học kỳ và dự báo tiến độ vẫn dùng **Tuần 1–37**.
+- Timeline Dashboard mở rộng lên 39 vị trí và nhận biết tuần phụ.
+- Tuần phụ chỉ kiểm tra Kế hoạch trường, không bị coi là thiếu TKB/Báo giảng.
+- Mã tuần phụ `-1/-2` được giữ nguyên để tương thích dữ liệu cũ.
 
 ## Kiểm tra tĩnh
 - Toàn bộ JavaScript nội bộ + `service-worker.js`: **PASS `node --check`**.
 - HTML ID: **430/430 duy nhất**.
 - Literal DOM references: **196**, không thiếu ID.
-- Hàm JavaScript có tên: **730/730 duy nhất**.
+- Hàm JavaScript có tên: **736/736 duy nhất**.
 - Tài nguyên nội bộ từ HTML: **46**, không thiếu file.
 - Service Worker app-shell: **49 tài nguyên**, không thiếu file.
-- 49 app-shell resources: **HTTP 200** trong kiểm thử local.
-- APP_VERSION trong state và Service Worker: cùng **50.6.0**.
+- 49/49 app-shell resources trả **HTTP 200** trong kiểm thử local.
+- APP_VERSION trong state và Service Worker: cùng **50.7.0**.
 - `teacher-data-changed`: **1 listener** dùng chung.
 - Heartbeat 60 giây: **1 timer** dùng chung.
 
 ## Fixture nghiệp vụ
-- Năm học / Kế hoạch / TKB / Sổ Công Việc cũ / Lịch báo giảng: PASS.
-- Mốc HKI do giáo viên xác nhận: PASS.
-- Gợi ý mốc HKI từ Kiểm tra/Trả bài: PASS.
-- 140 tiết cả năm, HKI mốc 54, đã học 28 → **Còn 26 tiết HKI**: PASS.
-- HKII, cả năm 140, đã học 80 → **Còn 60 tiết đến hết năm**: PASS.
-- HKI chưa xác nhận mốc → không tự đoán số còn lại: PASS.
-- Dự báo thiếu tiết cuối HKI/HKII vẫn hoạt động độc lập: PASS.
+- Quy tắc lịch 39 tuần: PASS.
+- Chuỗi tuần phụ + Tuần 1–37: PASS.
+- Ranh giới HKI/HKII 18/19: PASS.
+- Năm học / Kế hoạch / TKB / Sổ Công Việc / Lịch báo giảng: PASS.
+- Mốc HKI, số tiết còn lại và dự báo theo học kỳ: PASS.
 
 ## Lưu ý
-- Bản này thay đổi cách hiển thị `statusLabel`, không đổi cách phân loại nội bộ `behind / ahead / ontrack / completed`.
-- Vì vậy Dashboard, Reminder và Hệ thống gợi ý vẫn có thể xác định lớp cần chú ý, trong khi giáo viên nhìn thấy số tiết còn phải học ở cột Trạng thái.
+- Bản này mở rộng **timeline lịch năm học**, không biến tuần phụ thành tuần PPCT.
+- Vì vậy số tuần chuyên môn vẫn là 37; tổng thời gian quản lý trên Dashboard có thể đạt 39 tuần.
