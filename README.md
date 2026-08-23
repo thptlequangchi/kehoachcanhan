@@ -1,30 +1,24 @@
-# Sổ Tay Giáo Viên v50.5.0 — Mốc HKI do giáo viên xác nhận
+# Sổ Tay Giáo Viên v50.6.0 — Trạng thái số tiết còn lại theo học kỳ
 
-Bản v50.5 phát triển trực tiếp từ v50.4. Toàn bộ Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc, Nhắc việc, Dashboard, Báo cáo, IndexedDB, PWA và Regression Test được giữ nguyên.
+Bản v50.6 phát triển trực tiếp từ v50.5. Toàn bộ Kế hoạch, TKB, PPCT, Lịch báo giảng, Sổ Công Việc, Nhắc việc, Dashboard, Báo cáo, IndexedDB, PWA và Regression Test được giữ nguyên.
 
 ## Điểm mới
-- Quy ước rõ: số **140/105 tiết trong PPCT là tổng số tiết của cả năm học**, gồm cả HKI và HKII.
-- Mỗi bộ PPCT có thêm trường **Tiết PPCT kết thúc HKI** do giáo viên xác nhận.
-- HKI dùng chính mốc đã xác nhận này để dự báo thiếu/thừa tiết; HKII tự lấy phần còn lại từ mốc HKI đến tiết PPCT cuối cả năm.
-- Hệ thống không còn suy mốc HKI từ `sourceWeek <= 18`.
-- Tự gợi ý mốc HKI bằng tên bài: ưu tiên **Trả bài kiểm tra học kỳ I / cuối học kỳ I**; nếu không có thì lấy **Kiểm tra học kỳ I / cuối học kỳ I**; nếu tiết ngay sau bài kiểm tra có tên **Trả bài** thì gợi ý tiết đó.
-- Gợi ý chỉ được điền sẵn để giáo viên kiểm tra; **không dùng để dự báo cho đến khi bấm “Lưu mốc”**.
-- Danh sách PPCT hiển thị: tổng tiết cả năm, mốc HKI đã xác nhận, số tiết HKII còn lại hoặc mốc gợi ý cần xác nhận.
-- Dashboard, Engine gợi ý, Nhắc việc, Report Center và Hồ sơ tự động đều nhận biết trường hợp **chưa xác nhận mốc HKI**.
+Trong bảng **Tiến độ**, cột **Trạng thái** không còn hiển thị `Chậm x tiết / Nhanh x tiết`. Phần nhanh/chậm đã có ở cột **Chênh lệch**, còn Trạng thái trả lời trực tiếp câu hỏi “còn bao nhiêu tiết?”.
 
-## Cách dùng
-1. Chọn Khối/Lớp và Môn trong phần **Phân phối chương trình**.
-2. Tải PPCT cả năm như trước.
-3. Nhập **Tiết PPCT kết thúc HKI**. Nếu hệ thống tìm được “Kiểm tra học kỳ I” hoặc “Trả bài” phù hợp, số gợi ý sẽ được điền sẵn.
-4. Kiểm tra mốc và bấm **💾 Lưu mốc**.
-5. Bảng **Tiến độ giảng dạy theo học kỳ** sẽ tính lại dự báo HKI/HKII ngay.
+- **HKI:** số tiết còn lại = mốc PPCT kết thúc HKI do giáo viên xác nhận − PPCT thực tế.
+- **HKII:** số tiết còn lại = tiết PPCT cuối cùng của cả năm − PPCT thực tế.
+- Ví dụ: cả năm 140 tiết, HKI kết thúc tiết 54, đã học đến tiết 28 → **Còn 26 tiết HKI**.
+- Sang HKII, đã học đến tiết 80/140 → **Còn 60 tiết đến hết năm**.
+- Chưa xác nhận mốc HKI → **Chưa xác nhận mốc HKI**.
+- Đạt mốc HKI → **Đã hoàn thành mốc HKI**; đạt tiết cuối năm → **Đã hoàn thành PPCT cả năm**.
 
-## Nguyên tắc an toàn
-- `DATA_SCHEMA_VERSION` giữ nguyên.
+Các phân loại `behind / ahead / ontrack` vẫn được giữ nội bộ để tô trạng thái, cảnh báo và dự báo; chỉ phần chữ hiển thị ở **Trạng thái** được đổi theo yêu cầu.
+
+## An toàn dữ liệu
+- `DATA_SCHEMA_VERSION` không đổi.
 - Không thay Firestore Rules hay IndexedDB schema.
-- Trường `semesterOneEndPpct` là dữ liệu mở rộng tùy chọn trong từng profile PPCT; dữ liệu cũ vẫn đọc bình thường.
-- Nếu chưa xác nhận mốc HKI, hệ thống hiển thị cảnh báo và tạm không đưa ra dự báo học kỳ để tránh ngoại suy sai.
-- File sao lưu JSON tiếp tục chứa profile PPCT và mốc HKI đã xác nhận.
+- Không sửa dữ liệu PPCT đã lưu.
+- Dự báo thiếu tiết cuối học kỳ vẫn hoạt động độc lập với số tiết còn lại hiện tại.
 
 ## Cập nhật GitHub Pages
-Chép toàn bộ gói v50.5 vào repo và Push. Service Worker / APP_VERSION đã tăng lên **50.5.0**. Sau deploy nên chạy **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ** một lần.
+Chép toàn bộ gói v50.6 vào repo và Push. Service Worker / APP_VERSION đã tăng lên **50.6.0**. Sau deploy nên chạy **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ** một lần.

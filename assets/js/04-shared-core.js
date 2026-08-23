@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v50.5 — SHARED CORE
+   SỔ TAY GIÁO VIÊN v50.6 — SHARED CORE
    Hợp nhất các quy tắc dùng chung giữa Overview / Trợ lý tuần / Dashboard /
    Sổ Công Việc / Reminder / Report mà không thay đổi schema dữ liệu.
 ============================================================================ */
@@ -156,6 +156,55 @@ function getCurriculumSemesterTargets(curriculumMap, profile = null) {
         semesterOneSuggestedTopic: suggestion.topic || '',
         semesterOneSuggestionReason: suggestion.reason || '',
         semesterOneSuggestionConfidence: suggestion.confidence || 'none',
+    };
+}
+
+function buildSemesterRemainingStatus(options = {}) {
+    const semester = options.semester || getSchoolSemesterInfo(options.referenceWeek);
+    const actualPpct = Math.max(0, Number.parseInt(options.actualPpct, 10) || 0);
+    const totalPpct = Math.max(0, Number.parseInt(options.totalPpct, 10) || 0);
+    const semesterOneTargetPpct = Math.max(0, Number.parseInt(options.semesterOneTargetPpct, 10) || 0);
+    const semesterOneBoundaryConfirmed = options.semesterOneBoundaryConfirmed !== undefined
+        ? Boolean(options.semesterOneBoundaryConfirmed)
+        : semesterOneTargetPpct > 0;
+
+    if (!(totalPpct > 0)) {
+        return {
+            semester,
+            targetPpct: 0,
+            remainingPeriods: null,
+            state: 'missing',
+            label: 'Thiếu PPCT',
+        };
+    }
+
+    if (semester.number === 1) {
+        if (!semesterOneBoundaryConfirmed || !(semesterOneTargetPpct > 0)) {
+            return {
+                semester,
+                targetPpct: 0,
+                remainingPeriods: null,
+                state: 'boundary-missing',
+                label: 'Chưa xác nhận mốc HKI',
+            };
+        }
+        const remainingPeriods = Math.max(0, semesterOneTargetPpct - actualPpct);
+        return {
+            semester,
+            targetPpct: semesterOneTargetPpct,
+            remainingPeriods,
+            state: remainingPeriods > 0 ? 'remaining' : 'completed',
+            label: remainingPeriods > 0 ? `Còn ${remainingPeriods} tiết HKI` : 'Đã hoàn thành mốc HKI',
+        };
+    }
+
+    const remainingPeriods = Math.max(0, totalPpct - actualPpct);
+    return {
+        semester,
+        targetPpct: totalPpct,
+        remainingPeriods,
+        state: remainingPeriods > 0 ? 'remaining' : 'completed',
+        label: remainingPeriods > 0 ? `Còn ${remainingPeriods} tiết đến hết năm` : 'Đã hoàn thành PPCT cả năm',
     };
 }
 

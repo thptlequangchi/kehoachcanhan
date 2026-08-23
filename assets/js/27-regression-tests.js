@@ -1,4 +1,4 @@
-/* Bước 17 · v50.5 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
+/* Bước 17 · v50.6 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
 (() => {
     'use strict';
     const STORAGE_KEY = 'teacher_regression_last_v1';
@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.5.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.6.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -86,7 +86,7 @@
             return missing.length ? {status:'fail',message:`Thiếu: ${missing.join(', ')}`} : `Đủ ${ids.length}/${ids.length} vùng lõi.`;
         }));
         tests.push(runSync('core-globals','Các hàm nghiệp vụ lõi đã nạp','Khởi động',() => {
-            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','getWeekOperationalStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter','getSmartReminderManagedSuggestionKeys'];
+            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','getWeekOperationalStatus','buildSemesterRemainingStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter','getSmartReminderManagedSuggestionKeys'];
             const missing=names.filter(name=>typeof globalThis[name] !== 'function');
             return missing.length ? {status:'fail',message:`Thiếu hàm: ${missing.join(', ')}`} : `Đủ ${names.length} hàm lõi.`;
         }));
@@ -128,6 +128,13 @@
             const target=getCurriculumSemesterTargets(map,profile);
             const ok=suggestion.ppct===53 && target.semesterOneTargetPpct===0 && !target.semesterOneBoundaryConfirmed && target.semesterOneSuggestedPpct===53 && target.totalPpct===105;
             return ok ? 'Gợi ý Tiết 53 từ tiết Trả bài nhưng chưa tự dùng để dự báo khi giáo viên chưa xác nhận.' : {status:'fail',message:'Gợi ý mốc HKI đang bị tự áp dụng hoặc nhận dạng sai.'};
+        }));
+        tests.push(runSync('semester-remaining-status','Trạng thái hiển thị số tiết còn lại theo học kỳ','Nghiệp vụ',() => {
+            const hk1=buildSemesterRemainingStatus({referenceWeek:10,actualPpct:28,totalPpct:140,semesterOneTargetPpct:54,semesterOneBoundaryConfirmed:true});
+            const hk2=buildSemesterRemainingStatus({referenceWeek:25,actualPpct:80,totalPpct:140,semesterOneTargetPpct:54,semesterOneBoundaryConfirmed:true});
+            const missing=buildSemesterRemainingStatus({referenceWeek:10,actualPpct:28,totalPpct:140,semesterOneTargetPpct:0,semesterOneBoundaryConfirmed:false});
+            const ok=hk1.remainingPeriods===26 && hk1.label==='Còn 26 tiết HKI' && hk2.remainingPeriods===60 && hk2.label==='Còn 60 tiết đến hết năm' && missing.remainingPeriods===null && missing.label==='Chưa xác nhận mốc HKI';
+            return ok ? 'HKI = mốc HKI − đã học; HKII = tiết cuối năm − đã học; không dùng “Chậm x tiết” làm Trạng thái.' : {status:'fail',message:'Trạng thái số tiết còn lại theo học kỳ không đúng fixture.'};
         }));
         tests.push(runSync('semester-forecast-shortfall','Dự báo thiếu tiết cuối học kỳ','Nghiệp vụ',() => {
             const safe=buildSemesterForecastMetrics({referenceWeek:10,actualPpct:28,targetPpct:52,semesterStartPpct:0,weeklyRate:3});

@@ -552,20 +552,31 @@
             const currentTopic = currentLesson?.topic || cleanText(lastActive?.item?.topic);
             const difference = totalPpct > 0 ? actualPpct - plannedPpct : null;
             let status = 'ontrack';
-            let statusLabel = 'Đúng tiến độ';
+            let paceLabel = 'Đúng tiến độ';
             if (!(totalPpct > 0)) {
                 status = 'missing';
-                statusLabel = 'Thiếu PPCT';
+                paceLabel = 'Thiếu PPCT';
             } else if (actualPpct >= totalPpct) {
                 status = 'completed';
-                statusLabel = 'Đã hoàn thành';
+                paceLabel = 'Đã hoàn thành';
             } else if (difference < 0) {
                 status = 'behind';
-                statusLabel = `Chậm ${Math.abs(difference)} tiết`;
+                paceLabel = `Chậm ${Math.abs(difference)} tiết`;
             } else if (difference > 0) {
                 status = 'ahead';
-                statusLabel = `Nhanh ${difference} tiết`;
+                paceLabel = `Nhanh ${difference} tiết`;
             }
+            // Cột Trạng thái ưu tiên câu hỏi thực tế “còn bao nhiêu tiết?”.
+            // HKI: mốc HKI đã được giáo viên xác nhận - PPCT thực tế.
+            // HKII: tiết cuối cả năm - PPCT thực tế. Chênh lệch vẫn giữ ở cột riêng.
+            const remainingStatus = buildSemesterRemainingStatus({
+                semester,
+                actualPpct,
+                totalPpct,
+                semesterOneTargetPpct,
+                semesterOneBoundaryConfirmed,
+            });
+            const statusLabel = remainingStatus.label;
 
             // Dự báo theo đúng học kỳ hiện tại. Nhịp dạy chỉ lấy trong học kỳ để
             // không dùng số tiết/tuần của HKI để ngoại suy cho HKII (hoặc ngược lại).
@@ -622,6 +633,9 @@
                 makeupCount: makeupRecords.length,
                 status,
                 statusLabel,
+                paceLabel,
+                remainingToSemesterEnd: remainingStatus.remainingPeriods,
+                remainingTargetPpct: remainingStatus.targetPpct,
                 weeklyRate,
                 forecastWeek,
                 forecastLabel,
