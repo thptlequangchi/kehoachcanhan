@@ -807,6 +807,98 @@ body.premium-ui::before {
     .premium-ui .overview-card-body small { font-size: 9px; }
 }
 
+
+/* ---------- v51.1 · Work task form layout ---------- */
+.premium-ui .work-pro-modal {
+    max-width: 960px;
+}
+.premium-ui .app-form-grid > .work-task-fields.span-all {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+.premium-ui .work-task-fields {
+    padding: 14px;
+    border: 1px solid #dfe7f0;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%);
+}
+.premium-ui .work-task-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e7edf4;
+}
+.premium-ui .work-task-section-heading > div {
+    display: grid;
+    gap: 2px;
+}
+.premium-ui .work-task-section-heading strong {
+    color: #203b5b;
+    font-size: 12.5px;
+    font-weight: 800;
+    letter-spacing: -.005em;
+}
+.premium-ui .work-task-section-heading small {
+    color: #74869a;
+    font-size: 10.5px;
+    line-height: 1.4;
+}
+.premium-ui .work-task-setting-grid {
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    gap: 12px;
+    align-items: start;
+}
+.premium-ui .work-task-setting-grid .app-form-field {
+    min-width: 0;
+}
+.premium-ui .work-task-setting-grid .app-form-field > label {
+    min-height: 18px;
+    margin-bottom: 6px;
+    white-space: nowrap;
+}
+.premium-ui .work-task-setting-grid .app-form-field > select,
+.premium-ui .work-task-setting-grid .app-form-field > input {
+    width: 100%;
+    min-width: 0;
+}
+.premium-ui .work-task-setting-grid .app-form-help {
+    margin-top: 6px;
+    color: #718197;
+    font-size: 10px;
+    line-height: 1.45;
+}
+.premium-ui .work-task-setting-grid .span-2 {
+    grid-column: span 2;
+}
+
+@media (max-width: 900px) {
+    .premium-ui .work-pro-modal { max-width: 760px; }
+    .premium-ui .work-task-setting-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .premium-ui .work-task-setting-grid .span-2 {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 620px) {
+    .premium-ui .work-task-fields { padding: 12px; }
+    .premium-ui .work-task-section-heading { margin-bottom: 10px; }
+    .premium-ui .work-task-setting-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .premium-ui .work-task-setting-grid .span-2 {
+        grid-column: auto;
+    }
+    .premium-ui .work-task-setting-grid .app-form-field > label {
+        white-space: normal;
+    }
+}
+
 /* ---------- Reduced motion / print ---------- */
 @media (prefers-reduced-motion: reduce) {
     .premium-ui .tab-content.active { animation: none; }

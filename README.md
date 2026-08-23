@@ -1,6 +1,6 @@
-# Sổ Tay Giáo Viên v51.0.0 — Professional Workspace UI
+# Sổ Tay Giáo Viên v51.1.0 — Form Công Việc Pro
 
-Bản v51 phát triển trực tiếp từ v50.7. Toàn bộ nghiệp vụ và dữ liệu được giữ nguyên; trọng tâm của phiên bản này là nâng cấp **toàn bộ trải nghiệm giao diện** thành một workspace chuyên nghiệp, thống nhất và gọn hơn.
+Bản v51.1 phát triển trực tiếp từ v51.0. Toàn bộ nghiệp vụ và dữ liệu được giữ nguyên; bản này sửa và nâng cấp riêng modal **Sổ Công Việc**, đặc biệt nhóm Trạng thái / Ưu tiên / Hạn ngày / Giờ / Lặp lại / Nhắc trước hạn để không còn bị co hẹp, cắt chữ hoặc xuống dòng bất hợp lý.
 
 ## Giao diện mới
 - Header dạng command bar: năm học hiện tại, Ctrl+K, Nhắc việc, TKB trường, vnEdu, PWA và Cài đặt được tổ chức thành một cụm thao tác rõ ràng.
@@ -18,6 +18,6 @@ Bản v51 phát triển trực tiếp từ v50.7. Toàn bộ nghiệp vụ và d
 - Print CSS vẫn ưu tiên nền trắng, không shadow và không dùng hiệu ứng giao diện.
 
 ## Cập nhật GitHub Pages
-Giải nén và chép **toàn bộ** gói v51 vào repo rồi Commit/Push. Service Worker đã tăng lên `51.0.0` và app-shell có thêm `assets/css/pro-workspace-v51.css`, vì vậy PWA sẽ báo có phiên bản mới.
+Giải nén và chép **toàn bộ** gói v51 vào repo rồi Commit/Push. Service Worker đã tăng lên `51.1.0` và app-shell có thêm `assets/css/pro-workspace-v51.css`, vì vậy PWA sẽ báo có phiên bản mới.
 
 Sau khi cập nhật, nên mở trang trên máy tính và điện thoại để kiểm tra nhanh: header, 6 tab chính, Dashboard, một bảng dài và một modal.

@@ -1,4 +1,4 @@
-# AUDIT REPORT — v51.0.0 Professional Workspace UI
+# AUDIT REPORT — v51.1.0 Form Công Việc Pro
 
 ## Phạm vi
 - Nền trực tiếp: v50.7.0.
@@ -12,7 +12,7 @@
 - Tài nguyên nội bộ tham chiếu từ HTML: **47**, không thiếu file.
 - Service Worker app-shell: **50 tài nguyên**, không thiếu file.
 - Toàn bộ JavaScript nội bộ + Service Worker: **PASS `node --check`**.
-- `APP_VERSION` state / Service Worker: cùng **51.0.0**.
+- `APP_VERSION` state / Service Worker: cùng **51.1.0**.
 - `pro-workspace-v51.css`: tải sau cùng trong nhóm CSS.
 - CSS v51 parse bằng `tinycss2`: **160 rules, 0 parse error**.
 
@@ -38,3 +38,9 @@
 
 ## Kết luận
 Bản v51 đạt kiểm tra tĩnh, fixture nghiệp vụ và kiểm tra tài nguyên. Sau deploy GitHub Pages nên kiểm tra trực tiếp một vòng giao diện trên desktop + mobile để đánh giá tỷ lệ hiển thị thực tế của trình duyệt đang dùng.
+
+## Kiểm tra bổ sung v51.1
+- `workTaskFields.span-all` có rule chiếm `grid-column: 1 / -1`.
+- Grid thiết lập nhiệm vụ: 4 cột desktop, 2 cột tablet, 1 cột mobile.
+- Lặp lại và Nhắc trước hạn chiếm 2 cột trên desktop.
+- Không đổi ID, event handler, cấu trúc dữ liệu hay schema.

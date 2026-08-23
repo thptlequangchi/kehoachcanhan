@@ -1,4 +1,4 @@
-# TESTING — v51.0 Professional Workspace UI
+# TESTING — v51.1 Form Công Việc Pro
 
 ## Kiểm tra bắt buộc
 - `node --check` toàn bộ JavaScript và Service Worker.
@@ -23,3 +23,10 @@
 - Trạng thái số tiết còn lại theo học kỳ.
 - Reminder / Hệ thống gợi ý không lặp.
 - IndexedDB / Firebase / Report / Hồ sơ không thay schema.
+
+## Kiểm tra riêng v51.1
+- Mở Sổ Công Việc → Thêm/Sửa nhiệm vụ.
+- Nhóm Thiết lập nhiệm vụ phải chiếm toàn chiều rộng modal.
+- Desktop: 4 trường Trạng thái / Ưu tiên / Hạn ngày / Giờ cùng hàng; Lặp lại / Nhắc trước hạn ở hàng dưới.
+- Tablet: 2 cột; mobile: 1 cột.
+- Không được cắt chữ trong select và phần mô tả không bị bó thành cột hẹp.

@@ -51,7 +51,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v51.0 · Professional Workspace UI</span>
+                        <span>v51.1 · Form Công Việc Pro</span>
                         <i aria-hidden="true"></i>
                         <span>39 tuần lịch · 37 tuần PPCT · Trợ lý công việc · Hồ sơ</span>
                     </div>
@@ -1335,7 +1335,13 @@
                         </div>
 
                         <div class="work-task-fields span-all" id="workTaskFields">
-                            <div class="work-pro-form-grid">
+                            <div class="work-task-section-heading">
+                                <div>
+                                    <strong>⚙️ Thiết lập nhiệm vụ</strong>
+                                    <small>Trạng thái, mức ưu tiên, thời hạn và cách nhắc việc.</small>
+                                </div>
+                            </div>
+                            <div class="work-pro-form-grid work-task-setting-grid">
                                 <div class="app-form-field">
                                     <label for="workItemStatus">Trạng thái</label>
                                     <select id="workItemStatus"><option value="todo">Chưa làm</option><option value="doing">Đang làm</option><option value="waiting">Chờ xử lý</option><option value="done">Hoàn thành</option></select>
@@ -1352,12 +1358,12 @@
                                     <label for="workItemDueTime">Giờ</label>
                                     <input id="workItemDueTime" type="time" />
                                 </div>
-                                <div class="app-form-field">
+                                <div class="app-form-field span-2 work-task-wide-field">
                                     <label for="workItemRecurrence">Lặp lại</label>
                                     <select id="workItemRecurrence"><option value="none">Không lặp</option><option value="weekly">Mỗi tuần</option><option value="monthly">Mỗi tháng</option></select>
-                                    <div class="app-form-help">Hoàn thành sẽ tạo lần tiếp theo, chống trùng.</div>
+                                    <div class="app-form-help">Hoàn thành nhiệm vụ sẽ tự tạo lần tiếp theo và chống tạo trùng.</div>
                                 </div>
-                                <div class="app-form-field">
+                                <div class="app-form-field span-2 work-task-wide-field">
                                     <label for="workItemReminderLead">Nhắc trước hạn</label>
                                     <select id="workItemReminderLead">
                                         <option value="auto">✨ Tự động theo ưu tiên</option>
@@ -1368,7 +1374,7 @@
                                         <option value="1440">1 ngày</option>
                                         <option value="2880">2 ngày</option>
                                     </select>
-                                    <div class="app-form-help">Thiết lập nhắc là cá nhân trên thiết bị này, kể cả công việc nhóm.</div>
+                                    <div class="app-form-help">Thiết lập nhắc được lưu riêng trên thiết bị này, kể cả với công việc nhóm.</div>
                                 </div>
                             </div>
                         </div>
