@@ -1,4 +1,4 @@
-/* Bước 17 · v50.3 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
+/* Bước 17 · v50.4 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
 (() => {
     'use strict';
     const STORAGE_KEY = 'teacher_regression_last_v1';
@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.3.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.4.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -112,6 +112,24 @@
         tests.push(runSync('schedule-final-status','Trạng thái chốt dùng chung','Nghiệp vụ',() => {
             const ok=isScheduleFinalized({status:'final'}) && isScheduleFinalized({status:'finalized'}) && !isScheduleFinalized({status:'final',stale:true}) && !isScheduleFinalized({status:'draft'});
             return ok ? 'final/finalized được hiểu thống nhất; lịch stale không tính là đã chốt.' : {status:'fail',message:'Quy tắc trạng thái chốt đang không đồng nhất.'};
+        }));
+        tests.push(runSync('semester-ppct-targets','Mốc PPCT theo học kỳ','Nghiệp vụ',() => {
+            const map=new Map([[1,{sourceWeek:1}],[54,{sourceWeek:18}],[55,{sourceWeek:19}],[89,{sourceWeek:37}]]);
+            const target=getCurriculumSemesterTargets(map);
+            const hk1=getSchoolSemesterInfo(18), hk2=getSchoolSemesterInfo(19);
+            const ok=target.semesterOneTargetPpct===54 && target.totalPpct===89 && hk1.endWeek===18 && hk2.startWeek===19 && hk2.endWeek===37;
+            return ok ? 'HKI dùng tiết 54 ở Tuần 18; HKII dùng tiết 89 ở Tuần 37.' : {status:'fail',message:'Không xác định đúng mốc PPCT cuối học kỳ.'};
+        }));
+        tests.push(runSync('semester-forecast-shortfall','Dự báo thiếu tiết cuối học kỳ','Nghiệp vụ',() => {
+            const safe=buildSemesterForecastMetrics({referenceWeek:10,actualPpct:28,targetPpct:52,semesterStartPpct:0,weeklyRate:3});
+            const risk=buildSemesterForecastMetrics({referenceWeek:10,actualPpct:28,targetPpct:54,semesterStartPpct:0,weeklyRate:3});
+            const ok=safe.forecastState==='safe' && safe.forecastWeek===18 && risk.forecastState==='risk' && risk.forecastShortfall===2;
+            return ok ? 'Dự báo phân biệt đúng hoàn thành HKI và nguy cơ thiếu 2 tiết ở Tuần 18.' : {status:'fail',message:'Công thức dự báo cuối học kỳ không đạt fixture.'};
+        }));
+        tests.push(runSync('semester2-load-change','HKII có tải tiết khác HKI','Nghiệp vụ',() => {
+            const risk=buildSemesterForecastMetrics({referenceWeek:25,actualPpct:65,targetPpct:89,semesterStartPpct:54,weeklyRate:1.5});
+            const ok=risk.semester.shortLabel==='HKII' && risk.forecastState==='risk' && risk.forecastShortfall===6 && risk.forecastLabel.includes('tuần 37');
+            return ok ? 'HKII được dự báo độc lập theo nhịp HKII và cảnh báo thiếu 6 tiết ở Tuần 37.' : {status:'fail',message:'Dự báo HKII vẫn có dấu hiệu dùng nhịp/tổng của HKI.'};
         }));
         tests.push(runSync('ppct-suggestion-engine','PPCT dùng chung engine gợi ý','Nghiệp vụ',() => {
             const sample=classifyProgressRows([

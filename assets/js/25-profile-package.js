@@ -139,8 +139,8 @@
             r => `<tr><td>${r.week}</td><td>${esc(r.date || '—')}</td><td>${esc(r.day)}</td><td>${esc(r.session)}</td><td>${esc(r.period)}</td><td>${esc(r.className)}</td><td>${esc(r.subject)}</td><td>${esc(r.content)}</td></tr>`);
         const teaching = table(['Tuần','Ngày','Thứ','Buổi','TKB','PPCT','Lớp','Môn','Bài dạy / Chủ đề','Ghi chú'], snapshot.scheduleRows,
             r => `<tr><td>${r.week}</td><td>${esc(r.date || '—')}</td><td>${esc(r.day)}</td><td>${esc(r.session)}</td><td>${esc(r.period)}</td><td>${esc(r.ppctPeriod || '—')}</td><td>${esc(r.className)}</td><td>${esc(r.subject)}</td><td>${esc(r.topic)}</td><td>${esc(r.note)}</td></tr>`);
-        const progress = table(['Lớp','Môn','PPCT KH','PPCT TT','Chênh lệch','Bài đang dạy','Không học','Học bù','Trạng thái','Dự báo'], snapshot.progressRows,
-            r => `<tr><td>${esc(r.className)}</td><td>${esc(r.subject)}</td><td>${esc(r.plannedPpct || '—')}</td><td>${esc(r.actualPpct || '—')}</td><td>${esc(r.difference ?? '—')}</td><td>${esc(r.currentTopic || '—')}</td><td>${esc(r.canceledCount)}</td><td>${esc(r.makeupCount)}</td><td>${esc(r.statusLabel)}</td><td>${esc(r.forecastLabel)}</td></tr>`);
+        const progress = table(['Lớp','Môn','PPCT KH','PPCT TT','Chênh lệch','Bài đang dạy','Không học','Học bù','Trạng thái','Mốc cuối HK','Dự báo cuối HK'], snapshot.progressRows,
+            r => `<tr><td>${esc(r.className)}</td><td>${esc(r.subject)}</td><td>${esc(r.plannedPpct || '—')}</td><td>${esc(r.actualPpct || '—')}</td><td>${esc(r.difference ?? '—')}</td><td>${esc(r.currentTopic || '—')}</td><td>${esc(r.canceledCount)}</td><td>${esc(r.makeupCount)}</td><td>${esc(r.statusLabel)}</td><td>${esc(`${r.semesterShortLabel || 'HK'} · Tiết ${r.semesterTargetPpct || '—'} · Tuần ${r.semesterEndWeek || '—'}`)}</td><td>${esc(r.forecastLabel)}</td></tr>`);
         const exceptions = table(['Tuần','Ngày','Thứ','Lớp','Môn','Loại','Nội dung / Lý do','Ghi chú'], snapshot.exceptionRows,
             r => `<tr><td>${r.week}</td><td>${esc(r.date || '—')}</td><td>${esc(r.day)}</td><td>${esc(r.className)}</td><td>${esc(r.subject)}</td><td>${r.notTeaching ? 'Không học' : 'Học bù'}</td><td>${esc(r.topic)}</td><td>${esc(r.note)}</td></tr>`);
         const work = table(['Loại','Tiêu đề','Hạn','Phạm vi','Trạng thái','Nội dung'], snapshot.workRows,
@@ -192,7 +192,7 @@
         add('Ke hoach', [['Tuần','Ngày','Thứ','Buổi sáng','Buổi chiều','Đi công tác'], ...snapshot.planRows.map(r => [r.week,r.date,r.day,r.morning,r.afternoon,r.businessTrip])], [8,12,10,42,42,30]);
         add('Thoi khoa bieu', [['Tuần','Ngày','Thứ','Buổi','Tiết','Lớp','Môn','Nội dung'], ...snapshot.timetableRows.map(r => [r.week,r.date,r.day,r.session,r.period,r.className,r.subject,r.content])], [8,12,10,14,8,10,14,38]);
         add('Lich bao giang', [['Tuần','Ngày','Thứ','Buổi','TKB','PPCT','Lớp','Môn','Bài dạy / Chủ đề','Ghi chú'], ...snapshot.scheduleRows.map(r => [r.week,r.date,r.day,r.session,r.period,r.ppctPeriod || '',r.className,r.subject,r.topic,r.note])], [8,12,10,14,8,9,10,14,42,28]);
-        add('Tien do PPCT', [['Lớp','Môn','PPCT KH','PPCT TT','Chênh lệch','Bài đang dạy','Số tiết đã dạy','Không học','Học bù','Trạng thái','Dự báo'], ...snapshot.progressRows.map(r => [r.className,r.subject,r.plannedPpct || '',r.actualPpct || '',r.difference ?? '',r.currentTopic || '',r.taughtCount,r.canceledCount,r.makeupCount,r.statusLabel,r.forecastLabel])], [10,14,10,10,10,40,13,10,10,18,22]);
+        add('Tien do PPCT', [['Lớp','Môn','PPCT KH','PPCT TT','Chênh lệch','Bài đang dạy','Số tiết đã dạy','Không học','Học bù','Trạng thái','Học kỳ','Mốc cuối HK','Dự báo cuối HK','Thiếu dự kiến'], ...snapshot.progressRows.map(r => [r.className,r.subject,r.plannedPpct || '',r.actualPpct || '',r.difference ?? '',r.currentTopic || '',r.taughtCount,r.canceledCount,r.makeupCount,r.statusLabel,r.semesterLabel || '',r.semesterTargetPpct || '',r.forecastLabel,r.forecastShortfall || 0])], [10,14,10,10,10,40,13,10,10,18,12,13,34,13]);
         add('Khong hoc - Hoc bu', [['Tuần','Ngày','Thứ','Lớp','Môn','Loại','Nội dung / Lý do','Ghi chú'], ...snapshot.exceptionRows.map(r => [r.week,r.date,r.day,r.className,r.subject,r.notTeaching ? 'Không học' : 'Học bù',r.topic,r.note])], [8,12,10,10,14,12,42,28]);
         add('Cong viec', [['Loại','Tiêu đề','Hạn','Phạm vi','Trạng thái','Nội dung'], ...snapshot.workRows.map(r => [r.type,r.title,r.dueDate,r.scope,r.type === 'task' ? (r.completed ? 'Đã xong' : 'Chưa xong') : '',r.content])], [12,30,12,12,14,55]);
         return workbook;
@@ -287,7 +287,7 @@
             let xlsxBytes = null;
             if (workbook) xlsxBytes = new Uint8Array(XLSX.write(workbook, { bookType:'xlsx', type:'array' }));
             const manifest = {
-                application:'Sổ Tay Giáo Viên Pro', version:typeof APP_VERSION !== 'undefined' ? APP_VERSION : '50.3.0', createdAt:snapshot.packageCreatedAt,
+                application:'Sổ Tay Giáo Viên Pro', version:typeof APP_VERSION !== 'undefined' ? APP_VERSION : '50.4.0', createdAt:snapshot.packageCreatedAt,
                 academicYear:snapshot.academicYear,
                 range:{ label:snapshot.range.label, startWeek:snapshot.range.startWeek, endWeek:snapshot.range.endWeek, dateRange:snapshot.range.text },
                 teacher:{ school:snapshot.profile?.schoolName || '', name:snapshot.profile?.teacherName || '', subject:snapshot.profile?.subject || '' },

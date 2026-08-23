@@ -1,26 +1,14 @@
-# TESTING — v50.3
+# TESTING — v50.4
 
-## Kiểm tra build-time
-Chạy:
+## Kiểm thử bắt buộc
+1. Chạy `python tests/run-static-audit.py`.
+2. Chạy `node tests/run-state-fixtures.js`.
+3. Sau deploy GitHub Pages, chạy **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ**.
 
-```bash
-python tests/run-static-audit.py
-node tests/run-state-fixtures.js
-```
+## Fixture mới của v50.4
+- Tuần 18 thuộc HKI; Tuần 19 thuộc HKII.
+- PPCT mẫu có tiết 54 ở Tuần 18 và tiết 89 ở Tuần 37 phải xác định mốc HKI = 54, cả năm = 89.
+- Nếu Tuần 10 đang ở tiết 28, nhịp 3 tiết/tuần và mốc HKI = 52 thì dự kiến hoàn thành đúng Tuần 18.
+- Với cùng dữ liệu nhưng mốc HKI = 54 thì phải cảnh báo nguy cơ thiếu 2 tiết ở Tuần 18.
 
-Static Audit kiểm tra thêm:
-- chỉ một listener `teacher-data-changed`;
-- chỉ một heartbeat 60 giây;
-- PPCT dùng chung suggestion engine;
-- tồn tại `getSmartReminderManagedSuggestionKeys()`;
-- Reminder chỉ nhận gợi ý `urgent/high`;
-- Hệ thống gợi ý loại các key do Reminder quản lý;
-- `alert.detail` chỉ render một lần.
-
-## Kiểm tra trên trình duyệt thật sau deploy
-1. Mở Sổ Công Việc khi Tuần hiện tại chưa có Kế hoạch/TKB/Lịch báo giảng.
-2. Xác nhận 3 cảnh báo quan trọng chỉ xuất hiện trong **Nhắc việc thông minh**.
-3. Xác nhận **Hệ thống gợi ý** tự ẩn nếu không có gợi ý bổ sung.
-4. Tạo tình huống Lịch báo giảng đã có nhưng chưa chốt (gợi ý mức bình thường) và xác nhận khối **Hệ thống gợi ý** xuất hiện.
-5. Bấm **+ Thêm vào sổ** từ Reminder và kiểm tra không tạo bản trùng.
-6. Chạy **Kiểm thử hồi quy đầy đủ** và xác nhận 0 lỗi mới.
+Các test không gọi Gemini và không ghi Firestore.

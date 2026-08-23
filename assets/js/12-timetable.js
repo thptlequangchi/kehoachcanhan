@@ -512,13 +512,16 @@
                 return value > maximum ? value : maximum;
             }, 0);
             const curriculumMap = buildCurriculumLessonMap(course.className, course.subject);
+            const semester = getSchoolSemesterInfo(referenceWeek);
             let plannedPpct = 0;
-            let totalPpct = 0;
             curriculumMap.forEach((lesson, ppct) => {
                 const value = Number.parseInt(ppct, 10);
-                if (value > totalPpct) totalPpct = value;
-                if (Number.parseInt(lesson.sourceWeek, 10) <= referenceWeek && value > plannedPpct) plannedPpct = value;
+                const sourceWeek = Number.parseInt(lesson.sourceWeek, 10) || 0;
+                if (sourceWeek <= referenceWeek && value > plannedPpct) plannedPpct = value;
             });
+            const { semesterOneTargetPpct, totalPpct } = getCurriculumSemesterTargets(curriculumMap);
+            const semesterStartPpct = semester.number === 1 ? 0 : semesterOneTargetPpct;
+            const semesterTargetPpct = semester.number === 1 ? semesterOneTargetPpct : totalPpct;
             const lastActive = activeRecords[activeRecords.length - 1] || null;
             const currentLesson = actualPpct > 0
                 ? getCurriculumLessonByPpct(course.className, course.subject, actualPpct)
@@ -541,31 +544,30 @@
                 statusLabel = `Nhanh ${difference} tiết`;
             }
 
-            const recentStartWeek = Math.max(1, referenceWeek - 3);
-            const recentTaught = activeRecords.filter(record => record.week >= recentStartWeek).length;
+            // Dự báo theo đúng học kỳ hiện tại. Nhịp dạy chỉ lấy trong học kỳ để
+            // không dùng số tiết/tuần của HKI để ngoại suy cho HKII (hoặc ngược lại).
+            const semesterActiveRecords = activeRecords.filter(record => record.week >= semester.startWeek);
+            const recentStartWeek = Math.max(semester.startWeek, referenceWeek - 3);
+            const recentTaught = semesterActiveRecords.filter(record => record.week >= recentStartWeek).length;
             const recentWindow = referenceWeek - recentStartWeek + 1;
-            let weeklyRate = recentWindow > 0 ? recentTaught / recentWindow : 0;
-            if (!(weeklyRate > 0) && activeRecords.length) weeklyRate = activeRecords.length / referenceWeek;
-            const remainingPeriods = Math.max(0, totalPpct - actualPpct);
-            let forecastWeek = null;
-            let forecastLabel = 'Chưa đủ dữ liệu';
-            let forecastState = 'unknown';
-            if (!(totalPpct > 0)) {
-                forecastLabel = 'Chưa có tổng PPCT';
-            } else if (remainingPeriods === 0) {
-                forecastWeek = lastActive?.week || referenceWeek;
-                forecastLabel = 'Đã hoàn thành';
-                forecastState = 'safe';
-            } else if (weeklyRate > 0) {
-                forecastWeek = referenceWeek + Math.ceil(remainingPeriods / weeklyRate);
-                if (forecastWeek <= MAX_SCHOOL_WEEKS) {
-                    forecastLabel = `Dự kiến tuần ${forecastWeek}`;
-                    forecastState = 'safe';
-                } else {
-                    forecastLabel = `Nguy cơ đến tuần ${forecastWeek}`;
-                    forecastState = 'risk';
-                }
+            let recentWeeklyRate = recentWindow > 0 ? recentTaught / recentWindow : 0;
+            if (!(recentWeeklyRate > 0) && semesterActiveRecords.length) {
+                const elapsedSemesterWeeks = Math.max(1, referenceWeek - semester.startWeek + 1);
+                recentWeeklyRate = semesterActiveRecords.length / elapsedSemesterWeeks;
             }
+            const forecast = buildSemesterForecastMetrics({
+                semester,
+                referenceWeek,
+                actualPpct,
+                targetPpct: semesterTargetPpct,
+                semesterStartPpct,
+                weeklyRate: recentWeeklyRate,
+            });
+            const remainingPeriods = forecast.remainingPeriods;
+            const weeklyRate = forecast.weeklyRate;
+            const forecastWeek = forecast.forecastWeek;
+            const forecastLabel = forecast.forecastLabel;
+            const forecastState = forecast.forecastState;
             return {
                 ...course,
                 referenceWeek,
@@ -583,7 +585,23 @@
                 forecastWeek,
                 forecastLabel,
                 forecastState,
+                semesterKey: semester.key,
+                semesterNumber: semester.number,
+                semesterLabel: semester.label,
+                semesterShortLabel: semester.shortLabel,
+                semesterStartWeek: semester.startWeek,
+                semesterEndWeek: semester.endWeek,
+                semesterStartPpct,
+                semesterTargetPpct,
+                semesterPeriodCount: forecast.semesterPeriodCount,
+                semesterRemainingPeriods: forecast.remainingPeriods,
+                projectedPpctAtSemesterEnd: forecast.projectedPpctAtSemesterEnd,
+                forecastShortfall: forecast.forecastShortfall,
+                forecastRateSource: forecast.rateSource,
                 progressPercent: totalPpct > 0 ? Math.min(100, Math.round(actualPpct * 100 / totalPpct)) : 0,
+                semesterProgressPercent: semesterTargetPpct > semesterStartPpct
+                    ? Math.max(0, Math.min(100, Math.round((actualPpct - semesterStartPpct) * 100 / (semesterTargetPpct - semesterStartPpct))))
+                    : (actualPpct >= semesterTargetPpct && semesterTargetPpct > 0 ? 100 : 0),
             };
         }
 
@@ -635,7 +653,7 @@
                 <div class="progress-stat-card ${snapshot.missingWeeks ? 'warn' : 'good'}"><span class="stat-icon">📭</span><strong>${snapshot.missingWeeks}</strong><span>Tuần chưa có lịch</span></div>`;
             const notices = [];
             if (snapshot.behindCount) notices.push(`${snapshot.behindCount} lớp–môn chậm tiến độ`);
-            if (snapshot.riskCount) notices.push(`${snapshot.riskCount} lớp–môn có nguy cơ chưa hoàn thành trước tuần ${MAX_SCHOOL_WEEKS}`);
+            if (snapshot.riskCount) notices.push(`${snapshot.riskCount} lớp–môn có nguy cơ thiếu tiết ở cuối học kỳ đang theo dõi`);
             if (snapshot.missingCurriculumCount) notices.push(`${snapshot.missingCurriculumCount} lớp–môn chưa có đủ phân phối chương trình`);
             if (snapshot.missingWeeks) notices.push(`${snapshot.missingWeeks} tuần chưa có lịch báo giảng`);
             progressDashboardNotice.className = `progress-dashboard-notice${notices.length ? ' warn' : ''}`;
@@ -651,7 +669,7 @@
                 <thead><tr>
                     <th>Lớp</th><th>Môn</th><th>PPCT dự kiến</th><th>PPCT thực tế</th><th>Chênh lệch</th>
                     <th>Bài đang dạy</th><th>Đã dạy</th><th>Không học</th><th>Học bù</th>
-                    <th>Trạng thái</th><th>Dự báo hoàn thành</th><th>Mở lịch</th>
+                    <th>Trạng thái</th><th>Mốc cuối học kỳ</th><th>Dự báo cuối học kỳ</th><th>Mở lịch</th>
                 </tr></thead><tbody>${snapshot.rows.map(row => {
                     const rowClass = row.status === 'behind' ? 'progress-behind'
                         : row.status === 'ahead' || row.status === 'completed' ? 'progress-ahead'
@@ -669,7 +687,8 @@
                         <td class="progress-number">${row.canceledCount}</td>
                         <td class="progress-number">${row.makeupCount}</td>
                         <td class="text-center"><span class="progress-status-chip ${row.status}">${escapeHTML(row.statusLabel)}</span></td>
-                        <td class="text-center"><span class="progress-forecast-chip ${row.forecastState}">${escapeHTML(row.forecastLabel)}</span></td>
+                        <td class="text-center"><strong>${escapeHTML(row.semesterShortLabel || 'HK')}</strong><div style="font-size:10px;color:#64748b;margin-top:3px;">Tiết ${row.semesterTargetPpct || '—'} · Tuần ${row.semesterEndWeek || '—'}</div></td>
+                        <td class="text-center"><span class="progress-forecast-chip ${row.forecastState}">${escapeHTML(row.forecastLabel)}</span>${row.forecastState === 'risk' && row.forecastShortfall ? `<div style="font-size:10px;color:#be123c;margin-top:4px;">Dự kiến thiếu ${row.forecastShortfall} tiết</div>` : ''}</td>
                         <td class="text-center"><button class="btn btn-outline btn-sm" type="button" data-progress-open-week="${snapshot.referenceWeek}">Tuần ${snapshot.referenceWeek}</button></td>
                     </tr>`;
                 }).join('')}</tbody></table></div>`;
@@ -709,14 +728,14 @@
                 [`Tính đến tuần ${snapshot.referenceWeek}`],
                 [`Số lớp: ${snapshot.classCount}`, `Đúng tiến độ: ${snapshot.onTrackCount}`, `Chậm: ${snapshot.behindCount}`, `Tuần đã chốt: ${snapshot.finalizedWeeks}`, `Tuần chưa có lịch: ${snapshot.missingWeeks}`],
                 [],
-                ['Lớp', 'Môn', 'PPCT dự kiến', 'PPCT thực tế', 'Chênh lệch', 'Bài đang dạy', 'Số tiết đã dạy', 'Không học', 'Học bù', 'Trạng thái', 'Dự báo hoàn thành'],
+                ['Lớp', 'Môn', 'PPCT dự kiến', 'PPCT thực tế', 'Chênh lệch', 'Bài đang dạy', 'Số tiết đã dạy', 'Không học', 'Học bù', 'Trạng thái', 'Học kỳ', 'Mốc cuối HK', 'Dự báo cuối HK', 'Thiếu dự kiến'],
                 ...snapshot.rows.map(row => [
                     row.className, row.subject, row.plannedPpct || '', row.actualPpct || '', row.difference ?? '',
-                    row.currentTopic || '', row.taughtCount, row.canceledCount, row.makeupCount, row.statusLabel, row.forecastLabel,
+                    row.currentTopic || '', row.taughtCount, row.canceledCount, row.makeupCount, row.statusLabel, row.semesterLabel || '', row.semesterTargetPpct || '', row.forecastLabel, row.forecastShortfall || 0,
                 ]),
             ];
             const sheet = XLSX.utils.aoa_to_sheet(rows);
-            sheet['!cols'] = [{ wch: 11 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 46 }, { wch: 14 }, { wch: 11 }, { wch: 9 }, { wch: 19 }, { wch: 22 }];
+            sheet['!cols'] = [{ wch: 11 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 46 }, { wch: 14 }, { wch: 11 }, { wch: 9 }, { wch: 19 }, { wch: 12 }, { wch: 13 }, { wch: 34 }, { wch: 13 }];
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, sheet, `Tien do tuan ${snapshot.referenceWeek}`);
             XLSX.writeFile(workbook, `tien-do-giang-day-${snapshot.academicYear}-tuan-${snapshot.referenceWeek}.xlsx`);

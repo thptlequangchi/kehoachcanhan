@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v50.3 — SHARED CORE
+   SỔ TAY GIÁO VIÊN v50.4 — SHARED CORE
    Hợp nhất các quy tắc dùng chung giữa Overview / Trợ lý tuần / Dashboard /
    Sổ Công Việc / Reminder / Report mà không thay đổi schema dữ liệu.
 ============================================================================ */
@@ -55,6 +55,131 @@ function getWeekOperationalStatus(week) {
         finalized,
         stateKey,
         label,
+    };
+}
+
+const SEMESTER_ONE_END_WEEK = 18;
+
+function getSchoolSemesterInfo(referenceWeek) {
+    const week = Math.max(1, Math.min(MAX_SCHOOL_WEEKS, Number.parseInt(referenceWeek, 10) || 1));
+    if (week <= SEMESTER_ONE_END_WEEK) {
+        return {
+            key: 'semester1',
+            number: 1,
+            shortLabel: 'HKI',
+            label: 'Học kỳ I',
+            startWeek: 1,
+            endWeek: Math.min(SEMESTER_ONE_END_WEEK, MAX_SCHOOL_WEEKS),
+        };
+    }
+    return {
+        key: 'semester2',
+        number: 2,
+        shortLabel: 'HKII',
+        label: 'Học kỳ II',
+        startWeek: Math.min(SEMESTER_ONE_END_WEEK + 1, MAX_SCHOOL_WEEKS),
+        endWeek: MAX_SCHOOL_WEEKS,
+    };
+}
+
+function getCurriculumSemesterTargets(curriculumMap) {
+    let semesterOneTargetPpct = 0;
+    let totalPpct = 0;
+    if (!curriculumMap || typeof curriculumMap.forEach !== 'function') {
+        return { semesterOneTargetPpct, totalPpct };
+    }
+    curriculumMap.forEach((lesson, ppct) => {
+        const value = Number.parseInt(ppct, 10) || 0;
+        const sourceWeek = Number.parseInt(lesson?.sourceWeek, 10) || 0;
+        if (value > totalPpct) totalPpct = value;
+        if (sourceWeek > 0 && sourceWeek <= SEMESTER_ONE_END_WEEK && value > semesterOneTargetPpct) {
+            semesterOneTargetPpct = value;
+        }
+    });
+    return { semesterOneTargetPpct, totalPpct };
+}
+
+function buildSemesterForecastMetrics(options = {}) {
+    const semester = options.semester || getSchoolSemesterInfo(options.referenceWeek);
+    const referenceWeek = Math.max(semester.startWeek, Math.min(semester.endWeek, Number.parseInt(options.referenceWeek, 10) || semester.startWeek));
+    const actualPpct = Math.max(0, Number.parseInt(options.actualPpct, 10) || 0);
+    const targetPpct = Math.max(0, Number.parseInt(options.targetPpct, 10) || 0);
+    const semesterStartPpct = Math.max(0, Number.parseInt(options.semesterStartPpct, 10) || 0);
+    const weeklyRate = Number.isFinite(Number(options.weeklyRate)) && Number(options.weeklyRate) > 0 ? Number(options.weeklyRate) : 0;
+    const remainingPeriods = Math.max(0, targetPpct - actualPpct);
+    const remainingWeeks = Math.max(0, semester.endWeek - referenceWeek);
+    const semesterPeriodCount = Math.max(0, targetPpct - semesterStartPpct);
+    const semesterWeekCount = Math.max(1, semester.endWeek - semester.startWeek + 1);
+    const plannedWeeklyRate = semesterPeriodCount > 0 ? semesterPeriodCount / semesterWeekCount : 0;
+    const effectiveWeeklyRate = weeklyRate > 0 ? weeklyRate : plannedWeeklyRate;
+    const rateSource = weeklyRate > 0 ? 'recent' : plannedWeeklyRate > 0 ? 'planned' : 'none';
+
+    let forecastWeek = null;
+    let projectedPpctAtSemesterEnd = actualPpct;
+    let forecastShortfall = remainingPeriods;
+    let forecastState = 'unknown';
+    let forecastLabel = `${semester.shortLabel}: chưa xác định mốc cuối kỳ`;
+
+    if (!(targetPpct > 0)) {
+        return {
+            semester,
+            referenceWeek,
+            semesterStartPpct,
+            targetPpct,
+            semesterPeriodCount,
+            remainingPeriods,
+            remainingWeeks,
+            plannedWeeklyRate,
+            weeklyRate: effectiveWeeklyRate,
+            rateSource,
+            forecastWeek,
+            projectedPpctAtSemesterEnd,
+            forecastShortfall,
+            forecastState,
+            forecastLabel,
+        };
+    }
+
+    if (remainingPeriods === 0) {
+        forecastWeek = referenceWeek;
+        projectedPpctAtSemesterEnd = actualPpct;
+        forecastShortfall = 0;
+        forecastState = 'safe';
+        forecastLabel = `${semester.shortLabel}: đã đạt mốc ${targetPpct} tiết`;
+    } else if (effectiveWeeklyRate > 0) {
+        forecastWeek = referenceWeek + Math.ceil(remainingPeriods / effectiveWeeklyRate);
+        projectedPpctAtSemesterEnd = Math.min(targetPpct, actualPpct + Math.floor(effectiveWeeklyRate * remainingWeeks + 1e-9));
+        forecastShortfall = Math.max(0, targetPpct - projectedPpctAtSemesterEnd);
+        if (forecastWeek <= semester.endWeek) {
+            forecastState = 'safe';
+            forecastLabel = `${semester.shortLabel}: dự kiến xong tuần ${forecastWeek} · mốc ${targetPpct}`;
+        } else {
+            forecastState = 'risk';
+            forecastLabel = `${semester.shortLabel}: nguy cơ thiếu ${Math.max(1, forecastShortfall)} tiết ở tuần ${semester.endWeek}`;
+        }
+    } else if (referenceWeek >= semester.endWeek) {
+        forecastState = 'risk';
+        forecastLabel = `${semester.shortLabel}: thiếu ${remainingPeriods} tiết tại mốc tuần ${semester.endWeek}`;
+    } else {
+        forecastLabel = `${semester.shortLabel}: chưa đủ dữ liệu nhịp dạy · mốc ${targetPpct} tiết`;
+    }
+
+    return {
+        semester,
+        referenceWeek,
+        semesterStartPpct,
+        targetPpct,
+        semesterPeriodCount,
+        remainingPeriods,
+        remainingWeeks,
+        plannedWeeklyRate,
+        weeklyRate: effectiveWeeklyRate,
+        rateSource,
+        forecastWeek,
+        projectedPpctAtSemesterEnd,
+        forecastShortfall,
+        forecastState,
+        forecastLabel,
     };
 }
 

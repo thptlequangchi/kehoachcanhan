@@ -50,7 +50,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v50.3 · Gọn Nhắc việc & Gợi ý</span>
+                        <span>v50.4 · Dự báo theo học kỳ</span>
                         <i aria-hidden="true"></i>
                         <span>37 tuần · PPCT · Báo giảng · Hồ sơ</span>
                     </div>
@@ -241,7 +241,7 @@
                         <span class="health-overall-badge" id="healthOverallStatus">Chưa kiểm tra</span>
                     </div>
                     <div class="health-summary-grid">
-                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v50.3</strong></div>
+                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v50.4</strong></div>
                         <div class="health-summary-item"><span>Dữ liệu</span><strong id="healthSummaryData">Đang tổng hợp…</strong></div>
                         <div class="health-summary-item"><span>Cloud</span><strong id="healthSummaryCloud">Đang kiểm tra…</strong></div>
                         <div class="health-summary-item"><span>Nhật ký</span><strong id="healthSummaryErrors">0 lỗi</strong></div>
@@ -736,12 +736,12 @@
 
             <div class="card" id="progressDashboardCard">
                 <div class="card-header">
-                    <h2>📈 Tiến độ giảng dạy toàn năm học</h2>
-                    <span class="sub">Theo dõi từng lớp đến tối đa 37 tuần</span>
+                    <h2>📈 Tiến độ giảng dạy theo học kỳ</h2>
+                    <span class="sub">Đối chiếu đúng mốc cuối HKI và HKII</span>
                 </div>
                 <div class="progress-dashboard-guide">
                     Tiến độ thực tế lấy từ các tiết có học trong Lịch báo giảng; tiến độ dự kiến lấy từ Tiết PPCT của bộ phân phối.
-                    Tiết “Không học” không được tính, còn tiết học bù được tính như một tiết đã dạy. Dự báo dùng nhịp dạy của 4 tuần gần nhất.
+                    Tiết “Không học” không được tính, còn tiết học bù được tính như một tiết đã dạy. Dự báo tự tách theo học kỳ: HKI dùng tiết PPCT cuối cùng đến Tuần 18 làm mốc; HKII dùng tiết cuối năm ở Tuần 37. Nhịp dạy ưu tiên 4 tuần gần nhất trong chính học kỳ đang theo dõi, nên môn có số tiết/tuần khác nhau giữa hai học kỳ không bị ngoại suy sai.
                 </div>
                 <div class="progress-dashboard-filters">
                     <div class="progress-filter-field">
