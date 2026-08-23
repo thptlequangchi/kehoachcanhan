@@ -1,5 +1,5 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v50.4 — SHARED CORE
+   SỔ TAY GIÁO VIÊN v50.5 — SHARED CORE
    Hợp nhất các quy tắc dùng chung giữa Overview / Trợ lý tuần / Dashboard /
    Sổ Công Việc / Reminder / Report mà không thay đổi schema dữ liệu.
 ============================================================================ */
@@ -82,21 +82,81 @@ function getSchoolSemesterInfo(referenceWeek) {
     };
 }
 
-function getCurriculumSemesterTargets(curriculumMap) {
-    let semesterOneTargetPpct = 0;
-    let totalPpct = 0;
-    if (!curriculumMap || typeof curriculumMap.forEach !== 'function') {
-        return { semesterOneTargetPpct, totalPpct };
-    }
-    curriculumMap.forEach((lesson, ppct) => {
-        const value = Number.parseInt(ppct, 10) || 0;
-        const sourceWeek = Number.parseInt(lesson?.sourceWeek, 10) || 0;
-        if (value > totalPpct) totalPpct = value;
-        if (sourceWeek > 0 && sourceWeek <= SEMESTER_ONE_END_WEEK && value > semesterOneTargetPpct) {
-            semesterOneTargetPpct = value;
-        }
+function flattenCurriculumProfileLessons(profile) {
+    const rows = [];
+    (profile?.weeks || []).forEach(weekData => {
+        const sourceWeek = Number.parseInt(weekData?.week, 10) || 0;
+        (weekData?.lessons || []).forEach(lesson => {
+            const ppct = Number.parseInt(lesson?.ppctPeriod, 10) || 0;
+            if (!(ppct > 0)) return;
+            rows.push({ ppct, topic: cleanText(lesson?.topic), sourceWeek });
+        });
     });
-    return { semesterOneTargetPpct, totalPpct };
+    return rows.sort((a, b) => a.ppct - b.ppct);
+}
+
+function getCurriculumProfileTotalPpct(profile) {
+    return flattenCurriculumProfileLessons(profile).reduce((max, row) => Math.max(max, row.ppct), 0);
+}
+
+function curriculumTopicHasSemesterOneMarker(topic) {
+    const key = normalizeLookupText(topic);
+    if (!key) return false;
+    // “học kỳ I”, “học kì I”, “học kỳ 1”, “học kì 1” nhưng không ăn nhầm HKII.
+    return /hoc(?:ky|ki)(?:1|i)(?!i)/.test(key);
+}
+
+function detectSemesterOneEndSuggestion(profile) {
+    const rows = flattenCurriculumProfileLessons(profile);
+    if (!rows.length) return { ppct: 0, topic: '', reason: '', confidence: 'none' };
+
+    const isReturn = row => {
+        const key = normalizeLookupText(row?.topic);
+        return key.includes('traba') && curriculumTopicHasSemesterOneMarker(row?.topic);
+    };
+    const isExam = row => {
+        const key = normalizeLookupText(row?.topic);
+        return key.includes('kiemtra') && !key.includes('giu') && curriculumTopicHasSemesterOneMarker(row?.topic);
+    };
+
+    const explicitReturns = rows.filter(isReturn);
+    if (explicitReturns.length) {
+        const row = explicitReturns[explicitReturns.length - 1];
+        return { ppct: row.ppct, topic: row.topic, reason: 'Tiết trả bài HKI', confidence: 'high' };
+    }
+
+    const exams = rows.filter(isExam);
+    if (!exams.length) return { ppct: 0, topic: '', reason: '', confidence: 'none' };
+    const exam = exams[exams.length - 1];
+    const next = rows.find(row => row.ppct > exam.ppct);
+    if (next && next.ppct === exam.ppct + 1 && normalizeLookupText(next.topic).includes('traba')) {
+        return { ppct: next.ppct, topic: next.topic, reason: 'Tiết trả bài ngay sau kiểm tra HKI', confidence: 'high' };
+    }
+    return { ppct: exam.ppct, topic: exam.topic, reason: 'Tiết kiểm tra HKI', confidence: 'medium' };
+}
+
+function getCurriculumSemesterTargets(curriculumMap, profile = null) {
+    let totalPpct = 0;
+    if (curriculumMap && typeof curriculumMap.forEach === 'function') {
+        curriculumMap.forEach((_lesson, ppct) => {
+            const value = Number.parseInt(ppct, 10) || 0;
+            if (value > totalPpct) totalPpct = value;
+        });
+    }
+    if (!(totalPpct > 0) && profile) totalPpct = getCurriculumProfileTotalPpct(profile);
+
+    const configured = Math.max(0, Number.parseInt(profile?.semesterOneEndPpct, 10) || 0);
+    const semesterOneTargetPpct = configured > 0 && (!(totalPpct > 0) || configured <= totalPpct) ? configured : 0;
+    const suggestion = profile ? detectSemesterOneEndSuggestion(profile) : { ppct: 0, topic: '', reason: '', confidence: 'none' };
+    return {
+        semesterOneTargetPpct,
+        totalPpct,
+        semesterOneBoundaryConfirmed: semesterOneTargetPpct > 0,
+        semesterOneSuggestedPpct: suggestion.ppct || 0,
+        semesterOneSuggestedTopic: suggestion.topic || '',
+        semesterOneSuggestionReason: suggestion.reason || '',
+        semesterOneSuggestionConfidence: suggestion.confidence || 'none',
+    };
 }
 
 function buildSemesterForecastMetrics(options = {}) {
@@ -226,11 +286,11 @@ function getPendingWorkTasks(todayIso = '') {
 
 function classifyProgressRows(courseRows) {
     const rows = Array.isArray(courseRows) ? courseRows : [];
-    const onTrackRows = rows.filter(row => ['ontrack', 'ahead', 'completed'].includes(row?.status));
-    const attentionRows = rows.filter(row => row?.status === 'behind' || row?.status === 'missing' || row?.forecastState === 'risk')
+    const onTrackRows = rows.filter(row => ['ontrack', 'ahead', 'completed'].includes(row?.status) && !row?.semesterBoundaryMissing);
+    const attentionRows = rows.filter(row => row?.status === 'behind' || row?.status === 'missing' || row?.forecastState === 'risk' || row?.semesterBoundaryMissing)
         .sort((a, b) => {
-            const aDanger = Number(a?.status === 'behind' || a?.forecastState === 'risk');
-            const bDanger = Number(b?.status === 'behind' || b?.forecastState === 'risk');
+            const aDanger = Number(a?.status === 'behind' || a?.forecastState === 'risk' || a?.semesterBoundaryMissing);
+            const bDanger = Number(b?.status === 'behind' || b?.forecastState === 'risk' || b?.semesterBoundaryMissing);
             return bDanger - aDanger || (a?.difference ?? 0) - (b?.difference ?? 0);
         });
     return { courseRows: rows, onTrackRows, attentionRows };

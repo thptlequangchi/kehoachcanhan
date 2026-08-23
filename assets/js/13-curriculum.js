@@ -1,6 +1,9 @@
         // ================================================================
         //  CURRICULUM (Phân phối chương trình)
         // ================================================================
+        let curriculumBoundaryTargetId = '';
+        let curriculumBoundarySuggestionPrefill = false;
+
         function persistCurriculumProfiles() {
             const success = writeStoredJSON(CURRICULUM_PROFILES_STORAGE, {
                 version: 2,
@@ -24,6 +27,7 @@
                     ? `File sắp tải sẽ chỉ áp dụng cho lớp ${className}, môn ${subject}; dữ liệu này sẽ ưu tiên hơn phân phối Khối ${inferGradeFromClass(className) || grade}.`
                     : 'Nhập tên lớp chính xác như trong thời khóa biểu, ví dụ 10A1, 11A3 hoặc 12A2.'
                 : `File sắp tải sẽ áp dụng cho tất cả các lớp thuộc Khối ${grade}, môn ${subject}.`;
+            updateCurriculumSemesterBoundaryUI();
         }
 
         function getSelectedCurriculumTarget() {
@@ -43,6 +47,93 @@
             const target = { scope, grade, className, subject };
             target.id = curriculumTargetId(target);
             return target;
+        }
+
+        function getCurriculumProfileForTarget(target) {
+            if (!target?.id) return null;
+            return (state.curriculumProfiles || []).find(profile => profile.id === target.id) || null;
+        }
+
+        function getCurriculumBoundaryDisplay(profile) {
+            const totalPpct = getCurriculumProfileTotalPpct(profile);
+            const confirmed = Math.max(0, Number.parseInt(profile?.semesterOneEndPpct, 10) || 0);
+            const suggestion = detectSemesterOneEndSuggestion(profile);
+            return { totalPpct, confirmed, suggestion };
+        }
+
+        function updateCurriculumSemesterBoundaryUI(options = {}) {
+            if (!curriculumSemester1EndInput || !curriculumSemester1EndHint || !saveCurriculumSemester1EndBtn) return;
+            let target = null;
+            try { target = getSelectedCurriculumTarget(); } catch (_) { /* target đang nhập dở */ }
+            const profile = target ? getCurriculumProfileForTarget(target) : null;
+            const boundary = profile ? getCurriculumBoundaryDisplay(profile) : null;
+            const targetId = target?.id || '';
+            const targetChanged = targetId !== curriculumBoundaryTargetId;
+            if (targetChanged || options.force) {
+                curriculumBoundaryTargetId = targetId;
+                curriculumSemester1EndInput.value = boundary?.confirmed > 0
+                    ? String(boundary.confirmed)
+                    : boundary?.suggestion?.ppct > 0 ? String(boundary.suggestion.ppct) : '';
+                curriculumBoundarySuggestionPrefill = !(boundary?.confirmed > 0) && Boolean(boundary?.suggestion?.ppct > 0);
+            }
+            saveCurriculumSemester1EndBtn.disabled = !profile;
+            if (!profile) {
+                curriculumSemester1EndHint.className = 'curriculum-boundary-hint';
+                curriculumSemester1EndHint.textContent = 'Có thể nhập mốc HKI trước khi tải file. Sau khi đọc PPCT, hệ thống còn gợi ý từ “Kiểm tra học kỳ I” hoặc tiết “Trả bài” ngay sau đó.';
+                return;
+            }
+            const { totalPpct, confirmed, suggestion } = boundary;
+            if (confirmed > 0) {
+                curriculumSemester1EndHint.className = 'curriculum-boundary-hint good';
+                curriculumSemester1EndHint.textContent = `Đã xác nhận HKI kết thúc ở Tiết ${confirmed}. Tổng PPCT cả năm: ${totalPpct || '—'} tiết; HKII còn ${totalPpct > 0 ? Math.max(0, totalPpct - confirmed) : '—'} tiết.`;
+            } else if (suggestion.ppct > 0) {
+                curriculumSemester1EndHint.className = 'curriculum-boundary-hint warn';
+                curriculumSemester1EndHint.textContent = `Chưa xác nhận mốc HKI. Gợi ý: Tiết ${suggestion.ppct} (${suggestion.reason}) — “${suggestion.topic}”. Nhập hoặc dùng số này rồi bấm Lưu mốc.`;
+            } else {
+                curriculumSemester1EndHint.className = 'curriculum-boundary-hint warn';
+                curriculumSemester1EndHint.textContent = `Chưa xác nhận Tiết kết thúc HKI. Tổng PPCT cả năm: ${totalPpct || '—'} tiết. Hệ thống sẽ chưa dự báo theo học kỳ cho đến khi có mốc này.`;
+            }
+        }
+
+        function saveCurriculumSemesterOneBoundary() {
+            let target;
+            try {
+                target = getSelectedCurriculumTarget();
+            } catch (error) {
+                showToast('⚠️ ' + error.message, 'error');
+                return;
+            }
+            const profile = getCurriculumProfileForTarget(target);
+            if (!profile) {
+                showToast('⚠️ Hãy tải phân phối chương trình cho khối/lớp này trước khi lưu mốc HKI.', 'error');
+                return;
+            }
+            const totalPpct = getCurriculumProfileTotalPpct(profile);
+            const raw = cleanText(curriculumSemester1EndInput.value);
+            const value = Number.parseInt(raw, 10) || 0;
+            if (!raw) {
+                if (profile.semesterOneEndPpct > 0 && !confirm('Xóa mốc kết thúc HKI đã xác nhận? Dự báo theo học kỳ sẽ tạm dừng cho đến khi nhập lại.')) return;
+                profile.semesterOneEndPpct = 0;
+                profile.semesterOneEndConfirmedAt = '';
+                persistCurriculumProfiles();
+                updateCurriculumSemesterBoundaryUI({ force: true });
+                showToast('Đã xóa mốc HKI. Hệ thống sẽ chờ giáo viên xác nhận lại.', 'info');
+                return;
+            }
+            if (!(value > 0)) {
+                showToast('⚠️ Tiết kết thúc HKI phải là số nguyên dương.', 'error');
+                return;
+            }
+            if (totalPpct > 0 && value > totalPpct) {
+                showToast(`⚠️ Mốc HKI không thể lớn hơn tổng ${totalPpct} tiết của cả năm.`, 'error');
+                return;
+            }
+            profile.semesterOneEndPpct = value;
+            profile.semesterOneEndConfirmedAt = new Date().toISOString();
+            profile.updatedAt = new Date().toISOString();
+            persistCurriculumProfiles();
+            updateCurriculumSemesterBoundaryUI({ force: true });
+            showToast(`✅ Đã xác nhận HKI kết thúc ở Tiết ${value}. Hệ thống đã tính lại dự báo HKI/HKII.`, 'success');
         }
 
         function renderCurriculumProfiles() {
@@ -65,6 +156,12 @@
                     : '<span style="color:#b45309;font-weight:700;">⚠️ Cần tải lại file để đọc cột Tiết PPCT</span>';
                 const range = weeks.length === 1 ? `Tuần ${weeks[0]}` : `Tuần ${Math.min(...weeks)}–${Math.max(...weeks)}`;
                 const badgeClass = profile.scope === 'class' ? 'class' : profile.scope === 'all' ? 'all' : '';
+                const boundary = getCurriculumBoundaryDisplay(profile);
+                const boundaryMeta = boundary.confirmed > 0
+                    ? `<div class="curriculum-profile-boundary"><strong>Cả năm: ${boundary.totalPpct || '—'} tiết</strong> · HKI kết thúc Tiết ${boundary.confirmed} ✅ · HKII ${boundary.totalPpct > 0 ? Math.max(0, boundary.totalPpct - boundary.confirmed) : '—'} tiết</div>`
+                    : boundary.suggestion.ppct > 0
+                        ? `<div class="curriculum-profile-boundary"><strong>Cả năm: ${boundary.totalPpct || '—'} tiết</strong> · ⚠️ Chưa xác nhận HKI · gợi ý Tiết ${boundary.suggestion.ppct} (${escapeHTML(boundary.suggestion.reason)})</div>`
+                        : `<div class="curriculum-profile-boundary"><strong>Cả năm: ${boundary.totalPpct || '—'} tiết</strong> · ⚠️ Chưa nhập Tiết kết thúc HKI</div>`;
                 return `<div class="curriculum-profile-item">
                     <div class="curriculum-profile-main">
                         <div class="curriculum-profile-title">
@@ -74,6 +171,7 @@
                         <div class="curriculum-profile-meta">
                             ${profile.weeks.length} tuần · ${mappingStatus} · ${escapeHTML(range)}<br>
                             ${escapeHTML(profile.fileName)}${profile.migrated ? ' · đã chuyển từ dữ liệu cũ' : ''}
+                            ${boundaryMeta}
                         </div>
                     </div>
                     <div class="schedule-row-actions">
@@ -82,6 +180,7 @@
                     </div>
                 </div>`;
             }).join('');
+            if (document.activeElement !== curriculumSemester1EndInput) updateCurriculumSemesterBoundaryUI({ force: true });
             renderProgressDashboard();
         }
 
@@ -115,12 +214,25 @@
 
         function saveCurriculumProfile(target, weeks, fileName) {
             const existingIndex = state.curriculumProfiles.findIndex(profile => profile.id === target.id);
+            const existingProfile = existingIndex >= 0 ? state.curriculumProfiles[existingIndex] : null;
             if (existingIndex >= 0
-                && !confirm(`${curriculumProfileLabel(state.curriculumProfiles[existingIndex])} đã có phân phối. Thay bằng file ${fileName}?`)) return false;
+                && !confirm(`${curriculumProfileLabel(existingProfile)} đã có phân phối. Thay bằng file ${fileName}?`)) return false;
+            const normalizedWeeks = normalizeCurriculumWeeks(weeks);
+            const tempProfile = { ...target, weeks: normalizedWeeks };
+            const totalPpct = getCurriculumProfileTotalPpct(tempProfile);
+            const enteredBoundary = curriculumBoundarySuggestionPrefill
+                ? 0
+                : Math.max(0, Number.parseInt(curriculumSemester1EndInput?.value, 10) || 0);
+            const semesterOneEndPpct = enteredBoundary > 0 ? enteredBoundary : Math.max(0, Number.parseInt(existingProfile?.semesterOneEndPpct, 10) || 0);
+            if (semesterOneEndPpct > 0 && totalPpct > 0 && semesterOneEndPpct > totalPpct) {
+                throw new Error(`Tiết kết thúc HKI (${semesterOneEndPpct}) lớn hơn tổng ${totalPpct} tiết của cả năm.`);
+            }
             const profile = {
                 ...target,
                 fileName: cleanText(fileName) || 'Phân phối chương trình',
-                weeks: normalizeCurriculumWeeks(weeks),
+                weeks: normalizedWeeks,
+                semesterOneEndPpct,
+                semesterOneEndConfirmedAt: enteredBoundary > 0 ? new Date().toISOString() : cleanText(existingProfile?.semesterOneEndConfirmedAt),
                 updatedAt: new Date().toISOString(),
                 migrated: false,
             };
@@ -130,7 +242,7 @@
             renumberStoredSchedulesFrom(1);
             persistTeachingScheduleState();
             invalidateSchedulesForCurriculumTarget(target, `Phân phối ${curriculumProfileLabel(profile)} đã thay đổi`);
-            return true;
+            return profile;
         }
 
         function deleteCurriculumProfile(profileId) {
@@ -233,9 +345,20 @@
                     }
                     state.curriculumText = extractedContent;
                     localStorage.setItem('teacher_curriculum_text', state.curriculumText);
-                    if (!saveCurriculumProfile(target, weeks, file.name)) return;
+                    const savedProfile = saveCurriculumProfile(target, weeks, file.name);
+                    if (!savedProfile) return;
                     populateWeekSelect();
-                    showToast(`✅ Đã khớp ${mappedCount} Tiết PPCT với tên bài cho ${curriculumProfileLabel(target)}${usedLocalParser ? ' trực tiếp từ bảng' : ''}`, 'success');
+                    updateCurriculumSemesterBoundaryUI({ force: true });
+                    const boundary = getCurriculumBoundaryDisplay(savedProfile);
+                    if (!(boundary.confirmed > 0) && boundary.suggestion.ppct > 0) {
+                        curriculumSemester1EndInput.value = String(boundary.suggestion.ppct);
+                        curriculumBoundarySuggestionPrefill = true;
+                        curriculumSemester1EndHint.className = 'curriculum-boundary-hint warn';
+                        curriculumSemester1EndHint.textContent = `Gợi ý mốc HKI: Tiết ${boundary.suggestion.ppct} (${boundary.suggestion.reason}) — “${boundary.suggestion.topic}”. Hãy kiểm tra rồi bấm “Lưu mốc”.`;
+                        showToast(`✅ Đã đọc ${mappedCount} Tiết PPCT cả năm. Gợi ý HKI kết thúc ở Tiết ${boundary.suggestion.ppct}; thầy kiểm tra và bấm Lưu mốc để xác nhận.`, 'success');
+                    } else {
+                        showToast(`✅ Đã khớp ${mappedCount} Tiết PPCT với tên bài cho ${curriculumProfileLabel(target)}${usedLocalParser ? ' trực tiếp từ bảng' : ''}`, 'success');
+                    }
                 } else {
                     throw new Error('Không tìm thấy các dòng Tuần trong file Word/Excel');
                 }
@@ -264,6 +387,18 @@
             updateCurriculumTargetUI();
         });
         curriculumSubjectInput.addEventListener('input', updateCurriculumTargetUI);
+        curriculumSubjectInput.addEventListener('blur', updateCurriculumSemesterBoundaryUI);
+        curriculumSemester1EndInput.addEventListener('input', () => {
+            curriculumBoundarySuggestionPrefill = false;
+            const value = Number.parseInt(curriculumSemester1EndInput.value, 10) || 0;
+            if (value > 0) {
+                curriculumSemester1EndHint.className = 'curriculum-boundary-hint';
+                curriculumSemester1EndHint.textContent = `Đang nhập mốc HKI: Tiết ${value}. Bấm “Lưu mốc” để xác nhận và tính lại dự báo.`;
+            } else {
+                updateCurriculumSemesterBoundaryUI();
+            }
+        });
+        saveCurriculumSemester1EndBtn.addEventListener('click', saveCurriculumSemesterOneBoundary);
 
         curriculumProfileList.addEventListener('click', event => {
             const button = event.target.closest('button[data-curriculum-action][data-curriculum-id]');

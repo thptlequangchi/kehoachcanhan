@@ -335,11 +335,16 @@
                 progress.attentionRows.slice(0, 3).forEach(row => {
                     const className = cleanText(row.className);
                     const subject = cleanText(row.subject);
-                    const risk = row.status === 'behind' || row.forecastState === 'risk';
+                    const risk = row.status === 'behind' || row.forecastState === 'risk' || row.semesterBoundaryMissing;
+                    const boundaryNote = row.semesterBoundaryMissing
+                        ? `Chưa xác nhận Tiết kết thúc HKI${row.semesterOneSuggestedPpct ? ` · gợi ý Tiết ${row.semesterOneSuggestedPpct}` : ''}`
+                        : '';
                     add(
                         `system:${year}:ppct:${className}:${subject}`,
-                        `Rà soát PPCT ${className || 'lớp'} · ${subject || 'môn học'}`,
-                        [cleanText(row.statusLabel), cleanText(row.forecastLabel), cleanText(row.currentTopic)].filter(Boolean).join(' · ') || 'Lớp–môn đang cần chú ý về tiến độ.',
+                        row.semesterBoundaryMissing
+                            ? `Xác nhận mốc HKI ${className || 'lớp'} · ${subject || 'môn học'}`
+                            : `Rà soát PPCT ${className || 'lớp'} · ${subject || 'môn học'}`,
+                        [boundaryNote, cleanText(row.statusLabel), cleanText(row.forecastLabel), cleanText(row.currentTopic)].filter(Boolean).join(' · ') || 'Lớp–môn đang cần chú ý về tiến độ.',
                         risk ? 'high' : 'normal',
                         'teaching', week, className, subject, workTodayISO()
                     );

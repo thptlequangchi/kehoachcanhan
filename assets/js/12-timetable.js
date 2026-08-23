@@ -89,6 +89,23 @@
             } : { topics: '', lessons: [], profileId: '', sourceLabel: 'Chưa có phân phối', scope: '' };
         }
 
+        function getPreferredCurriculumProfileForCourse(className, subject = '') {
+            const classKey = normalizeClassKey(className);
+            const grade = inferGradeFromClass(className);
+            const subjectKey = normalizeLookupText(subject);
+            const candidates = (state.curriculumProfiles || []).map(profile => {
+                if (!curriculumSubjectMatches(profile.subject, subject)) return null;
+                let priority = 0;
+                if (profile.scope === 'class' && normalizeClassKey(profile.className) === classKey) priority = 300;
+                else if (profile.scope === 'grade' && cleanText(profile.grade) === grade) priority = 200;
+                else if (profile.scope === 'all') priority = 100;
+                if (!priority) return null;
+                if (subjectKey && normalizeLookupText(profile.subject) === subjectKey) priority += 10;
+                return { profile, priority };
+            }).filter(Boolean).sort((a, b) => b.priority - a.priority);
+            return candidates[0]?.profile || null;
+        }
+
         function countTimetableLessonsForClass(timetable, className, subject) {
             const classKey = normalizeClassKey(className);
             const subjectKey = normalizeLookupText(subject);
@@ -512,6 +529,7 @@
                 return value > maximum ? value : maximum;
             }, 0);
             const curriculumMap = buildCurriculumLessonMap(course.className, course.subject);
+            const curriculumProfile = getPreferredCurriculumProfileForCourse(course.className, course.subject);
             const semester = getSchoolSemesterInfo(referenceWeek);
             let plannedPpct = 0;
             curriculumMap.forEach((lesson, ppct) => {
@@ -519,7 +537,12 @@
                 const sourceWeek = Number.parseInt(lesson.sourceWeek, 10) || 0;
                 if (sourceWeek <= referenceWeek && value > plannedPpct) plannedPpct = value;
             });
-            const { semesterOneTargetPpct, totalPpct } = getCurriculumSemesterTargets(curriculumMap);
+            const semesterTargets = getCurriculumSemesterTargets(curriculumMap, curriculumProfile);
+            const {
+                semesterOneTargetPpct, totalPpct, semesterOneBoundaryConfirmed,
+                semesterOneSuggestedPpct, semesterOneSuggestedTopic, semesterOneSuggestionReason,
+            } = semesterTargets;
+            const semesterBoundaryMissing = totalPpct > 0 && !semesterOneBoundaryConfirmed;
             const semesterStartPpct = semester.number === 1 ? 0 : semesterOneTargetPpct;
             const semesterTargetPpct = semester.number === 1 ? semesterOneTargetPpct : totalPpct;
             const lastActive = activeRecords[activeRecords.length - 1] || null;
@@ -555,14 +578,32 @@
                 const elapsedSemesterWeeks = Math.max(1, referenceWeek - semester.startWeek + 1);
                 recentWeeklyRate = semesterActiveRecords.length / elapsedSemesterWeeks;
             }
-            const forecast = buildSemesterForecastMetrics({
-                semester,
-                referenceWeek,
-                actualPpct,
-                targetPpct: semesterTargetPpct,
-                semesterStartPpct,
-                weeklyRate: recentWeeklyRate,
-            });
+            const forecast = semesterBoundaryMissing
+                ? {
+                    semester,
+                    referenceWeek,
+                    semesterStartPpct,
+                    targetPpct: semesterTargetPpct,
+                    semesterPeriodCount: 0,
+                    remainingPeriods: Math.max(0, semesterTargetPpct - actualPpct),
+                    remainingWeeks: Math.max(0, semester.endWeek - referenceWeek),
+                    plannedWeeklyRate: 0,
+                    weeklyRate: recentWeeklyRate,
+                    rateSource: recentWeeklyRate > 0 ? 'recent' : 'none',
+                    forecastWeek: null,
+                    projectedPpctAtSemesterEnd: actualPpct,
+                    forecastShortfall: 0,
+                    forecastState: 'unknown',
+                    forecastLabel: `${semester.shortLabel}: chưa nhập mốc kết thúc HKI${semesterOneSuggestedPpct ? ` · gợi ý tiết ${semesterOneSuggestedPpct}` : ''}`,
+                }
+                : buildSemesterForecastMetrics({
+                    semester,
+                    referenceWeek,
+                    actualPpct,
+                    targetPpct: semesterTargetPpct,
+                    semesterStartPpct,
+                    weeklyRate: recentWeeklyRate,
+                });
             const remainingPeriods = forecast.remainingPeriods;
             const weeklyRate = forecast.weeklyRate;
             const forecastWeek = forecast.forecastWeek;
@@ -593,15 +634,21 @@
                 semesterEndWeek: semester.endWeek,
                 semesterStartPpct,
                 semesterTargetPpct,
+                semesterBoundaryMissing,
+                semesterOneEndPpct: semesterOneTargetPpct,
+                semesterOneSuggestedPpct,
+                semesterOneSuggestedTopic,
+                semesterOneSuggestionReason,
+                curriculumProfileId: curriculumProfile?.id || '',
                 semesterPeriodCount: forecast.semesterPeriodCount,
                 semesterRemainingPeriods: forecast.remainingPeriods,
                 projectedPpctAtSemesterEnd: forecast.projectedPpctAtSemesterEnd,
                 forecastShortfall: forecast.forecastShortfall,
                 forecastRateSource: forecast.rateSource,
                 progressPercent: totalPpct > 0 ? Math.min(100, Math.round(actualPpct * 100 / totalPpct)) : 0,
-                semesterProgressPercent: semesterTargetPpct > semesterStartPpct
+                semesterProgressPercent: !semesterBoundaryMissing && semesterTargetPpct > semesterStartPpct
                     ? Math.max(0, Math.min(100, Math.round((actualPpct - semesterStartPpct) * 100 / (semesterTargetPpct - semesterStartPpct))))
-                    : (actualPpct >= semesterTargetPpct && semesterTargetPpct > 0 ? 100 : 0),
+                    : (!semesterBoundaryMissing && actualPpct >= semesterTargetPpct && semesterTargetPpct > 0 ? 100 : 0),
             };
         }
 
@@ -632,11 +679,12 @@
                 rows,
                 courseCount: rows.length,
                 classCount: new Set(rows.map(row => row.classKey)).size,
-                onTrackCount: rows.filter(row => ['ontrack', 'completed'].includes(row.status)).length,
+                onTrackCount: rows.filter(row => ['ontrack', 'completed'].includes(row.status) && !row.semesterBoundaryMissing).length,
                 behindCount: rows.filter(row => row.status === 'behind').length,
                 aheadCount: rows.filter(row => row.status === 'ahead').length,
                 missingCurriculumCount: rows.filter(row => row.status === 'missing').length,
                 riskCount: rows.filter(row => row.forecastState === 'risk').length,
+                boundaryMissingCount: rows.filter(row => row.semesterBoundaryMissing).length,
                 finalizedWeeks,
                 draftWeeks,
                 missingWeeks: Math.max(0, referenceWeek - finalizedWeeks - draftWeeks),
@@ -654,6 +702,7 @@
             const notices = [];
             if (snapshot.behindCount) notices.push(`${snapshot.behindCount} lớp–môn chậm tiến độ`);
             if (snapshot.riskCount) notices.push(`${snapshot.riskCount} lớp–môn có nguy cơ thiếu tiết ở cuối học kỳ đang theo dõi`);
+            if (snapshot.boundaryMissingCount) notices.push(`${snapshot.boundaryMissingCount} lớp–môn chưa xác nhận Tiết PPCT kết thúc HKI`);
             if (snapshot.missingCurriculumCount) notices.push(`${snapshot.missingCurriculumCount} lớp–môn chưa có đủ phân phối chương trình`);
             if (snapshot.missingWeeks) notices.push(`${snapshot.missingWeeks} tuần chưa có lịch báo giảng`);
             progressDashboardNotice.className = `progress-dashboard-notice${notices.length ? ' warn' : ''}`;
@@ -687,7 +736,9 @@
                         <td class="progress-number">${row.canceledCount}</td>
                         <td class="progress-number">${row.makeupCount}</td>
                         <td class="text-center"><span class="progress-status-chip ${row.status}">${escapeHTML(row.statusLabel)}</span></td>
-                        <td class="text-center"><strong>${escapeHTML(row.semesterShortLabel || 'HK')}</strong><div style="font-size:10px;color:#64748b;margin-top:3px;">Tiết ${row.semesterTargetPpct || '—'} · Tuần ${row.semesterEndWeek || '—'}</div></td>
+                        <td class="text-center"><strong>${escapeHTML(row.semesterShortLabel || 'HK')}</strong>${row.semesterBoundaryMissing
+                            ? `<div style="font-size:10px;color:#b45309;margin-top:3px;font-weight:700;">Chưa xác nhận mốc HKI${row.semesterOneSuggestedPpct ? ` · gợi ý tiết ${row.semesterOneSuggestedPpct}` : ''}</div>`
+                            : `<div style="font-size:10px;color:#64748b;margin-top:3px;">Tiết ${row.semesterTargetPpct || '—'} · Tuần ${row.semesterEndWeek || '—'}${row.semesterNumber === 2 ? ` · HKI hết tiết ${row.semesterOneEndPpct}` : ''}</div>`}</td>
                         <td class="text-center"><span class="progress-forecast-chip ${row.forecastState}">${escapeHTML(row.forecastLabel)}</span>${row.forecastState === 'risk' && row.forecastShortfall ? `<div style="font-size:10px;color:#be123c;margin-top:4px;">Dự kiến thiếu ${row.forecastShortfall} tiết</div>` : ''}</td>
                         <td class="text-center"><button class="btn btn-outline btn-sm" type="button" data-progress-open-week="${snapshot.referenceWeek}">Tuần ${snapshot.referenceWeek}</button></td>
                     </tr>`;
@@ -728,14 +779,14 @@
                 [`Tính đến tuần ${snapshot.referenceWeek}`],
                 [`Số lớp: ${snapshot.classCount}`, `Đúng tiến độ: ${snapshot.onTrackCount}`, `Chậm: ${snapshot.behindCount}`, `Tuần đã chốt: ${snapshot.finalizedWeeks}`, `Tuần chưa có lịch: ${snapshot.missingWeeks}`],
                 [],
-                ['Lớp', 'Môn', 'PPCT dự kiến', 'PPCT thực tế', 'Chênh lệch', 'Bài đang dạy', 'Số tiết đã dạy', 'Không học', 'Học bù', 'Trạng thái', 'Học kỳ', 'Mốc cuối HK', 'Dự báo cuối HK', 'Thiếu dự kiến'],
+                ['Lớp', 'Môn', 'PPCT dự kiến', 'PPCT thực tế', 'Chênh lệch', 'Bài đang dạy', 'Số tiết đã dạy', 'Không học', 'Học bù', 'Trạng thái', 'Học kỳ', 'Mốc HKI xác nhận', 'Gợi ý mốc HKI', 'Mốc cuối HK', 'Dự báo cuối HK', 'Thiếu dự kiến'],
                 ...snapshot.rows.map(row => [
                     row.className, row.subject, row.plannedPpct || '', row.actualPpct || '', row.difference ?? '',
-                    row.currentTopic || '', row.taughtCount, row.canceledCount, row.makeupCount, row.statusLabel, row.semesterLabel || '', row.semesterTargetPpct || '', row.forecastLabel, row.forecastShortfall || 0,
+                    row.currentTopic || '', row.taughtCount, row.canceledCount, row.makeupCount, row.statusLabel, row.semesterLabel || '', row.semesterOneEndPpct || '', row.semesterOneSuggestedPpct || '', row.semesterTargetPpct || '', row.forecastLabel, row.forecastShortfall || 0,
                 ]),
             ];
             const sheet = XLSX.utils.aoa_to_sheet(rows);
-            sheet['!cols'] = [{ wch: 11 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 46 }, { wch: 14 }, { wch: 11 }, { wch: 9 }, { wch: 19 }, { wch: 12 }, { wch: 13 }, { wch: 34 }, { wch: 13 }];
+            sheet['!cols'] = [{ wch: 11 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 46 }, { wch: 14 }, { wch: 11 }, { wch: 9 }, { wch: 19 }, { wch: 12 }, { wch: 15 }, { wch: 14 }, { wch: 13 }, { wch: 34 }, { wch: 13 }];
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, sheet, `Tien do tuan ${snapshot.referenceWeek}`);
             XLSX.writeFile(workbook, `tien-do-giang-day-${snapshot.academicYear}-tuan-${snapshot.referenceWeek}.xlsx`);

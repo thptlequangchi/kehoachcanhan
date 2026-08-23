@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '50.4.0';
+        const APP_VERSION = '50.5.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -716,6 +716,8 @@
                     subject: cleanText(item.subject) || DEFAULT_TEACHER_PROFILE.subject,
                     fileName: cleanText(item.fileName) || 'Phân phối chương trình',
                     weeks,
+                    semesterOneEndPpct: Math.max(0, Number.parseInt(item.semesterOneEndPpct, 10) || 0),
+                    semesterOneEndConfirmedAt: cleanText(item.semesterOneEndConfirmedAt),
                     updatedAt: cleanText(item.updatedAt),
                     migrated: Boolean(item.migrated),
                 };

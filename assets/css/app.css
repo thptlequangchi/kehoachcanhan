@@ -1194,7 +1194,7 @@
         }
         .curriculum-target-panel {
             display: grid;
-            grid-template-columns: repeat(4, minmax(150px, 1fr));
+            grid-template-columns: repeat(5, minmax(150px, 1fr));
             gap: 12px;
             margin-bottom: 14px;
             padding: 14px;
@@ -1230,6 +1230,30 @@
             box-shadow: 0 0 0 3px rgba(45, 106, 159, 0.12);
         }
         .curriculum-field[hidden] { display: none; }
+
+        .curriculum-semester-boundary-field { min-width: 0; }
+        .curriculum-boundary-input-row {
+            display: grid;
+            grid-template-columns: minmax(90px, 1fr) auto;
+            gap: 7px;
+            align-items: center;
+        }
+        .curriculum-boundary-input-row .btn { min-height: 42px; white-space: nowrap; }
+        .curriculum-boundary-hint {
+            color: #64748b;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+        .curriculum-boundary-hint.good { color: #047857; font-weight: 700; }
+        .curriculum-boundary-hint.warn { color: #b45309; font-weight: 700; }
+        .curriculum-boundary-hint.error { color: #be123c; font-weight: 700; }
+        .curriculum-profile-boundary {
+            margin-top: 5px;
+            color: #475569;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+        .curriculum-profile-boundary strong { color: #0f172a; }
         .curriculum-target-note {
             grid-column: 1 / -1;
             color: #64748b;
