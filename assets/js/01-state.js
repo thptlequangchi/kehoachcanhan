@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '51.1.0';
+        const APP_VERSION = '51.2.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -373,6 +373,24 @@
                 fallbackReason: cleanText(item.fallbackReason),
                 ocrLayoutConfidence: Number.isFinite(Number(item.ocrLayoutConfidence))
                     ? Number(item.ocrLayoutConfidence) : null,
+                revisionHistory: Array.isArray(item.revisionHistory) ? item.revisionHistory.slice(-20).map(entry => ({
+                    at: cleanText(entry?.at),
+                    fileName: cleanText(entry?.fileName),
+                    mode: cleanText(entry?.mode) || 'selected',
+                    sourceMode: cleanText(entry?.sourceMode),
+                    appliedCount: Math.max(0, Number.parseInt(entry?.appliedCount, 10) || 0),
+                    totalChanges: Math.max(0, Number.parseInt(entry?.totalChanges, 10) || 0),
+                    added: Math.max(0, Number.parseInt(entry?.added, 10) || 0),
+                    changed: Math.max(0, Number.parseInt(entry?.changed, 10) || 0),
+                    removed: Math.max(0, Number.parseInt(entry?.removed, 10) || 0),
+                    summary: cleanText(entry?.summary),
+                    changedKeys: Array.isArray(entry?.changedKeys) ? entry.changedKeys.map(cleanText).filter(Boolean).slice(0, 32) : [],
+                    beforeFingerprint: cleanText(entry?.beforeFingerprint),
+                    afterFingerprint: cleanText(entry?.afterFingerprint),
+                })).filter(entry => entry.at || entry.summary) : [],
+                lastRevisionAt: cleanText(item.lastRevisionAt),
+                lastRevisionSummary: cleanText(item.lastRevisionSummary),
+                lastRevisionFileName: cleanText(item.lastRevisionFileName),
                 updatedAt: cleanText(item.updatedAt || item.createdAt),
                 status: days.length > 0 || item.status === 'done' ? 'done' : 'pending',
             };

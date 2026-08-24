@@ -38,6 +38,7 @@
     <link rel="stylesheet" href="assets/css/reminder-calendar.css" />
     <link rel="stylesheet" href="assets/css/regression-test.css" />
     <link rel="stylesheet" href="assets/css/pro-workspace-v51.css" />
+    <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
 </head>
 <body class="premium-ui">
 
@@ -51,7 +52,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v51.1 · Form Công Việc Pro</span>
+                        <span>v51.2 · So sánh lịch công tác điều chỉnh</span>
                         <i aria-hidden="true"></i>
                         <span>39 tuần lịch · 37 tuần PPCT · Trợ lý công việc · Hồ sơ</span>
                     </div>
@@ -563,7 +564,7 @@
                 <div class="upload-zone" id="planUploadZone">
                     <span class="icon-big">🖼️</span>
                     <p><strong>Kéo thả hoặc nhấn để tải ảnh kế hoạch</strong></p>
-                    <span class="hint">Hỗ trợ mẫu: Thứ/ngày – Buổi sáng – Buổi chiều – Đi công tác</span>
+                    <span class="hint">Hỗ trợ mẫu: Thứ/ngày – Buổi sáng – Buổi chiều – Đi công tác<br><strong>Nếu tuần đã có dữ liệu, ảnh mới sẽ được so sánh với bản đang lưu trước khi cập nhật.</strong></span>
                     <input type="file" id="planFileInput" accept="image/jpeg,image/png,image/webp" multiple
                            aria-label="Tải ảnh kế hoạch của nhà trường" />
                 </div>
@@ -1168,6 +1169,42 @@
         </div>
     </div>
 
+    <!-- MODAL SO SÁNH ẢNH LỊCH CÔNG TÁC ĐIỀU CHỈNH -->
+    <div class="app-modal-backdrop" id="planUpdateCompareModal" hidden>
+        <section class="app-modal plan-revision-modal" role="dialog" aria-modal="true" aria-labelledby="planUpdateCompareTitle">
+            <div class="app-modal-header">
+                <div>
+                    <h3 class="app-modal-title" id="planUpdateCompareTitle">🔄 Phát hiện lịch công tác điều chỉnh</h3>
+                    <div class="app-modal-subtitle" id="planUpdateCompareSubtitle">Hệ thống đang so sánh ảnh mới với kế hoạch tuần đang lưu.</div>
+                </div>
+                <button class="app-modal-close" id="planUpdateCompareCloseBtn" type="button" aria-label="Đóng và không cập nhật">✕</button>
+            </div>
+            <div class="app-modal-body">
+                <div class="plan-revision-safety">
+                    <span>🛡️</span>
+                    <div><strong>Chưa có dữ liệu nào bị ghi đè.</strong><small>Chỉ các thay đổi thầy chọn mới được áp dụng. Nội dung không thay đổi được giữ nguyên.</small></div>
+                </div>
+                <div class="plan-revision-summary" id="planUpdateCompareSummary"></div>
+                <div class="plan-revision-warning" id="planUpdateCompareWarning" hidden></div>
+                <div class="plan-revision-toolbar">
+                    <label class="plan-revision-select-all"><input type="checkbox" id="planUpdateSelectAll" checked /> <span>Chọn tất cả thay đổi</span></label>
+                    <span id="planUpdateSelectionMeta">0 thay đổi được chọn</span>
+                </div>
+                <div class="plan-revision-table-wrap">
+                    <table class="plan-revision-table">
+                        <thead><tr><th>Chọn</th><th>Vị trí</th><th>Loại</th><th>Bản đang lưu</th><th>Ảnh mới</th></tr></thead>
+                        <tbody id="planUpdateCompareBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="app-modal-footer plan-revision-footer">
+                <button class="btn btn-outline" id="planUpdateCancelBtn" type="button" style="color:#475569;border-color:#cbd5e1;">Hủy · Giữ bản hiện tại</button>
+                <button class="btn btn-outline" id="planUpdateReplaceAllBtn" type="button" style="color:#9a3412;border-color:#fdba74;">Dùng toàn bộ ảnh mới</button>
+                <button class="btn btn-primary" id="planUpdateApplyBtn" type="button">Cập nhật thay đổi đã chọn</button>
+            </div>
+        </section>
+    </div>
+
     <!-- MODAL TÀI KHOẢN / THIẾT LẬP NHÓM -->
     <div class="app-modal-backdrop" id="accountModal" hidden>
         <section class="app-modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle">
@@ -1503,6 +1540,7 @@
     <script src="assets/js/08-gemini.js"></script>
     <script src="assets/js/09-workspace.js"></script>
     <script src="assets/js/10-tabs.js"></script>
+    <script src="assets/js/11-plan-revision.js"></script>
     <script src="assets/js/11-plan.js"></script>
     <script src="assets/js/12-timetable.js"></script>
     <script src="assets/js/13-curriculum.js"></script>

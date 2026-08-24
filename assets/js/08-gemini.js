@@ -975,6 +975,9 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
                 return { icon: '⚡', title: 'Đã dùng bộ nhớ ảnh.', text: 'Ảnh này đã được xử lý trước đó nên trang không gọi lại Gemini hoặc OCR.' };
             }
             const source = data?.sourceMode;
+            if (source === 'revision-merge') {
+                return { icon: '🔄', title: 'Đã hợp nhất lịch công tác điều chỉnh.', text: 'Hệ thống chỉ cập nhật các thay đổi đã được giáo viên chọn; các nội dung còn lại của tuần được giữ nguyên.' };
+            }
             if (source === 'gemini-verified') {
                 return { icon: '✅', title: 'Gemini nhận dạng hai lượt.', text: 'Ảnh được đọc ở độ phân giải cao rồi đối chiếu lại từng hàng và từng ô.' };
             }

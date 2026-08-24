@@ -27,7 +27,7 @@
             if (modal === scheduleEditorModal) scheduleEditorContext = null;
             if (modal === notTeachingModal) notTeachingEditorContext = null;
             if (modal === workItemModal) workItemEditorContext = null;
-            const stillOpen = [accountModal, teamAdminModal, scheduleEditorModal, notTeachingModal, workItemModal, teacherProfileModal]
+            const stillOpen = [accountModal, teamAdminModal, scheduleEditorModal, notTeachingModal, workItemModal, teacherProfileModal, planUpdateCompareModal]
                 .some(item => item && !item.hidden);
             if (!stillOpen) document.body?.classList.remove('modal-open');
             const returnFocus = modalReturnFocus.get(modal.id);

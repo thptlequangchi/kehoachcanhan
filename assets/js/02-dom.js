@@ -73,6 +73,18 @@
         const planWeekListSummary = $('#planWeekListSummary');
         const planWeekSelect = $('#planWeekSelect');
         const planDetailDisplay = $('#planDetailDisplay');
+        const planUpdateCompareModal = $('#planUpdateCompareModal');
+        const planUpdateCompareTitle = $('#planUpdateCompareTitle');
+        const planUpdateCompareSubtitle = $('#planUpdateCompareSubtitle');
+        const planUpdateCompareSummary = $('#planUpdateCompareSummary');
+        const planUpdateCompareWarning = $('#planUpdateCompareWarning');
+        const planUpdateCompareBody = $('#planUpdateCompareBody');
+        const planUpdateSelectAll = $('#planUpdateSelectAll');
+        const planUpdateSelectionMeta = $('#planUpdateSelectionMeta');
+        const planUpdateCompareCloseBtn = $('#planUpdateCompareCloseBtn');
+        const planUpdateCancelBtn = $('#planUpdateCancelBtn');
+        const planUpdateReplaceAllBtn = $('#planUpdateReplaceAllBtn');
+        const planUpdateApplyBtn = $('#planUpdateApplyBtn');
 
         const personalWorkScopeBtn = $('#personalWorkScopeBtn');
         const sharedWorkScopeBtn = $('#sharedWorkScopeBtn');

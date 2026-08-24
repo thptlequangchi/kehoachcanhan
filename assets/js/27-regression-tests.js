@@ -1,4 +1,4 @@
-/* Bước 17 · v50.7 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
+/* Bước 17 · v51.2 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
 (() => {
     'use strict';
     const STORAGE_KEY = 'teacher_regression_last_v1';
@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '50.7.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '51.2.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -81,12 +81,12 @@
             return duplicates.length ? {status:'fail',message:`ID trùng: ${[...new Set(duplicates)].slice(0,8).join(', ')}`} : `${ids.length} ID duy nhất.`;
         }));
         tests.push(runSync('critical-dom','Các vùng giao diện lõi tồn tại','Giao diện',() => {
-            const ids=['settingsHub','yearDashboard','teacherCommandCenter','automationCenter','workItemList','reportCenterCard','healthCenterCard','storageProCard','globalCommandPalette','regressionCenterCard'];
+            const ids=['settingsHub','yearDashboard','teacherCommandCenter','automationCenter','workItemList','reportCenterCard','healthCenterCard','storageProCard','globalCommandPalette','regressionCenterCard','planUpdateCompareModal'];
             const missing=ids.filter(id=>!$(id));
             return missing.length ? {status:'fail',message:`Thiếu: ${missing.join(', ')}`} : `Đủ ${ids.length}/${ids.length} vùng lõi.`;
         }));
         tests.push(runSync('core-globals','Các hàm nghiệp vụ lõi đã nạp','Khởi động',() => {
-            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','getWeekOperationalStatus','buildSemesterRemainingStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter','getSmartReminderManagedSuggestionKeys'];
+            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','getWeekOperationalStatus','buildSemesterRemainingStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter','getSmartReminderManagedSuggestionKeys','buildPlanRevisionDiff','applyPlanRevisionSelection'];
             const missing=names.filter(name=>typeof globalThis[name] !== 'function');
             return missing.length ? {status:'fail',message:`Thiếu hàm: ${missing.join(', ')}`} : `Đủ ${names.length} hàm lõi.`;
         }));
@@ -95,6 +95,13 @@
         tests.push(runSync('plan-normalizer','Chuẩn hóa Kế hoạch tuần','Nghiệp vụ',() => {
             const data=normalizePlanWeek({week:5,dateRange:'24/08/2026 - 30/08/2026',days:[{day:'Thứ 2',date:'24/08',morning:'Chào cờ'}]});
             return data?.week===5 && data.days?.[0]?.day==='Thứ 2' && data.days?.[0]?.morning==='Chào cờ' ? 'Fixture kế hoạch được chuẩn hóa đúng.' : {status:'fail',message:'Fixture kế hoạch không giữ đúng tuần/ngày/nội dung.'};
+        }));
+        tests.push(runSync('plan-revision-diff','So sánh lịch công tác điều chỉnh','Nghiệp vụ',() => {
+            const before=normalizePlanWeek({week:5,days:[{day:'Thứ 2',morning:'Họp 7h'},{day:'Thứ 3',afternoon:''},{day:'Thứ 4',businessTrip:'Đi Sở'}]});
+            const after=normalizePlanWeek({week:5,days:[{day:'Thứ 2',morning:'Họp 8h'},{day:'Thứ 3',afternoon:'Tập huấn'},{day:'Thứ 4',businessTrip:''}]});
+            const diff=buildPlanRevisionDiff(before,after);
+            const ok=diff.comparable && diff.counts.changed===1 && diff.counts.added===1 && diff.counts.removed===1 && diff.items.length===3;
+            return ok ? 'Phân biệt đúng nội dung thêm / sửa / bỏ trước khi cập nhật tuần.' : {status:'fail',message:'Engine so sánh ảnh điều chỉnh không đạt fixture.'};
         }));
         tests.push(runSync('timetable-normalizer','Chuẩn hóa Thời khóa biểu','Nghiệp vụ',() => {
             const data=normalizeTimetable({week:5,sessions:[{key:'morning',periods:[{period:1,cells:[{day:'Thứ 2',className:'12A1',subject:'Toán'}]}]},{key:'afternoon',periods:[]}]});

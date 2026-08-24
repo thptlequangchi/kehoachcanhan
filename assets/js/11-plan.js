@@ -18,7 +18,9 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
 5. Ô trống trả chuỗi rỗng. Tuyệt đối không suy đoán nội dung không nhìn thấy và không chuyển nội dung sang ô bên cạnh.
 6. Nếu một phần chữ quá mờ, ghi phần chắc chắn và thêm mô tả vào warnings.
 7. Phải trả các hàng ngày trong ảnh; không được trả mảng days rỗng.
-8. Chỉ trả JSON đúng lược đồ.`;
+8. Nếu đây là bản LỊCH CÔNG TÁC ĐIỀU CHỈNH có chữ gạch bỏ, màu nhấn hoặc nội dung thay thế: ưu tiên nội dung cuối cùng còn hiệu lực nhìn thấy rõ. Nếu không chắc phần nào đã hủy/phần nào thay thế, giữ phần chắc chắn và ghi cảnh báo trong warnings.
+9. Không tự so sánh với dữ liệu cũ và không tự diễn giải thay đổi; chỉ trả lại nội dung cuối cùng của chính ảnh này. Ứng dụng sẽ tự so sánh sau.
+10. Chỉ trả JSON đúng lược đồ.`;
         }
 
         async function handlePlanFiles(files) {
@@ -36,7 +38,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
             planStatus.innerHTML = '<span class="loading-spinner"></span> Đang chuẩn bị nhận dạng...';
             planStatus.className = 'mt-12';
 
-            let successCount = 0;
+            let addedCount = 0;
+            let updatedCount = 0;
+            let unchangedCount = 0;
+            let cancelledCount = 0;
             let failedCount = 0;
             try {
                 const fileList = Array.from(files);
@@ -66,53 +71,112 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                         applyAutomaticDatesToPlan(plan);
 
                         const existingIndex = state.planData.findIndex(item => item.week === plan.week);
-                        if (existingIndex >= 0) state.planData[existingIndex] = plan;
-                        else state.planData.push(plan);
-                        // Sort by week
-                        state.planData.sort((a, b) => a.week - b.week);
-                        writeStoredJSON('teacher_plan_data', state.planData);
-                        persistActiveYearWorkspace();
-                        invalidateTeachingSchedules('Kế hoạch nhà trường đã thay đổi');
-                        renderPlanTable();
-                        showPlanWeek(plan.week);
-                        successCount++;
+                        if (existingIndex >= 0) {
+                            const existing = state.planData[existingIndex];
+                            planStatus.innerHTML = `<span class="loading-spinner"></span> ${escapeHTML(getPlanWeekLabel(plan.week))} đã có dữ liệu · đang so sánh ảnh điều chỉnh...`;
+                            const review = await reviewPlanRevision(existing, plan, { fileName: file.name });
+                            if (review.action === 'no-change') {
+                                unchangedCount++;
+                                renderPlanTable();
+                                showPlanWeek(plan.week);
+                                continue;
+                            }
+                            if (review.action === 'cancel') {
+                                cancelledCount++;
+                                continue;
+                            }
+                            if (review.action !== 'apply') throw new Error('Không thể so sánh ảnh điều chỉnh với kế hoạch hiện tại');
+                            if (!canEditSharedPlan()) {
+                                throw new Error('Kế hoạch dùng chung đã thay đổi trong lúc thầy đang duyệt. Bản cũ vẫn được giữ an toàn; hãy tải lại ảnh để so sánh lại.');
+                            }
+                            const currentIndex = state.planData.findIndex(item => item.week === plan.week);
+                            const currentPlan = currentIndex >= 0 ? state.planData[currentIndex] : null;
+                            if (!currentPlan || planRevisionFingerprint(currentPlan) !== review.baseFingerprint) {
+                                throw new Error('Kế hoạch tuần này vừa thay đổi ở nơi khác. Hệ thống không ghi đè; hãy mở bản mới rồi tải lại ảnh điều chỉnh.');
+                            }
+
+                            const applied = applyPlanRevisionSelection(
+                                currentPlan,
+                                plan,
+                                review.diff,
+                                review.selectedKeys,
+                                review.mode,
+                                { fileName: file.name }
+                            );
+                            state.planData[currentIndex] = applied.plan;
+                            state.planData.sort((a, b) => a.week - b.week);
+                            writeStoredJSON('teacher_plan_data', state.planData);
+                            persistActiveYearWorkspace();
+
+                            if (state.teachingSchedule?.[plan.week]?.length
+                                && planRevisionHasScheduleImpact(review.diff, review.selectedKeys)) {
+                                const affectedSlots = getPlanRevisionAffectedSourceSlots(plan.week, review.diff, review.selectedKeys);
+                                if (affectedSlots.length) {
+                                    invalidateTeachingSchedules(
+                                        `Kế hoạch ${getPlanWeekLabel(plan.week)} đã điều chỉnh: ${applied.entry.summary}`,
+                                        plan.week,
+                                        affectedSlots
+                                    );
+                                }
+                            }
+                            renderPlanTable();
+                            showPlanWeek(plan.week);
+                            updatedCount++;
+                            showToast(`✅ ${getPlanWeekLabel(plan.week)}: ${applied.entry.summary}`, 'success');
+                        } else {
+                            state.planData.push(plan);
+                            state.planData.sort((a, b) => a.week - b.week);
+                            writeStoredJSON('teacher_plan_data', state.planData);
+                            persistActiveYearWorkspace();
+                            invalidateTeachingSchedules(`Đã thêm Kế hoạch ${getPlanWeekLabel(plan.week)}`, plan.week);
+                            renderPlanTable();
+                            showPlanWeek(plan.week);
+                            addedCount++;
+                        }
                     } catch (fileError) {
                         console.error('Lỗi ảnh kế hoạch:', file.name, fileError);
                         const detail = cleanText(fileError?.message) || 'Lỗi không xác định';
-                        // Không để lỗi OCR/Gemini làm mất luôn thao tác tải ảnh. Nếu nhận dạng hỏng bất ngờ,
-                        // tạo tuần trống an toàn để giáo viên vẫn có thể mở và nhập/sửa thủ công.
-                        try {
-                            const emergency = normalizePlanWeek(createPlanDraftFromOcr('', 'manual', detail));
-                            if (emergency && canEditSharedPlan()) {
-                                emergency.schoolYear = state.selectedAcademicYear;
-                                emergency.updatedAt = new Date().toISOString();
-                                emergency.warnings = [
-                                    'Ảnh đã tải nhưng bộ nhận dạng gặp lỗi. Hệ thống đã tạo mẫu trống an toàn để thầy nhập hoặc thử nhận dạng lại.',
-                                    `Chi tiết kỹ thuật: ${detail}`,
-                                ];
-                                applyAutomaticDatesToPlan(emergency);
-                                const existingIndex = state.planData.findIndex(item => item.week === emergency.week);
-                                if (existingIndex >= 0) state.planData[existingIndex] = emergency;
-                                else state.planData.push(emergency);
-                                state.planData.sort((a, b) => a.week - b.week);
-                                writeStoredJSON('teacher_plan_data', state.planData);
-                                persistActiveYearWorkspace();
-                                renderPlanTable();
-                                showPlanWeek(emergency.week);
-                                showToast(`⚠️ ${file.name}: nhận dạng lỗi, đã tạo mẫu tuần để chỉnh thủ công`, 'info');
-                                successCount++;
-                                continue;
+                        // Khi hệ thống đã có dữ liệu kế hoạch, tuyệt đối không tạo/ghi đè một tuần trống
+                        // chỉ vì ảnh điều chỉnh đọc lỗi. Bản đang lưu phải được giữ nguyên.
+                        if (state.planData.length === 0) {
+                            try {
+                                const emergency = normalizePlanWeek(createPlanDraftFromOcr('', 'manual', detail));
+                                if (emergency && canEditSharedPlan()) {
+                                    emergency.schoolYear = state.selectedAcademicYear;
+                                    emergency.updatedAt = new Date().toISOString();
+                                    emergency.warnings = [
+                                        'Ảnh đã tải nhưng bộ nhận dạng gặp lỗi. Hệ thống đã tạo mẫu trống an toàn để thầy nhập hoặc thử nhận dạng lại.',
+                                        `Chi tiết kỹ thuật: ${detail}`,
+                                    ];
+                                    applyAutomaticDatesToPlan(emergency);
+                                    state.planData.push(emergency);
+                                    state.planData.sort((a, b) => a.week - b.week);
+                                    writeStoredJSON('teacher_plan_data', state.planData);
+                                    persistActiveYearWorkspace();
+                                    renderPlanTable();
+                                    showPlanWeek(emergency.week);
+                                    showToast(`⚠️ ${file.name}: nhận dạng lỗi, đã tạo mẫu tuần để chỉnh thủ công`, 'info');
+                                    addedCount++;
+                                    continue;
+                                }
+                            } catch (fallbackError) {
+                                console.error('Không thể tạo mẫu dự phòng kế hoạch:', fallbackError);
                             }
-                        } catch (fallbackError) {
-                            console.error('Không thể tạo mẫu dự phòng kế hoạch:', fallbackError);
                         }
                         failedCount++;
-                        showToast(`❌ ${file.name}: ${detail}`, 'error');
-                        if (planStatus) planStatus.textContent = `Lỗi ảnh: ${detail}`;
+                        showToast(`❌ ${file.name}: ${detail}. Kế hoạch đang lưu không bị thay đổi.`, 'error');
+                        if (planStatus) planStatus.textContent = `Lỗi ảnh: ${detail} · dữ liệu cũ vẫn được giữ nguyên`;
                     }
                 }
-                if (successCount > 0) {
-                    showToast(`✅ Đã cập nhật ${successCount} ảnh kế hoạch${failedCount ? `, lỗi ${failedCount} ảnh` : ''}`, 'success');
+                const processedCount = addedCount + updatedCount;
+                if (processedCount > 0 || unchangedCount > 0 || cancelledCount > 0) {
+                    const parts = [];
+                    if (addedCount) parts.push(`${addedCount} tuần mới`);
+                    if (updatedCount) parts.push(`${updatedCount} tuần đã cập nhật`);
+                    if (unchangedCount) parts.push(`${unchangedCount} ảnh không có thay đổi`);
+                    if (cancelledCount) parts.push(`${cancelledCount} lần giữ bản cũ`);
+                    if (failedCount) parts.push(`${failedCount} ảnh lỗi`);
+                    showToast(`✅ Xử lý ảnh kế hoạch: ${parts.join(' · ')}`, failedCount ? 'info' : 'success');
                 }
             } finally {
                 state.busy.plan = false;
@@ -162,12 +226,16 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 const weekLabel = getPlanWeekLabel(week);
                 const auxiliary = isAuxiliaryPlanWeek(week);
                 const warningText = p.warnings?.length ? ` · ⚠️ ${p.warnings.length} lưu ý` : '';
+                const revisionCount = Array.isArray(p.revisionHistory) ? p.revisionHistory.length : 0;
+                const revisionChip = p.lastRevisionAt
+                    ? `<span class="plan-revision-list-chip" title="${escapeHTML(p.lastRevisionSummary || 'Đã cập nhật từ ảnh điều chỉnh')}">🔄 Điều chỉnh${revisionCount ? ` ${revisionCount}` : ''}</span>`
+                    : '';
                 html += `
               <tr class="${auxiliary ? 'auxiliary-plan-row' : ''}">
                 <td class="week-num"><span class="plan-week-label ${auxiliary ? 'auxiliary' : ''}">${escapeHTML(weekLabel)}</span></td>
                 <td>${escapeHTML(p.dateRange || '—')}</td>
                 <td>${escapeHTML(p.duty || '—')}</td>
-                <td><span class="status-badge done">✅ ${Array.isArray(p.days) ? p.days.length : 0} ngày${escapeHTML(warningText)}</span></td>
+                <td><span class="status-badge done">✅ ${Array.isArray(p.days) ? p.days.length : 0} ngày${escapeHTML(warningText)}</span>${revisionChip}</td>
                 <td>
                   <button class="btn btn-outline btn-sm" style="color:#1e3a5f;border-color:#cbd5e1;" 
                           data-action="view" data-week="${week}" aria-label="Xem kế hoạch ${escapeHTML(weekLabel)}">👁️ Xem</button>
@@ -268,6 +336,13 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 : '';
             const title = getPlanDisplayTitle(plan);
             const sourceInfo = getRecognitionSourceInfo(plan);
+            let revisionHtml = '';
+            if (plan.lastRevisionAt) {
+                const revisionDate = new Date(plan.lastRevisionAt);
+                const revisionTime = Number.isNaN(revisionDate.getTime()) ? '' : revisionDate.toLocaleString('vi-VN');
+                const fileInfo = plan.lastRevisionFileName ? ` · ${escapeHTML(plan.lastRevisionFileName)}` : '';
+                revisionHtml = `<div class="plan-revision-last-update"><span>🔄</span><div><strong>Đã cập nhật từ lịch công tác điều chỉnh</strong><br>${escapeHTML(plan.lastRevisionSummary || 'Đã áp dụng thay đổi được duyệt')}${revisionTime ? ` · ${escapeHTML(revisionTime)}` : ''}${fileInfo}</div></div>`;
+            }
             const transcriptHtml = renderOcrTranscript(plan.offlineOcrText, `data-plan-action="copy-ocr" data-week="${plan.week}"`);
             const recentFile = plan.cacheHash
                 ? state.recentRecognitionFiles[`plan:${plan.cacheHash}`] : null;
@@ -301,6 +376,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                             data-plan-action="edit-meta" data-week="${plan.week}" ${planEditDisabled}>✏️ Sửa thông tin tuần</button>
                     ${recoveryActions}</div>
                 </div>
+                ${revisionHtml}
                 <div class="plan-review-workspace ${sourcePreviewHtml ? 'with-preview' : ''}">
                     ${sourcePreviewHtml}
                     <div class="table-wrap">
@@ -388,6 +464,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 draft.schoolYear = state.selectedAcademicYear;
                 draft.cacheHash = currentPlan.cacheHash;
                 draft.cacheHit = false;
+                draft.revisionHistory = Array.isArray(currentPlan.revisionHistory) ? [...currentPlan.revisionHistory] : [];
+                draft.lastRevisionAt = currentPlan.lastRevisionAt || '';
+                draft.lastRevisionSummary = currentPlan.lastRevisionSummary || '';
+                draft.lastRevisionFileName = currentPlan.lastRevisionFileName || '';
                 draft.updatedAt = new Date().toISOString();
                 applyAutomaticDatesToPlan(draft);
                 const index = state.planData.findIndex(item => item.week === week);

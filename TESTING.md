@@ -1,32 +1,30 @@
-# TESTING — v51.1 Form Công Việc Pro
+# TESTING — v51.2.0
 
-## Kiểm tra bắt buộc
-- `node --check` toàn bộ JavaScript và Service Worker.
-- HTML ID không trùng, DOM reference đầy đủ, app-shell không thiếu tài nguyên.
-- `pro-workspace-v51.css` phải là stylesheet nội bộ tải cuối cùng.
-- CSS v51 parse không lỗi.
-- Fixture nghiệp vụ v50.7 tiếp tục PASS.
+## Kiểm thử tự động đã chạy
+- `python tests/run-static-audit.py`
+- `node tests/run-state-fixtures.js`
+- `node --check` cho toàn bộ JavaScript và Service Worker
+- Parse toàn bộ CSS bằng `tinycss2`
+- HTTP local kiểm tra toàn bộ APP_SHELL
 
-## Kiểm tra giao diện trên trình duyệt thật sau deploy
-1. **Desktop 1366/1440px**: header không tràn; Ctrl+K, Nhắc việc, TKB trường, vnEdu, PWA và Cài đặt hiển thị gọn.
-2. **Thanh 6 tab**: sticky khi cuộn; active state rõ; không che nội dung.
-3. **Dashboard**: KPI/panel thẳng hàng, không cắt chữ ở dữ liệu dài.
-4. **Bảng dài**: header bảng sticky trong vùng cuộn; dòng không bị lệch cột.
-5. **Form / modal / Ctrl+K**: focus rõ, nút không tràn.
-6. **Điện thoại 390–430px**: header xếp 2 cột hợp lý, tab cuộn ngang, không có horizontal overflow toàn trang.
-7. **In / Save as PDF**: nền trắng, không shadow/accent UI và header bảng trở về static.
+## Fixture mới cho lịch điều chỉnh
+- Một ô đổi nội dung → `changed`.
+- Một ô từ trống thành có nội dung → `added`.
+- Một ô từ có nội dung thành trống → `removed`.
+- Chọn cập nhật duy nhất một thay đổi → các ô không chọn giữ nguyên.
+- Lịch sử điều chỉnh và tên file được giữ qua `normalizePlanWeek`.
 
-## Kiểm tra nghiệp vụ giữ nguyên
-- Lịch năm học: 2 tuần phụ + 37 tuần chính.
-- HKI 1–18, HKII 19–37.
-- Mốc HKI do giáo viên xác nhận.
-- Trạng thái số tiết còn lại theo học kỳ.
-- Reminder / Hệ thống gợi ý không lặp.
-- IndexedDB / Firebase / Report / Hồ sơ không thay schema.
+## Kiểm thử thực tế nên làm sau deploy
+1. Tải ảnh Tuần 1 lần đầu → lưu bình thường.
+2. Sửa một nội dung trong ảnh Tuần 1 rồi tải lại → modal so sánh phải mở.
+3. Chỉ chọn một thay đổi → sau cập nhật các ô còn lại phải giữ nguyên.
+4. Tải lại đúng ảnh hiện tại → báo không có thay đổi.
+5. Dùng ảnh OCR kém/có cảnh báo → các dòng `Bỏ` không được chọn mặc định.
+6. Nếu Tuần 1 đã có Lịch báo giảng, sau khi đổi ô sáng/chiều liên quan → tuần phải được đánh dấu cần đồng bộ lại đúng các slot ảnh hưởng.
 
-## Kiểm tra riêng v51.1
-- Mở Sổ Công Việc → Thêm/Sửa nhiệm vụ.
-- Nhóm Thiết lập nhiệm vụ phải chiếm toàn chiều rộng modal.
-- Desktop: 4 trường Trạng thái / Ưu tiên / Hạn ngày / Giờ cùng hàng; Lặp lại / Nhắc trước hạn ở hàng dưới.
-- Tablet: 2 cột; mobile: 1 cột.
-- Không được cắt chữ trong select và phần mô tả không bị bó thành cột hẹp.
+## Kết quả build v51.2
+- HTML IDs: 442/442 unique.
+- Named functions: 753/753 unique.
+- APP_SHELL: 52/52 resource tồn tại và 52/52 HTTP 200 local.
+- APP_VERSION: 51.2.0.
+- DATA_SCHEMA_VERSION: 1.

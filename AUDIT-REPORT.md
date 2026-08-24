@@ -1,46 +1,40 @@
-# AUDIT REPORT — v51.1.0 Form Công Việc Pro
+# AUDIT REPORT — Sổ Tay Giáo Viên v51.2.0
 
 ## Phạm vi
-- Nền trực tiếp: v50.7.0.
-- Chỉ nâng lớp trình bày và PWA theme; không thay nghiệp vụ/schema.
-- Thêm `assets/css/pro-workspace-v51.css` và bắt buộc tải cuối cùng.
+Nâng cấp chức năng Kế hoạch trường để hỗ trợ **Lịch công tác điều chỉnh**: ảnh mới của tuần đã có được so sánh theo từng ô, duyệt thay đổi rồi mới cập nhật.
 
-## Kiểm tra tĩnh
-- HTML ID: **430/430 duy nhất**.
-- Literal DOM references: **196/196 hợp lệ**.
-- Hàm JavaScript có tên: **736/736 duy nhất**.
-- Tài nguyên nội bộ tham chiếu từ HTML: **47**, không thiếu file.
-- Service Worker app-shell: **50 tài nguyên**, không thiếu file.
-- Toàn bộ JavaScript nội bộ + Service Worker: **PASS `node --check`**.
-- `APP_VERSION` state / Service Worker: cùng **51.1.0**.
-- `pro-workspace-v51.css`: tải sau cùng trong nhóm CSS.
-- CSS v51 parse bằng `tinycss2`: **160 rules, 0 parse error**.
+## Kết quả kiểm tra tĩnh
+- HTML IDs: **442/442 duy nhất**.
+- HTML resources: **49** tài nguyên tham chiếu đều tồn tại.
+- Literal DOM refs: **196/196** hợp lệ.
+- Named JavaScript functions: **753/753 không trùng tên**.
+- Service Worker APP_SHELL: **52** tài nguyên, đều tồn tại.
+- APP_VERSION state / Service Worker: **51.2.0 / 51.2.0**.
+- `teacher-data-changed`: **1** listener dùng chung.
+- Heartbeat 60 giây: **1** timer dùng chung.
+- Tất cả JavaScript + Service Worker: `node --check` **PASS**.
+- Toàn bộ CSS: parse bằng `tinycss2` **PASS**.
+- APP_SHELL qua HTTP local: **52/52 trả 200**.
 
-## Kiểm tra nghiệp vụ hồi quy
-`node tests/run-state-fixtures.js`: toàn bộ fixture PASS, gồm:
-- Năm học và lịch 39 tuần.
-- Kế hoạch, TKB, Sổ Công Việc, Lịch báo giảng.
-- Trạng thái final/finalized.
-- PPCT attention và mốc HKI giáo viên xác nhận.
-- Số tiết còn lại theo học kỳ.
-- Dự báo HKI/HKII với tải tiết khác nhau.
+## Fixture nghiệp vụ mới
+- Phát hiện đúng **1 thay đổi + 1 thêm + 1 bỏ** giữa hai bản cùng tuần: PASS.
+- Áp dụng chọn lọc một thay đổi và giữ nguyên các ô không chọn: PASS.
+- `revisionHistory` và tên file ảnh điều chỉnh sống qua `normalizePlanWeek`: PASS.
+- Không còn đường ghi đè trực tiếp `state.planData[existingIndex] = plan` trong luồng tải ảnh cùng tuần: PASS.
+- Có fingerprint kiểm tra xung đột trước khi ghi bản điều chỉnh: PASS.
 
-## PWA / tài nguyên
-- 50/50 app-shell resource trả HTTP 200 trong kiểm tra local.
-- Theme PWA đổi sang `#0c2745`; background `#edf2f8`.
-- Cache version tăng lên 51.0.0 để tránh giữ CSS giao diện cũ.
+## Bảo vệ dữ liệu
+- Ảnh cùng tuần luôn đi qua màn hình so sánh trước khi cập nhật.
+- Nếu ảnh có cảnh báo nhận dạng hoặc dùng OCR dự phòng, mục **Bỏ** không được chọn mặc định.
+- Chế độ `manual/offline-ocr` không cho phép nút **Dùng toàn bộ ảnh mới**.
+- Nếu đã có dữ liệu tuần mà nhận dạng ảnh mới lỗi, dữ liệu cũ được giữ nguyên.
+- Lịch báo giảng chỉ bị đánh dấu stale ở đúng các source slot ngày/buổi bị ảnh hưởng khi xác định được.
 
-## Kiểm tra giao diện
-- CSS v51 không thay DOM ID, event handler hay script order.
-- Có breakpoint riêng cho 1320px, 1020px, 700px và 430px.
-- Print override giữ header bảng không sticky và loại shadow/accent trang trí.
-- Chromium headless trong container tiếp tục bị timeout do môi trường DBus, nên **không tuyên bố đã hoàn tất visual E2E bằng trình duyệt thật**.
+## Dữ liệu / tương thích
+- `DATA_SCHEMA_VERSION` giữ nguyên **1**.
+- Không thay Firebase Rules.
+- Không thay IndexedDB schema.
+- Dữ liệu cũ không có `revisionHistory` vẫn chuẩn hóa bình thường.
 
-## Kết luận
-Bản v51 đạt kiểm tra tĩnh, fixture nghiệp vụ và kiểm tra tài nguyên. Sau deploy GitHub Pages nên kiểm tra trực tiếp một vòng giao diện trên desktop + mobile để đánh giá tỷ lệ hiển thị thực tế của trình duyệt đang dùng.
-
-## Kiểm tra bổ sung v51.1
-- `workTaskFields.span-all` có rule chiếm `grid-column: 1 / -1`.
-- Grid thiết lập nhiệm vụ: 4 cột desktop, 2 cột tablet, 1 cột mobile.
-- Lặp lại và Nhắc trước hạn chiếm 2 cột trên desktop.
-- Không đổi ID, event handler, cấu trúc dữ liệu hay schema.
+## Giới hạn kiểm thử
+Đã kiểm tra tĩnh, fixture nghiệp vụ, CSS parser và HTTP app-shell. Chưa tuyên bố hoàn tất E2E trên trình duyệt thật với API Gemini/Firestore thực tế. Sau deploy nên chạy **Cài đặt → Kiểm thử hồi quy → Kiểm thử đầy đủ** và thử một ảnh điều chỉnh thật của cùng tuần.
