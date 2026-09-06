@@ -1,4 +1,4 @@
-/* Bước 17 · v51.3 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
+/* Bước 17 · v51.4 — Bộ kiểm thử hồi quy tự động, không phá dữ liệu thật. */
 (() => {
     'use strict';
     const STORAGE_KEY = 'teacher_regression_last_v1';
@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '51.3.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '51.4.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -81,12 +81,12 @@
             return duplicates.length ? {status:'fail',message:`ID trùng: ${[...new Set(duplicates)].slice(0,8).join(', ')}`} : `${ids.length} ID duy nhất.`;
         }));
         tests.push(runSync('critical-dom','Các vùng giao diện lõi tồn tại','Giao diện',() => {
-            const ids=['settingsHub','yearDashboard','teacherCommandCenter','automationCenter','workItemList','reportCenterCard','healthCenterCard','storageProCard','globalCommandPalette','regressionCenterCard','planUpdateCompareModal'];
+            const ids=['settingsHub','yearDashboard','teacherCommandCenter','automationCenter','workItemList','gradebookCard','reportCenterCard','healthCenterCard','storageProCard','globalCommandPalette','regressionCenterCard','planUpdateCompareModal'];
             const missing=ids.filter(id=>!$(id));
             return missing.length ? {status:'fail',message:`Thiếu: ${missing.join(', ')}`} : `Đủ ${ids.length}/${ids.length} vùng lõi.`;
         }));
         tests.push(runSync('core-globals','Các hàm nghiệp vụ lõi đã nạp','Khởi động',() => {
-            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeBackupPayload','getWeekOperationalStatus','buildSemesterRemainingStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter','getSmartReminderManagedSuggestionKeys','buildPlanRevisionDiff','applyPlanRevisionSelection'];
+            const names=['normalizePlanWeek','normalizeTimetable','normalizeScheduleItem','normalizeWorkItems','normalizeGradebookBook','normalizeGradebookWorkspace','gradebookCalculateStudentAverage','normalizeBackupPayload','getWeekOperationalStatus','buildSemesterRemainingStatus','getTodayTeachingItems','getPendingWorkTasks','renderPlanTable','renderTimetable','renderTeachingSchedule','renderGradebook','renderYearDashboard','renderAutomationCenter','renderReportCenter','initSmartReminderCenter','getSmartReminderManagedSuggestionKeys','buildPlanRevisionDiff','applyPlanRevisionSelection'];
             const missing=names.filter(name=>typeof globalThis[name] !== 'function');
             return missing.length ? {status:'fail',message:`Thiếu hàm: ${missing.join(', ')}`} : `Đủ ${names.length} hàm lõi.`;
         }));
@@ -111,6 +111,11 @@
         tests.push(runSync('work-legacy','Tương thích Sổ Công Việc cũ','Nghiệp vụ',() => {
             const item=normalizeWorkItems([{id:'fixture',type:'task',title:'Kiểm thử',completed:true}], 'personal')[0];
             return item?.status==='done' && item?.completed===true ? 'completed:true được hiểu là status:done.' : {status:'fail',message:'Tương thích task phiên bản cũ bị thay đổi.'};
+        }));
+        tests.push(runSync('gradebook-regular-columns','Sổ điểm cá nhân tối đa 5 cột TX','Nghiệp vụ',() => {
+            const book=normalizeGradebookBook({className:'12A2',subject:'Toán',semester:'1',regularColumns:9,students:[{id:'hs1',name:'Nguyễn A',scores:{tx:[8,9,10,7,8],midterm:9,final:9}}]});
+            const average=gradebookCalculateStudentAverage(book.students[0],book);
+            return GRADEBOOK_MAX_REGULAR_COLUMNS===5 && book.regularColumns===5 && average===8.7 ? 'Sổ điểm giới hạn đúng 5 cột TX và tính ĐTB HK đúng fixture.' : {status:'fail',message:'Giới hạn cột TX hoặc công thức ĐTB HK không đúng.'};
         }));
         tests.push(runSync('schedule-normalizer','Chuẩn hóa tiết báo giảng','Nghiệp vụ',() => {
             const item=normalizeScheduleItem({day:'Thứ 3',session:'Sáng',period:'2',class:'12A1',subject:'Toán',topic:'Đạo hàm'},5,0);

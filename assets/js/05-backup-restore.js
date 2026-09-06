@@ -21,6 +21,7 @@
                     curriculumProfiles: state.curriculumProfiles,
                     teachingSchedule: state.teachingSchedule,
                     scheduleMeta: state.scheduleMeta,
+                    gradebook: state.gradebook,
                     teacherProfile: state.teacherProfile,
                     selectedTeachingWeek: Number.parseInt(localStorage.getItem('teacher_selected_week'), 10) || null,
                     recognitionMode: state.recognitionMode,
@@ -90,6 +91,7 @@
                 curriculumProfiles,
                 teachingSchedule: normalizeTeachingScheduleBackup(data.teachingSchedule),
                 scheduleMeta: normalizeScheduleMetaBackup(data.scheduleMeta),
+                gradebook: normalizeGradebookWorkspace(data.gradebook ?? savedSelectedWorkspace?.gradebook),
                 selectedTeachingWeek: selectedTeachingWeek > 0 && selectedTeachingWeek <= MAX_SCHOOL_WEEKS
                     ? selectedTeachingWeek : savedSelectedWorkspace?.selectedTeachingWeek || null,
             });
@@ -109,6 +111,7 @@
                     curriculumProfiles,
                     teachingSchedule: normalizeTeachingScheduleBackup(data.teachingSchedule),
                     scheduleMeta: normalizeScheduleMetaBackup(data.scheduleMeta),
+                    gradebook: normalizeGradebookWorkspace(data.gradebook ?? yearWorkspaces[selectedAcademicYear]?.gradebook),
                     teacherProfile,
                     selectedTeachingWeek: selectedTeachingWeek > 0 && selectedTeachingWeek <= MAX_SCHOOL_WEEKS ? selectedTeachingWeek : null,
                     recognitionMode,
@@ -143,12 +146,21 @@
                 workItems: workspaces.reduce((sum, workspace) => sum + (
                     Array.isArray(workspace.workItems) ? workspace.workItems.length : 0
                 ), 0),
+                gradebooks: workspaces.reduce((sum, workspace) => sum + (
+                    workspace.gradebook?.books && typeof workspace.gradebook.books === 'object'
+                        ? Object.keys(workspace.gradebook.books).length : 0
+                ), 0),
+                gradebookStudents: workspaces.reduce((sum, workspace) => sum + (
+                    workspace.gradebook?.books && typeof workspace.gradebook.books === 'object'
+                        ? Object.values(workspace.gradebook.books).reduce((bookSum, book) => bookSum + (Array.isArray(book?.students) ? book.students.length : 0), 0)
+                        : 0
+                ), 0),
             };
         }
 
         function updateDataSafetySummary() {
             const counts = backupDataCounts();
-            dataSafetySummary.textContent = `${counts.years} năm học · ${counts.plans} tuần kế hoạch · ${counts.timetables} tuần TKB · ${counts.schedules} tuần lịch báo giảng${counts.curriculum ? ` · ${counts.curriculum} bộ phân phối` : ''}${counts.workItems ? ` · ${counts.workItems} mục công việc` : ''}. File sao lưu không chứa API key.`;
+            dataSafetySummary.textContent = `${counts.years} năm học · ${counts.plans} tuần kế hoạch · ${counts.timetables} tuần TKB · ${counts.schedules} tuần lịch báo giảng${counts.curriculum ? ` · ${counts.curriculum} bộ phân phối` : ''}${counts.gradebooks ? ` · ${counts.gradebooks} sổ điểm/${counts.gradebookStudents} học sinh` : ''}${counts.workItems ? ` · ${counts.workItems} mục công việc` : ''}. File sao lưu không chứa API key.`;
             const storageApi = window.teacherNotebookIndexedDB;
             if (storageApi) {
                 Promise.all([
@@ -243,6 +255,7 @@
             }
             updateDataSafetySummary();
             renderWorkWorkspace();
+            if (typeof renderGradebook === 'function') renderGradebook();
             if (typeof renderYearDashboard === 'function') renderYearDashboard();
         }
 
@@ -269,7 +282,7 @@
                 const counts = backupDataCounts(payload);
                 try { localStorage.setItem('teacher_last_backup_at_v1', new Date().toISOString()); } catch (_) { /* noop */ }
                 if (typeof refreshHealthCenterSummary === 'function') refreshHealthCenterSummary();
-                showToast(`✅ Đã sao lưu ${counts.years} năm học, ${counts.plans} tuần kế hoạch, ${counts.timetables} tuần TKB và ${counts.schedules} tuần lịch báo giảng`, 'success');
+                showToast(`✅ Đã sao lưu ${counts.years} năm học, ${counts.plans} tuần kế hoạch, ${counts.timetables} tuần TKB, ${counts.schedules} tuần lịch báo giảng${counts.gradebooks ? ` và ${counts.gradebooks} sổ điểm` : ''}`, 'success');
             } catch (error) {
                 showToast('❌ Không thể tạo file sao lưu: ' + error.message, 'error');
             }

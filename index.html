@@ -38,6 +38,7 @@
     <link rel="stylesheet" href="assets/css/reminder-calendar.css" />
     <link rel="stylesheet" href="assets/css/regression-test.css" />
     <link rel="stylesheet" href="assets/css/pro-workspace-v51.css" />
+    <link rel="stylesheet" href="assets/css/gradebook-v51.css" />
     <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
 </head>
 <body class="premium-ui">
@@ -52,7 +53,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v51.3 · PPCT sáng/chiều độc lập</span>
+                        <span>PPCT sáng/chiều độc lập · Sổ điểm cá nhân</span>
                         <i aria-hidden="true"></i>
                         <span>39 tuần lịch · 37 tuần PPCT · Trợ lý công việc · Hồ sơ</span>
                     </div>
@@ -526,6 +527,9 @@
             <button class="tab-btn" data-tab="teaching" role="tab" aria-selected="false" aria-controls="tab-teaching">
                 <span class="icon">📖</span> Lịch Báo Giảng
             </button>
+            <button class="tab-btn" data-tab="gradebook" role="tab" aria-selected="false" aria-controls="tab-gradebook">
+                <span class="icon">📒</span> Sổ Điểm
+            </button>
             <button class="tab-btn" data-tab="reports" role="tab" aria-selected="false" aria-controls="tab-reports">
                 <span class="icon">📑</span> Báo Cáo & Hồ Sơ
             </button>
@@ -888,7 +892,85 @@
         </div>
 
         <!-- ============================================================ -->
-        <!-- TAB 4: BÁO CÁO & HỒ SƠ                                        -->
+        <!-- TAB: SỔ ĐIỂM CÁ NHÂN                                         -->
+        <!-- ============================================================ -->
+        <div class="tab-content" id="tab-gradebook" role="tabpanel">
+            <div class="card gradebook-shell" id="gradebookCard">
+                <div class="card-header gradebook-header">
+                    <div>
+                        <h2>📒 Sổ điểm cá nhân <small>theo lớp · môn · học kỳ</small></h2>
+                        <span class="sub" id="gradebookSubtitle">Dữ liệu riêng của giáo viên, không đưa vào Kế hoạch trường dùng chung.</span>
+                    </div>
+                    <div class="gradebook-private-badge" title="Khi dùng tài khoản nhóm, sổ điểm chỉ đồng bộ vào vùng dữ liệu riêng của tài khoản giáo viên.">🔐 Cá nhân</div>
+                </div>
+
+                <div class="gradebook-guide">
+                    <span>💡</span>
+                    <div><strong>Điểm thường xuyên linh hoạt:</strong> bắt đầu với 2 cột TX và có thể thêm dần đến tối đa <strong>5 cột TX</strong>. ĐTB học kỳ chỉ hiện khi các cột đang dùng, giữa kỳ và cuối kỳ đã có điểm; công thức: tổng TX + 2×GK + 3×CK chia cho số điểm TX + 5.</div>
+                </div>
+
+                <div class="gradebook-toolbar">
+                    <label class="gradebook-field"><span>Năm học</span><input id="gradebookYearDisplay" type="text" readonly /></label>
+                    <label class="gradebook-field"><span>Lớp</span>
+                        <input id="gradebookClassInput" type="text" list="gradebookClassSuggestions" placeholder="Ví dụ: 12A2" autocomplete="off" />
+                        <datalist id="gradebookClassSuggestions"></datalist>
+                    </label>
+                    <label class="gradebook-field"><span>Môn</span>
+                        <input id="gradebookSubjectInput" type="text" list="gradebookSubjectSuggestions" value="Toán" placeholder="Ví dụ: Toán" autocomplete="off" />
+                        <datalist id="gradebookSubjectSuggestions"></datalist>
+                    </label>
+                    <label class="gradebook-field"><span>Học kỳ</span>
+                        <select id="gradebookSemesterSelect">
+                            <option value="1">Học kỳ I</option>
+                            <option value="2">Học kỳ II</option>
+                        </select>
+                    </label>
+                    <button class="btn btn-primary gradebook-open-btn" id="gradebookOpenBtn" type="button">Mở / Tạo sổ</button>
+                </div>
+
+                <div class="gradebook-book-strip" id="gradebookBookStrip" aria-label="Các sổ điểm đã tạo"></div>
+
+                <div class="gradebook-kpis" id="gradebookStats">
+                    <div class="gradebook-kpi"><span>👥</span><div><strong id="gradebookStudentCount">0</strong><small>Học sinh</small></div></div>
+                    <div class="gradebook-kpi"><span>✍️</span><div><strong id="gradebookRegularCount">2/5</strong><small>Cột thường xuyên</small></div></div>
+                    <div class="gradebook-kpi"><span>📊</span><div><strong id="gradebookClassAverage">—</strong><small>ĐTB lớp</small></div></div>
+                    <div class="gradebook-kpi"><span>⏳</span><div><strong id="gradebookIncompleteCount">0</strong><small>Chưa đủ điểm</small></div></div>
+                </div>
+
+                <div class="gradebook-actions">
+                    <button class="btn btn-success btn-sm" id="gradebookAddStudentBtn" type="button">＋ Học sinh</button>
+                    <button class="btn btn-outline btn-sm" id="gradebookPasteRosterBtn" type="button" style="color:#0f766e;border-color:#5eead4;">📋 Dán danh sách</button>
+                    <span class="gradebook-action-divider" aria-hidden="true"></span>
+                    <button class="btn btn-outline btn-sm" id="gradebookRemoveRegularBtn" type="button">− Cột TX</button>
+                    <button class="btn btn-primary btn-sm" id="gradebookAddRegularBtn" type="button">＋ Cột TX</button>
+                    <span class="gradebook-action-spacer"></span>
+                    <button class="btn btn-success btn-sm" id="gradebookExportExcelBtn" type="button">📊 Xuất Excel</button>
+                    <button class="btn btn-outline btn-sm" id="gradebookClearBookBtn" type="button" style="color:#b91c1c;border-color:#fca5a5;">🗑️ Xóa sổ</button>
+                </div>
+
+                <section class="gradebook-paste-panel" id="gradebookPastePanel" hidden aria-label="Dán danh sách học sinh">
+                    <div class="gradebook-paste-head">
+                        <div><strong>📋 Dán danh sách học sinh</strong><small>Mỗi học sinh một dòng. Có thể dán trực tiếp cột Họ và tên từ Excel hoặc danh sách có STT.</small></div>
+                        <button class="btn btn-outline btn-sm" id="gradebookClosePasteBtn" type="button">✕ Đóng</button>
+                    </div>
+                    <textarea id="gradebookRosterTextarea" rows="8" placeholder="1	Nguyễn Văn An
+2	Trần Thị Bình
+3	Lê Minh Châu"></textarea>
+                    <div class="gradebook-paste-actions">
+                        <span id="gradebookPasteHint">Danh sách sẽ được nối vào cuối sổ hiện tại.</span>
+                        <button class="btn btn-primary btn-sm" id="gradebookApplyRosterBtn" type="button">Thêm vào sổ</button>
+                    </div>
+                </section>
+
+                <div class="gradebook-table-wrap" id="gradebookTableWrap">
+                    <div class="gradebook-empty">Chọn lớp, môn, học kỳ rồi nhấn <strong>“Mở / Tạo sổ”</strong>.</div>
+                </div>
+                <div class="gradebook-footnote" id="gradebookFootnote">Điểm hợp lệ từ 0 đến 10, hỗ trợ 1 chữ số thập phân. Dữ liệu được lưu tự động theo năm học hiện tại.</div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 5: BÁO CÁO & HỒ SƠ                                        -->
         <!-- ============================================================ -->
         <div class="tab-content" id="tab-reports" role="tabpanel">
             <div class="card report-center-card" id="reportCenterCard">
@@ -1561,6 +1643,7 @@
     <script src="assets/js/19-report-center.js"></script>
     <script src="assets/js/25-profile-package.js"></script>
     <script src="assets/js/26-reminder-calendar.js"></script>
+    <script src="assets/js/28-gradebook.js"></script>
     <script src="assets/js/20-pwa.js"></script>
     <script src="assets/js/21-health-check.js"></script>
     <script src="assets/js/22-links-center.js"></script>

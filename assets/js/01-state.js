@@ -45,8 +45,8 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '51.3.0';
-        const DATA_SCHEMA_VERSION = 1;
+        const APP_VERSION = '51.4.0';
+        const DATA_SCHEMA_VERSION = 2;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
         const GEMINI_MODEL = 'gemini-3.5-flash';
@@ -69,11 +69,14 @@
         const SELECTED_ACADEMIC_YEAR_STORAGE = 'teacher_selected_academic_year';
         const RECOGNITION_MODES = ['auto', 'accurate', 'economy', 'offline'];
         const BACKUP_FORMAT = 'teacher-notebook-backup';
-        const BACKUP_VERSION = 4;
+        const BACKUP_VERSION = 5;
         const PRE_RESTORE_BACKUP_KEY = 'teacher_pre_restore_backup_v1';
         const PRE_CLOUD_SYNC_BACKUP_KEY = 'teacher_pre_cloud_sync_backup_v1';
         const SHARED_PLAN_HISTORY_STORAGE = 'teacher_shared_plan_history_v1';
         const SHARED_PLAN_HISTORY_LIMIT = 5;
+        const GRADEBOOK_MAX_REGULAR_COLUMNS = 5;
+        const GRADEBOOK_DEFAULT_REGULAR_COLUMNS = 2;
+        const GRADEBOOK_SEMESTERS = ['1', '2'];
         const WORK_SCOPE_STORAGE = 'teacher_work_scope_v1';
         const WORK_VIEW_STORAGE = 'teacher_work_view_v1';
         const WORK_SMART_FILTER_STORAGE = 'teacher_work_smart_filter_v1';
@@ -928,6 +931,72 @@
                 : [];
         }
 
+        function normalizeGradeScore(value) {
+            if (value === '' || value === null || typeof value === 'undefined') return '';
+            const number = Number(String(value).replace(',', '.'));
+            if (!Number.isFinite(number) || number < 0 || number > 10) return '';
+            return Math.round(number * 10) / 10;
+        }
+
+        function normalizeGradebookStudent(value, fallbackIndex = 0) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const scores = value.scores && typeof value.scores === 'object' && !Array.isArray(value.scores) ? value.scores : {};
+            const txSource = Array.isArray(scores.tx) ? scores.tx : Array.isArray(value.tx) ? value.tx : [];
+            const tx = Array.from({ length: GRADEBOOK_MAX_REGULAR_COLUMNS }, (_, index) => normalizeGradeScore(txSource[index]));
+            return {
+                id: cleanText(value.id) || `hs-${Date.now()}-${fallbackIndex}-${Math.random().toString(36).slice(2, 8)}`,
+                name: cleanText(value.name || value.fullName),
+                scores: {
+                    tx,
+                    midterm: normalizeGradeScore(scores.midterm ?? value.midterm),
+                    final: normalizeGradeScore(scores.final ?? value.final),
+                },
+                note: cleanText(value.note),
+            };
+        }
+
+        function normalizeGradebookBook(value, fallbackId = '') {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const className = cleanText(value.className);
+            const subject = cleanText(value.subject) || cleanText(DEFAULT_TEACHER_PROFILE.subject) || 'Toán';
+            const semester = GRADEBOOK_SEMESTERS.includes(String(value.semester)) ? String(value.semester) : '1';
+            if (!className) return null;
+            const regularColumns = Math.min(
+                GRADEBOOK_MAX_REGULAR_COLUMNS,
+                Math.max(1, Number.parseInt(value.regularColumns, 10) || GRADEBOOK_DEFAULT_REGULAR_COLUMNS)
+            );
+            const students = Array.isArray(value.students)
+                ? value.students.map((student, index) => normalizeGradebookStudent(student, index)).filter(Boolean)
+                : [];
+            return {
+                id: cleanText(value.id) || cleanText(fallbackId) || `gb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                className,
+                subject,
+                semester,
+                regularColumns,
+                students,
+                updatedAt: cleanText(value.updatedAt),
+            };
+        }
+
+        function normalizeGradebookWorkspace(value) {
+            const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            const rawBooks = source.books && typeof source.books === 'object' && !Array.isArray(source.books) ? source.books : {};
+            const books = {};
+            Object.entries(rawBooks).forEach(([id, book]) => {
+                const normalized = normalizeGradebookBook(book, id);
+                if (normalized) books[normalized.id] = normalized;
+            });
+            return {
+                version: 1,
+                books,
+                selectedBookId: books[cleanText(source.selectedBookId)] ? cleanText(source.selectedBookId) : '',
+                selectedClassName: cleanText(source.selectedClassName),
+                selectedSubject: cleanText(source.selectedSubject) || 'Toán',
+                selectedSemester: GRADEBOOK_SEMESTERS.includes(String(source.selectedSemester)) ? String(source.selectedSemester) : '1',
+            };
+        }
+
         function normalizeTeachingScheduleBackup(value) {
             if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
             return Object.fromEntries(
@@ -985,6 +1054,7 @@
                 teachingSchedule: normalizeTeachingScheduleBackup(source.teachingSchedule),
                 scheduleMeta: normalizeScheduleMetaBackup(source.scheduleMeta),
                 workItems: normalizeWorkItems(source.workItems, 'personal'),
+                gradebook: normalizeGradebookWorkspace(source.gradebook),
                 selectedTimetableWeek: selectedTimetableWeek > 0 && selectedTimetableWeek <= MAX_SCHOOL_WEEKS
                     ? selectedTimetableWeek : 1,
                 selectedTeachingWeek: selectedTeachingWeek > 0 && selectedTeachingWeek <= MAX_SCHOOL_WEEKS
@@ -1017,6 +1087,7 @@
             teachingSchedule: readStoredJSON('teacher_teaching_schedule', {}),
             scheduleMeta: readStoredJSON('teacher_schedule_meta', {}),
             workItems: [],
+            gradebook: normalizeGradebookWorkspace(null),
             sharedWorkItems: [],
             workScope: localStorage.getItem(WORK_SCOPE_STORAGE) === 'shared' ? 'shared' : 'personal',
             workView: ['kanban','calendar'].includes(localStorage.getItem(WORK_VIEW_STORAGE)) ? localStorage.getItem(WORK_VIEW_STORAGE) : 'list',
@@ -1147,6 +1218,7 @@
         state.teachingSchedule = activeYearWorkspace.teachingSchedule;
         state.scheduleMeta = activeYearWorkspace.scheduleMeta;
         state.workItems = activeYearWorkspace.workItems;
+        state.gradebook = activeYearWorkspace.gradebook;
         state.selectedTimetableWeek = activeYearWorkspace.selectedTimetableWeek;
         state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
         state.teacherProfile.academicYear = selectedAcademicYear;

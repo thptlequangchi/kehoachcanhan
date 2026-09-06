@@ -1,0 +1,58 @@
+/* Sổ điểm cá nhân v51.4 */
+.gradebook-shell{overflow:visible}
+.gradebook-header{align-items:center;gap:16px;flex-wrap:wrap}
+.gradebook-private-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid #bbf7d0;border-radius:999px;background:#f0fdf4;color:#166534;font-size:.84rem;font-weight:800;white-space:nowrap}
+.gradebook-guide{display:flex;gap:10px;align-items:flex-start;margin:2px 0 16px;padding:12px 14px;border:1px solid #dbeafe;border-radius:14px;background:#eff6ff;color:#334155;line-height:1.55}
+.gradebook-guide>span{font-size:1.1rem}
+.gradebook-toolbar{display:grid;grid-template-columns:150px minmax(150px,1fr) minmax(150px,1fr) 150px auto;gap:12px;align-items:end;padding:14px;border:1px solid #e2e8f0;border-radius:16px;background:#f8fafc}
+.gradebook-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.gradebook-field>span{font-size:.8rem;font-weight:800;color:#475569}
+.gradebook-field input,.gradebook-field select,.gradebook-paste-panel textarea,.gradebook-table input{width:100%;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;font:inherit}
+.gradebook-field input,.gradebook-field select{height:40px;padding:0 10px}
+.gradebook-open-btn{height:40px;white-space:nowrap}
+.gradebook-book-strip{display:flex;gap:8px;overflow-x:auto;padding:12px 2px 4px;scrollbar-width:thin}
+.gradebook-book-chip{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:999px;padding:7px 11px;font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:.15s ease}
+.gradebook-book-chip:hover{border-color:#93c5fd;background:#f8fbff}
+.gradebook-book-chip.active{border-color:#2563eb;background:#eff6ff;color:#1d4ed8;box-shadow:0 0 0 2px rgba(37,99,235,.08)}
+.gradebook-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.gradebook-kpi{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid #e2e8f0;border-radius:14px;background:#fff}
+.gradebook-kpi>span{font-size:1.2rem}
+.gradebook-kpi strong{display:block;font-size:1.15rem;color:#0f172a}
+.gradebook-kpi small{display:block;color:#64748b;font-size:.76rem;margin-top:2px}
+.gradebook-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.gradebook-action-divider{width:1px;height:26px;background:#e2e8f0}
+.gradebook-action-spacer{flex:1 1 auto}
+.gradebook-paste-panel{margin:0 0 14px;padding:14px;border:1px solid #bae6fd;border-radius:16px;background:#f0f9ff}
+.gradebook-paste-head,.gradebook-paste-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.gradebook-paste-head>div{display:flex;flex-direction:column;gap:3px}
+.gradebook-paste-head small,.gradebook-paste-actions span{color:#64748b;font-size:.8rem}
+.gradebook-paste-panel textarea{margin-top:10px;min-height:150px;padding:10px 12px;resize:vertical;line-height:1.5}
+.gradebook-paste-actions{margin-top:10px}
+.gradebook-table-wrap{overflow:auto;border:1px solid #dbe3ee;border-radius:16px;background:#fff;min-height:220px}
+.gradebook-table{width:100%;min-width:980px;border-collapse:separate;border-spacing:0}
+.gradebook-table th{position:sticky;top:0;z-index:2;padding:9px 7px;border-bottom:1px solid #cbd5e1;border-right:1px solid #e2e8f0;background:#0f5f2f;color:#fff;text-align:center;font-size:.8rem;white-space:nowrap}
+.gradebook-table th:first-child{left:0;z-index:4}
+.gradebook-table td{padding:6px;border-bottom:1px solid #edf2f7;border-right:1px solid #edf2f7;vertical-align:middle;background:#fff}
+.gradebook-table tbody tr:nth-child(even) td{background:#fbfdff}
+.gradebook-table tbody tr:hover td{background:#f8fbff}
+.gradebook-table td.gradebook-stt{position:sticky;left:0;z-index:1;width:54px;text-align:center;font-weight:800;color:#475569;background:#fff}
+.gradebook-table tbody tr:nth-child(even) td.gradebook-stt{background:#fbfdff}
+.gradebook-table input{height:34px;padding:5px 7px;border-radius:8px;font-size:.87rem}
+.gradebook-table input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.gradebook-name-input{min-width:220px;font-weight:650}
+.gradebook-score-input{width:66px!important;text-align:center;font-variant-numeric:tabular-nums}
+.gradebook-note-input{min-width:180px}
+.gradebook-average{min-width:72px;text-align:center;font-weight:900;font-variant-numeric:tabular-nums;color:#0f172a}
+.gradebook-average.pending{color:#94a3b8;font-weight:700}
+.gradebook-delete-row{border:0;background:transparent;color:#b91c1c;cursor:pointer;border-radius:8px;padding:6px 8px;font-size:.95rem}
+.gradebook-delete-row:hover{background:#fef2f2}
+.gradebook-empty{display:grid;place-items:center;min-height:220px;padding:28px;text-align:center;color:#64748b}
+.gradebook-footnote{margin-top:10px;color:#64748b;font-size:.78rem}
+.gradebook-limit-note{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:#fff7ed;color:#9a3412;font-weight:700;font-size:.76rem}
+.gradebook-table .gradebook-score-header{min-width:72px}
+.gradebook-table .gradebook-name-header{min-width:240px;text-align:left;padding-left:12px}
+.gradebook-table .gradebook-note-header{min-width:190px}
+.gradebook-table .gradebook-action-header{width:58px}
+@media(max-width:980px){.gradebook-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.gradebook-open-btn{grid-column:span 2}.gradebook-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.gradebook-toolbar{grid-template-columns:1fr}.gradebook-open-btn{grid-column:auto}.gradebook-kpis{grid-template-columns:1fr 1fr}.gradebook-action-divider{display:none}.gradebook-action-spacer{display:none}.gradebook-actions .btn{flex:1 1 calc(50% - 8px)}.gradebook-private-badge{width:100%;justify-content:center}.gradebook-guide{font-size:.88rem}}
+@media print{#tab-gradebook .gradebook-toolbar,#tab-gradebook .gradebook-actions,#tab-gradebook .gradebook-book-strip,#tab-gradebook .gradebook-paste-panel,#tab-gradebook .gradebook-private-badge{display:none!important}.gradebook-table-wrap{overflow:visible;border:none}.gradebook-table{min-width:0;font-size:9pt}.gradebook-table th{position:static;background:#e2e8f0!important;color:#111!important}.gradebook-table td.gradebook-stt{position:static}.gradebook-delete-row{display:none}.gradebook-table input{border:0;padding:0;height:auto}.gradebook-footnote{display:none}}
