@@ -58,7 +58,7 @@
                 scheduleEditorMappingHint.textContent = 'Tiết PPCT và tên bài sẽ được tính theo vị trí của tiết học sau khi lưu.';
                 return;
             }
-            const lesson = getCurriculumLessonByPpct(className, subject, ppct);
+            const lesson = getCurriculumLessonByPpct(className, subject, ppct, new Map(), scheduleEditorSession.value);
             scheduleEditorMappingHint.textContent = lesson?.topic
                 ? `Đối chiếu PPCT ${ppct}: ${lesson.topic}`
                 : `Chưa tìm thấy tên bài tương ứng với Tiết PPCT ${ppct} của lớp ${className}.`;

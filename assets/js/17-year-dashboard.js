@@ -229,7 +229,7 @@
             const behind = rows.filter(row => row.status === 'behind').length;
             const risk = rows.filter(row => row.forecastState === 'risk').length;
             summary.textContent = snapshot.courseRows.length
-                ? `${snapshot.onTrackRows.length}/${snapshot.courseRows.length} lớp–môn ổn${behind ? ` · ${behind} đang chậm` : ''}${risk ? ` · ${risk} có nguy cơ` : ''}`
+                ? `${snapshot.onTrackRows.length}/${snapshot.courseRows.length} lớp–môn–buổi ổn${behind ? ` · ${behind} đang chậm` : ''}${risk ? ` · ${risk} có nguy cơ` : ''}`
                 : 'Chưa đủ TKB/PPCT/Lịch báo giảng để đối chiếu';
             list.innerHTML = rows.length ? rows.slice(0, 6).map(row => {
                 const danger = row.status === 'behind' || row.forecastState === 'risk';
@@ -238,11 +238,11 @@
                     : `${row.statusLabel}${row.forecastState === 'risk' ? ' · ' + row.forecastLabel : ''}${row.currentTopic ? ' · ' + row.currentTopic : ''}`;
                 return `<button class="year-action-item ${danger ? 'danger' : 'warning'}" type="button" data-year-progress="1">
                     <span class="year-action-icon">${danger ? '⏳' : '📚'}</span>
-                    <span class="year-action-main"><strong>${yearDashboardEscape(row.className)} · ${yearDashboardEscape(row.subject)}</strong><small>${yearDashboardEscape(detail)}</small></span>
+                    <span class="year-action-main"><strong>${yearDashboardEscape(row.className)} · ${yearDashboardEscape(row.subject)} · ${yearDashboardEscape(row.session || '')}</strong><small>${yearDashboardEscape(detail)}</small></span>
                     <span class="year-action-badge">${Number.isFinite(row.progressPercent) ? row.progressPercent + '%' : '—'}</span>
                 </button>`;
             }).join('') : (snapshot.courseRows.length
-                ? '<div class="year-action-item good"><span class="year-action-icon">✓</span><span class="year-action-main"><strong>Tất cả lớp–môn đang ổn</strong><small>Không phát hiện lớp chậm PPCT hoặc có nguy cơ hoàn thành muộn đến mốc đối chiếu.</small></span><span class="year-action-badge">Ổn</span></div>'
+                ? '<div class="year-action-item good"><span class="year-action-icon">✓</span><span class="year-action-main"><strong>Tất cả lớp–môn–buổi đang ổn</strong><small>Không phát hiện lớp–môn–buổi chậm PPCT hoặc có nguy cơ hoàn thành muộn đến mốc đối chiếu.</small></span><span class="year-action-badge">Ổn</span></div>'
                 : '<div class="year-empty">Hãy tải TKB và PPCT, sau đó tạo lịch báo giảng để Dashboard theo dõi tiến độ từng lớp.</div>');
         }
 

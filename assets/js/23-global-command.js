@@ -127,8 +127,9 @@
                 clazz.value = course.classKey;
                 if (typeof renderProgressDashboard === 'function') renderProgressDashboard();
             }
-            if (subject && subject.querySelector(`option[value="${course.subjectKey}"]`)) {
-                subject.value = course.subjectKey;
+            const subjectFilterKey = course.subjectFilterKey || `${course.subjectKey}|${course.sessionKey || 'all'}`;
+            if (subject && subject.querySelector(`option[value="${subjectFilterKey}"]`)) {
+                subject.value = subjectFilterKey;
                 if (typeof renderProgressDashboard === 'function') renderProgressDashboard();
             }
             scrollToId('progressDashboardCard');
@@ -225,10 +226,10 @@
         return safeArray(catalog).map(course => ({
             id:`course:${course.key}`,
             icon:'🏫',
-            title:`${course.className} · ${course.subject}`,
-            subtitle:'Mở tiến độ PPCT của lớp–môn này',
-            tag:'Lớp–môn',
-            keywords:`${course.className} ${course.subject} lop mon ppct tien do`,
+            title:`${course.className} · ${course.subject}${course.session ? ' · '+course.session : ''}`,
+            subtitle:'Mở tiến độ PPCT của đúng lớp–môn–buổi này',
+            tag:'Lớp–môn–buổi',
+            keywords:`${course.className} ${course.subject} ${course.session || ''} lop mon buoi ppct tien do`,
             action:()=>openCourseProgress(course),
         }));
     }
@@ -262,16 +263,18 @@
                 if (!(ppct>0) || item?.notTeaching) return;
                 const className=clean(item.class);
                 const subject=clean(item.subject);
-                const key=`${week}|${ppct}|${fold(className)}|${fold(subject)}|${fold(item.topic)}`;
+                const session=clean(item.session);
+                const sessionKey=typeof normalizeCurriculumSession === 'function' ? normalizeCurriculumSession(session) : fold(session);
+                const key=`${week}|${ppct}|${fold(className)}|${fold(subject)}|${sessionKey}|${fold(item.topic)}`;
                 if (seen.has(key)) return;
                 seen.add(key);
                 commands.push({
                     id:`ppct:${week}:${clean(item.id)||key}`,
                     icon:'📚',
-                    title:`PPCT ${ppct} · ${className || 'Chưa rõ lớp'}${subject ? ' · '+subject : ''}`,
-                    subtitle:`Tuần ${week}${item.topic ? ' · '+clean(item.topic) : ''}`,
+                    title:`PPCT ${ppct} · ${className || 'Chưa rõ lớp'}${subject ? ' · '+subject : ''}${session ? ' · '+session : ''}`,
+                    subtitle:`Tuần ${week}${session ? ' · '+session : ''}${item.topic ? ' · '+clean(item.topic) : ''}`,
                     tag:'PPCT',
-                    keywords:`ppct ${ppct} tiet ${ppct} tuan ${week} ${className} ${subject} ${clean(item.topic)}`,
+                    keywords:`ppct ${ppct} tiet ${ppct} tuan ${week} ${className} ${subject} ${session} ${clean(item.topic)}`,
                     action:()=>openWeekTarget('teaching',week),
                 });
             });

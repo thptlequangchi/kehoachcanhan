@@ -27,6 +27,26 @@
             return reportClean(value).toLowerCase();
         }
 
+        function reportSessionKey(value) {
+            if (typeof normalizeCurriculumSession === 'function') return normalizeCurriculumSession(value);
+            const text = reportClean(value).toLowerCase();
+            if (text.includes('sáng') || text === 'morning') return 'morning';
+            if (text.includes('chiều') || text === 'afternoon') return 'afternoon';
+            return 'all';
+        }
+
+        function reportSessionLabel(value) {
+            const key = reportSessionKey(value);
+            if (typeof curriculumSessionLabel === 'function') return curriculumSessionLabel(key);
+            if (key === 'morning') return 'Buổi sáng';
+            if (key === 'afternoon') return 'Buổi chiều';
+            return 'Cả hai buổi';
+        }
+
+        function reportSubjectFilterKey(subject, session) {
+            return `${reportSubjectKey(subject)}|${reportSessionKey(session)}`;
+        }
+
         function reportSemesterMilestone(row) {
             if (row?.semesterBoundaryMissing) {
                 return `Chưa xác nhận mốc HKI${row.semesterOneSuggestedPpct ? ` · gợi ý tiết ${row.semesterOneSuggestedPpct}` : ''}`;
@@ -172,8 +192,19 @@
                 const subject = reportClean(item?.subject);
                 const classKey = reportClassKey(className);
                 const subjectKey = reportSubjectKey(subject);
+                const sessionKey = reportSessionKey(item?.session);
                 if (!classKey || !subjectKey) return;
-                map.set(`${classKey}|${subjectKey}`, { classKey, className, subjectKey, subject });
+                const key = `${classKey}|${subjectKey}|${sessionKey}`;
+                map.set(key, {
+                    key,
+                    classKey,
+                    className,
+                    subjectKey,
+                    subject,
+                    sessionKey,
+                    session: reportSessionLabel(sessionKey),
+                    subjectFilterKey: `${subjectKey}|${sessionKey}`,
+                });
             }));
             return Array.from(map.values());
         }
@@ -200,8 +231,13 @@
             const previousSubject = subjectSelect.value;
             const subjectMap = new Map();
             catalog.filter(course => !classSelect.value || course.classKey === classSelect.value)
-                .forEach(course => subjectMap.set(course.subjectKey, course.subject));
-            subjectSelect.innerHTML = '<option value="">Tất cả môn</option>';
+                .forEach(course => {
+                    const sessionKey = course.sessionKey || reportSessionKey(course.session);
+                    const value = course.subjectFilterKey || `${course.subjectKey}|${sessionKey}`;
+                    const label = `${course.subject} · ${course.session || reportSessionLabel(sessionKey)}`;
+                    subjectMap.set(value, label);
+                });
+            subjectSelect.innerHTML = '<option value="">Tất cả môn / buổi</option>';
             Array.from(subjectMap, ([value, label]) => ({ value, label }))
                 .sort((a, b) => a.label.localeCompare(b.label, 'vi'))
                 .forEach(item => {
@@ -213,9 +249,17 @@
             subjectSelect.value = subjectMap.has(previousSubject) ? previousSubject : '';
         }
 
-        function reportMatchesFilters(className, subject, filters) {
+        function reportMatchesFilters(className, subject, filters, session = '') {
             if (filters.classKey && reportClassKey(className) !== filters.classKey) return false;
-            if (filters.subjectKey && reportSubjectKey(subject) !== filters.subjectKey) return false;
+            if (filters.subjectKey) {
+                const selected = String(filters.subjectKey);
+                if (selected.includes('|')) {
+                    if (reportSubjectFilterKey(subject, session) !== selected) return false;
+                } else if (reportSubjectKey(subject) !== selected) {
+                    // Tương thích bộ lọc cũ: chỉ tên môn thì vẫn xem cả sáng và chiều.
+                    return false;
+                }
+            }
             return true;
         }
 
@@ -238,7 +282,7 @@
                 const source = state?.teachingSchedule?.[week] || [];
                 const items = typeof getSortedScheduleItems === 'function' ? getSortedScheduleItems(source) : source;
                 (items || []).forEach(item => {
-                    if (!reportMatchesFilters(item?.class, item?.subject, filters)) return;
+                    if (!reportMatchesFilters(item?.class, item?.subject, filters, item?.session)) return;
                     rows.push({
                         week,
                         date: reportDateForScheduleItem(week, item?.day),
@@ -319,7 +363,7 @@
         }
 
         function reportBuildProgressRows(endWeek, filters) {
-            const catalog = reportBuildCourseCatalogSafe().filter(course => reportMatchesFilters(course.className, course.subject, filters));
+            const catalog = reportBuildCourseCatalogSafe().filter(course => reportMatchesFilters(course.className, course.subject, filters, course.sessionKey || course.session));
             if (typeof buildCourseProgressRow !== 'function') return [];
             return catalog.map(course => buildCourseProgressRow(course, endWeek));
         }
@@ -460,8 +504,8 @@
                 row => `<tr${row.notTeaching ? ' class="report-row-muted"' : ''}><td>${row.week}</td><td>${reportEscape(row.date || '—')}</td><td>${reportEscape(row.day)}</td><td>${reportEscape(row.session)}</td><td class="text-center">${reportEscape(row.period)}</td><td class="text-center">${reportEscape(row.ppctPeriod || '—')}</td><td>${reportEscape(row.className)}</td><td>${reportEscape(row.subject)}</td><td>${reportEscape(row.topic || '—')}</td><td>${reportEscape(row.note || '')}</td></tr>`,
                 'Phạm vi này chưa có Lịch báo giảng phù hợp bộ lọc.', 220);
             const progressTable = reportTable(snapshot.progressRows,
-                ['Lớp','Môn','PPCT kế hoạch','PPCT thực tế','Tiến độ','Bài đang dạy','Không học','Học bù','Mốc cuối HK','Dự báo cuối HK'],
-                row => `<tr><td>${reportEscape(row.className)}</td><td>${reportEscape(row.subject)}</td><td class="text-center">${row.plannedPpct || '—'}</td><td class="text-center">${row.actualPpct || '—'}</td><td><span class="report-status ${row.status === 'behind' || row.forecastState === 'risk' ? 'danger' : row.semesterBoundaryMissing || row.status === 'ahead' ? 'warning' : 'good'}">${reportEscape(row.statusLabel)}</span></td><td>${reportEscape(row.currentTopic || '—')}</td><td class="text-center">${row.canceledCount}</td><td class="text-center">${row.makeupCount}</td><td>${reportEscape(reportSemesterMilestone(row))}</td><td>${reportEscape(row.forecastLabel)}</td></tr>`,
+                ['Lớp','Môn','Buổi','PPCT kế hoạch','PPCT thực tế','Tiến độ','Bài đang dạy','Không học','Học bù','Mốc cuối HK','Dự báo cuối HK'],
+                row => `<tr><td>${reportEscape(row.className)}</td><td>${reportEscape(row.subject)}</td><td>${reportEscape(row.session || reportSessionLabel(row.sessionKey))}</td><td class="text-center">${row.plannedPpct || '—'}</td><td class="text-center">${row.actualPpct || '—'}</td><td><span class="report-status ${row.status === 'behind' || row.forecastState === 'risk' ? 'danger' : row.semesterBoundaryMissing || row.status === 'ahead' ? 'warning' : 'good'}">${reportEscape(row.statusLabel)}</span></td><td>${reportEscape(row.currentTopic || '—')}</td><td class="text-center">${row.canceledCount}</td><td class="text-center">${row.makeupCount}</td><td>${reportEscape(reportSemesterMilestone(row))}</td><td>${reportEscape(row.forecastLabel)}</td></tr>`,
                 'Chưa đủ TKB/PPCT/Lịch báo giảng để lập bảng tiến độ.', 160);
             const planTable = reportTable(snapshot.planRows,
                 ['Tuần','Ngày','Thứ','Buổi sáng','Buổi chiều','Đi công tác'],
@@ -474,7 +518,7 @@
             preview.innerHTML = `
                 <details class="report-section" open><summary><span>📌 Tổng hợp theo tuần</span><small>${snapshot.weekRows.length} tuần</small></summary><div class="report-section-body">${weekTable}</div></details>
                 <details class="report-section"><summary><span>📖 Lịch báo giảng</span><small>${snapshot.scheduleRows.length} dòng · ${snapshot.stats.activeLessons} tiết học</small></summary><div class="report-section-body">${scheduleTable}</div></details>
-                <details class="report-section"><summary><span>📈 Tiến độ PPCT</span><small>${snapshot.progressRows.length} lớp–môn</small></summary><div class="report-section-body">${progressTable}</div></details>
+                <details class="report-section"><summary><span>📈 Tiến độ PPCT</span><small>${snapshot.progressRows.length} lớp–môn–buổi</small></summary><div class="report-section-body">${progressTable}</div></details>
                 <details class="report-section"><summary><span>📋 Kế hoạch trường</span><small>${snapshot.planRows.length} dòng có nội dung</small></summary><div class="report-section-body">${planTable}</div></details>
                 <details class="report-section"><summary><span>🗂️ Sổ công việc</span><small>${snapshot.workRows.length} mục trong kỳ</small></summary><div class="report-section-body">${workTable}</div></details>`;
         }
@@ -506,8 +550,8 @@
                 ...snapshot.scheduleRows.map(row => [row.week,row.date,row.day,row.session,row.period,row.ppctPeriod || '—',row.className,row.subject,row.topic,row.note]),
             ];
             const progress = [
-                ['Lớp','Môn','PPCT dự kiến','PPCT thực tế','Chênh lệch','Bài đang dạy','Số tiết đã dạy','Không học','Học bù','Trạng thái','Học kỳ','Mốc HKI xác nhận','Gợi ý mốc HKI','Mốc cuối HK','Dự báo cuối HK','Thiếu dự kiến'],
-                ...snapshot.progressRows.map(row => [row.className,row.subject,row.plannedPpct || '',row.actualPpct || '',row.difference ?? '',row.currentTopic || '',row.taughtCount,row.canceledCount,row.makeupCount,row.statusLabel,row.semesterLabel || '',row.semesterOneEndPpct || '',row.semesterOneSuggestedPpct || '',row.semesterTargetPpct || '',row.forecastLabel,row.forecastShortfall || 0]),
+                ['Lớp','Môn','Buổi','PPCT dự kiến','PPCT thực tế','Chênh lệch','Bài đang dạy','Số tiết đã dạy','Không học','Học bù','Trạng thái','Học kỳ','Mốc HKI xác nhận','Gợi ý mốc HKI','Mốc cuối HK','Dự báo cuối HK','Thiếu dự kiến'],
+                ...snapshot.progressRows.map(row => [row.className,row.subject,row.session || reportSessionLabel(row.sessionKey),row.plannedPpct || '',row.actualPpct || '',row.difference ?? '',row.currentTopic || '',row.taughtCount,row.canceledCount,row.makeupCount,row.statusLabel,row.semesterLabel || '',row.semesterOneEndPpct || '',row.semesterOneSuggestedPpct || '',row.semesterTargetPpct || '',row.forecastLabel,row.forecastShortfall || 0]),
             ];
             const plan = [
                 ['Tuần','Ngày','Thứ','Buổi sáng','Buổi chiều','Đi công tác'],
@@ -542,7 +586,7 @@
             };
             addSheet('Tong quan', rows.summary, [10,24,16,14,16,18]);
             addSheet('Lich bao giang', rows.schedule, [7,12,10,14,8,10,10,14,42,30]);
-            addSheet('Tien do PPCT', rows.progress, [10,14,13,13,11,42,13,10,9,18,12,15,14,13,34,13]);
+            addSheet('Tien do PPCT', rows.progress, [10,14,14,13,13,11,42,13,10,9,18,12,15,14,13,34,13]);
             addSheet('Ke hoach truong', rows.plan, [7,12,10,42,42,30]);
             addSheet('Cong viec', rows.work, [12,28,12,12,14,55]);
             XLSX.writeFile(workbook, `ho-so-giang-day-${reportFilenameSuffix(snapshot)}.xlsx`);
@@ -559,8 +603,8 @@
                 row => `<tr><td>${row.week}</td><td>${reportEscape(row.dateRange || '—')}</td><td>${row.hasPlan ? 'Có' : 'Chưa'}</td><td>${row.timetableCount || '—'}</td><td>${row.scheduleCount || '—'}</td><td>${reportEscape(row.status)}</td></tr>`);
             const scheduleTable = reportDocumentTable(['Tuần','Ngày','Thứ','Buổi','TKB','PPCT','Lớp','Môn','Bài dạy / Chủ đề','Ghi chú'], snapshot.scheduleRows,
                 row => `<tr><td>${row.week}</td><td>${reportEscape(row.date || '—')}</td><td>${reportEscape(row.day)}</td><td>${reportEscape(row.session)}</td><td>${reportEscape(row.period)}</td><td>${reportEscape(row.ppctPeriod || '—')}</td><td>${reportEscape(row.className)}</td><td>${reportEscape(row.subject)}</td><td>${reportEscape(row.topic)}</td><td>${reportEscape(row.note)}</td></tr>`);
-            const progressTable = reportDocumentTable(['Lớp','Môn','PPCT KH','PPCT TT','Trạng thái','Bài đang dạy','Không học','Học bù','Mốc cuối HK','Dự báo cuối HK'], snapshot.progressRows,
-                row => `<tr><td>${reportEscape(row.className)}</td><td>${reportEscape(row.subject)}</td><td>${row.plannedPpct || '—'}</td><td>${row.actualPpct || '—'}</td><td>${reportEscape(row.statusLabel)}</td><td>${reportEscape(row.currentTopic || '—')}</td><td>${row.canceledCount}</td><td>${row.makeupCount}</td><td>${reportEscape(reportSemesterMilestone(row))}</td><td>${reportEscape(row.forecastLabel)}</td></tr>`);
+            const progressTable = reportDocumentTable(['Lớp','Môn','Buổi','PPCT KH','PPCT TT','Trạng thái','Bài đang dạy','Không học','Học bù','Mốc cuối HK','Dự báo cuối HK'], snapshot.progressRows,
+                row => `<tr><td>${reportEscape(row.className)}</td><td>${reportEscape(row.subject)}</td><td>${reportEscape(row.session || reportSessionLabel(row.sessionKey))}</td><td>${row.plannedPpct || '—'}</td><td>${row.actualPpct || '—'}</td><td>${reportEscape(row.statusLabel)}</td><td>${reportEscape(row.currentTopic || '—')}</td><td>${row.canceledCount}</td><td>${row.makeupCount}</td><td>${reportEscape(reportSemesterMilestone(row))}</td><td>${reportEscape(row.forecastLabel)}</td></tr>`);
             const planTable = reportDocumentTable(['Tuần','Ngày','Thứ','Buổi sáng','Buổi chiều','Đi công tác'], snapshot.planRows,
                 row => `<tr><td>${row.week}</td><td>${reportEscape(row.date || '—')}</td><td>${reportEscape(row.day)}</td><td>${reportEscape(row.morning)}</td><td>${reportEscape(row.afternoon)}</td><td>${reportEscape(row.businessTrip)}</td></tr>`);
             const workTable = reportDocumentTable(['Loại','Tiêu đề','Hạn','Phạm vi','Trạng thái','Nội dung'], snapshot.workRows,

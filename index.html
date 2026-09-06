@@ -52,7 +52,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>v51.2 · So sánh lịch công tác điều chỉnh</span>
+                        <span>v51.3 · PPCT sáng/chiều độc lập</span>
                         <i aria-hidden="true"></i>
                         <span>39 tuần lịch · 37 tuần PPCT · Trợ lý công việc · Hồ sơ</span>
                     </div>
@@ -681,13 +681,14 @@
             <div class="card">
                 <div class="card-header">
                     <h2>📖 Phân phối chương trình theo khối, lớp</h2>
-                    <span class="sub">Mỗi khối hoặc lớp có thể dùng một file riêng</span>
+                    <span class="sub">Mỗi khối/lớp và từng buổi có thể dùng một file PPCT riêng</span>
                 </div>
                 <div class="curriculum-guide">
                     <strong>Nguyên tắc tự động:</strong> phân phối của lớp cụ thể được ưu tiên trước phân phối của khối.
                     Ví dụ, lớp 12A2 có file riêng thì dùng file 12A2; lớp 12A1 chưa có file riêng sẽ dùng file Khối 12.
-                    Tiết PPCT của mỗi lớp tự bắt đầu từ 1, tăng liên tục và tuần sau nối tiếp tuần trước.
-                    Tiết TKB chỉ là vị trí học trong buổi; tên bài luôn được tra bằng Tiết PPCT.
+                    Tiết PPCT được theo dõi độc lập theo <strong>lớp + môn + buổi</strong>: cùng lớp 12A2 môn Toán, buổi chiều không nối tiếp PPCT của buổi sáng mà có dãy PPCT riêng.
+                    Có thể tải file riêng cho Buổi sáng hoặc Buổi chiều; nếu chưa tách, bộ “Cả hai buổi” sẽ được dùng làm PPCT dự phòng.
+                    Tiết TKB chỉ là vị trí học trong buổi; tên bài luôn được tra bằng đúng Tiết PPCT của buổi tương ứng.
                     Nếu một tiết không học, chọn “Không học”; dòng sẽ được làm mờ, không tính PPCT và các Tiết PPCT phía sau tự động lùi lại.
                     Tiết học bù được chèn theo đúng thứ tự ngày/buổi/Tiết TKB, tự nhận Tiết PPCT và làm tăng các tiết tiếp theo,
                     đồng thời Bài dạy / Chủ đề cũng chuyển theo đúng Tiết PPCT mới.
@@ -721,6 +722,14 @@
                         <label for="curriculumSubjectInput">Môn học</label>
                         <input id="curriculumSubjectInput" type="text" value="Toán" placeholder="Ví dụ: Toán" autocomplete="off" />
                     </div>
+                    <div class="curriculum-field">
+                        <label for="curriculumSessionSelect">Buổi áp dụng</label>
+                        <select id="curriculumSessionSelect">
+                            <option value="all" selected>Cả hai buổi (dự phòng)</option>
+                            <option value="morning">Buổi sáng</option>
+                            <option value="afternoon">Buổi chiều</option>
+                        </select>
+                    </div>
                     <div class="curriculum-field curriculum-semester-boundary-field">
                         <label for="curriculumSemester1EndInput">Tiết PPCT kết thúc HKI</label>
                         <div class="curriculum-boundary-input-row">
@@ -730,13 +739,13 @@
                         <small id="curriculumSemester1EndHint" class="curriculum-boundary-hint">140/105 tiết là tổng cả năm. Nhập tiết cuối HKI để hệ thống tách đúng hai học kỳ.</small>
                     </div>
                     <div class="curriculum-target-note" id="curriculumTargetNote">
-                        File sắp tải sẽ áp dụng cho tất cả các lớp thuộc Khối 12.
+                        File sắp tải sẽ áp dụng cho Khối 12, môn Toán, cả hai buổi (dùng dự phòng khi chưa có PPCT riêng theo buổi).
                     </div>
                 </div>
                 <div class="upload-zone" id="curriculumUploadZone">
                     <span class="icon-big">📄</span>
                     <p><strong>Kéo thả hoặc nhấn để tải phân phối đã chọn ở trên</strong></p>
-                    <span class="hint">Hỗ trợ .xlsx, .xls, .docx — thay file mới sẽ cập nhật đúng khối/lớp đó</span>
+                    <span class="hint">Hỗ trợ .xlsx, .xls, .docx — thay file mới sẽ cập nhật đúng khối/lớp/buổi đã chọn</span>
                     <input type="file" id="curriculumFileInput" accept=".xlsx,.xls,.docx"
                            aria-label="Tải file phân phối chương trình" />
                 </div>

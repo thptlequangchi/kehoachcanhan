@@ -507,7 +507,7 @@
                     );
                 }
                 const lesson = ppct > 0
-                    ? getCurriculumLessonByPpct(item.class, item.subject, ppct)
+                    ? getCurriculumLessonByPpct(item.class, item.subject, ppct, new Map(), item.session)
                     : null;
                 if (!lesson) {
                     addIssue(
@@ -584,7 +584,7 @@
             });
             courseGroups.forEach(items => {
                 const ordered = getSortedScheduleItems(items);
-                let expected = getAutomaticPpctStart(normalizedWeek, ordered[0].class, ordered[0].subject);
+                let expected = getAutomaticPpctStart(normalizedWeek, ordered[0].class, ordered[0].subject, ordered[0].session);
                 ordered.forEach(item => {
                     const actual = Number.parseInt(item.ppctPeriod, 10);
                     if (actual > 0 && actual !== expected) {
@@ -821,7 +821,7 @@
                 return;
             }
             const preferredSubject = getPreferredScheduleSubjectLabel(context.week, className, subjectInput);
-            const curriculum = getCurriculumForClass(context.week, className, preferredSubject);
+            const curriculum = getCurriculumForClass(context.week, className, preferredSubject, session);
             pushScheduleUndo(context.week);
             if (item) {
                 Object.assign(item, {
@@ -1412,7 +1412,8 @@
               - day dùng dạng "Thứ 2" đến "Thứ 7"; session dùng "Buổi sáng" hoặc "Buổi chiều".
               - Với mỗi ô, topic chỉ được lấy từ đúng phần tử có className trùng lớp trong danh sách phân phối đã ghép; không dùng bài của lớp hoặc khối khác.
               - ppctPeriod là Tiết PPCT, hoàn toàn khác period. Tên bài phải tra bằng ppctPeriod; tuyệt đối không dùng period (Tiết TKB) để chọn tên bài.
-              - Với mỗi lớp, ppctPeriod bắt đầu bằng ppctStart rồi tăng 1 theo thứ tự các tiết học của lớp trong tuần.
+              - PPCT được tách riêng theo lớp + môn + buổi. Cùng một lớp/môn, Buổi sáng và Buổi chiều là hai dãy PPCT độc lập, không được cộng nối với nhau.
+              - Với mỗi lớp + môn + buổi, ppctPeriod bắt đầu bằng ppctStart rồi tăng 1 theo thứ tự các tiết học của đúng buổi đó trong tuần.
               - Nếu topics của lớp đang trống, ghi "Chưa có phân phối tuần ${week} cho lớp [tên lớp]"; note ghi ảnh hưởng liên quan trong kế hoạch nhà trường nếu có.
               Nếu thiếu thông tin khác, điền "—" hoặc "Chưa xác định".
               Chỉ trả JSON đúng lược đồ.
@@ -1480,13 +1481,18 @@
             }
         }
 
-        function findCurriculumMapEntry(curriculumMap, className, subject) {
+        function findCurriculumMapEntry(curriculumMap, className, subject, session = '') {
             const classKey = normalizeClassKey(className);
             const subjectKey = normalizeLookupText(subject);
+            const sessionKey = normalizeCurriculumSession(session);
             return (curriculumMap || []).find(item =>
                 normalizeClassKey(item.className) === classKey
                 && normalizeLookupText(item.subject) === subjectKey
-            ) || (curriculumMap || []).find(item => normalizeClassKey(item.className) === classKey) || null;
+                && normalizeCurriculumSession(item.session || item.sessionKey) === sessionKey
+            ) || (curriculumMap || []).find(item =>
+                normalizeClassKey(item.className) === classKey
+                && normalizeCurriculumSession(item.session || item.sessionKey) === sessionKey
+            ) || null;
         }
 
         function generateFallbackSchedule(week, tt, curriculumMap) {
@@ -1517,13 +1523,13 @@
             const occurrenceByClass = new Map();
             const curriculumLessonCache = new Map();
             return slots.map(slot => {
-                const curriculum = findCurriculumMapEntry(curriculumMap, slot.class, slot.subject);
-                const occurrenceKey = `${normalizeClassKey(slot.class)}|${normalizeLookupText(slot.subject)}`;
+                const curriculum = findCurriculumMapEntry(curriculumMap, slot.class, slot.subject, slot.session);
+                const occurrenceKey = `${normalizeClassKey(slot.class)}|${normalizeLookupText(slot.subject)}|${normalizeCurriculumSession(slot.session)}`;
                 const occurrence = occurrenceByClass.get(occurrenceKey) || 0;
                 occurrenceByClass.set(occurrenceKey, occurrence + 1);
                 const ppctPeriod = String((Number.parseInt(curriculum?.ppctStart, 10) || 1) + occurrence);
                 const exactLesson = getCurriculumLessonByPpct(
-                    slot.class, slot.subject, ppctPeriod, curriculumLessonCache
+                    slot.class, slot.subject, ppctPeriod, curriculumLessonCache, slot.session
                 );
                 return {
                     ...slot,

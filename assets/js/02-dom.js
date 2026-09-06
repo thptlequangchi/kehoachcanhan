@@ -132,6 +132,7 @@
         const curriculumClassField = $('#curriculumClassField');
         const curriculumClassInput = $('#curriculumClassInput');
         const curriculumSubjectInput = $('#curriculumSubjectInput');
+        const curriculumSessionSelect = $('#curriculumSessionSelect');
         const curriculumSemester1EndInput = $('#curriculumSemester1EndInput');
         const saveCurriculumSemester1EndBtn = $('#saveCurriculumSemester1EndBtn');
         const curriculumSemester1EndHint = $('#curriculumSemester1EndHint');

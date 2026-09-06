@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '51.2.0';
+        const APP_VERSION = '51.3.0';
         const DATA_SCHEMA_VERSION = 1;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -274,6 +274,27 @@
             if (text.includes('sáng') || text === 'morning') return 'Buổi sáng';
             if (text.includes('chiều') || text === 'afternoon') return 'Buổi chiều';
             return cleanText(value);
+        }
+
+        function normalizeCurriculumSession(value) {
+            const text = cleanText(value).toLowerCase();
+            const normalizedLabel = normalizeSessionLabel(value);
+            if (normalizedLabel === 'Buổi sáng' || text === 'morning') return 'morning';
+            if (normalizedLabel === 'Buổi chiều' || text === 'afternoon') return 'afternoon';
+            return 'all';
+        }
+
+        function curriculumSessionLabel(value) {
+            const session = normalizeCurriculumSession(value);
+            if (session === 'morning') return 'Buổi sáng';
+            if (session === 'afternoon') return 'Buổi chiều';
+            return 'Cả hai buổi';
+        }
+
+        function curriculumSessionMatches(profileSession, scheduleSession) {
+            const profileKey = normalizeCurriculumSession(profileSession);
+            if (profileKey === 'all') return true;
+            return profileKey === normalizeCurriculumSession(scheduleSession);
         }
 
         function parsePlanDateParts(value) {
@@ -737,7 +758,8 @@
             const grade = cleanText(source?.grade);
             const className = normalizeClassKey(source?.className);
             const subject = normalizeLookupText(source?.subject || DEFAULT_TEACHER_PROFILE.subject);
-            return `curriculum-${hashText([scope, grade, className, subject].join('|'))}`;
+            const session = normalizeCurriculumSession(source?.session);
+            return `curriculum-${hashText([scope, grade, className, subject, session].join('|'))}`;
         }
 
         function normalizeCurriculumProfiles(value, legacyText = '') {
@@ -758,6 +780,7 @@
                     grade,
                     className,
                     subject: cleanText(item.subject) || DEFAULT_TEACHER_PROFILE.subject,
+                    session: normalizeCurriculumSession(item.session),
                     fileName: cleanText(item.fileName) || 'Phân phối chương trình',
                     weeks,
                     semesterOneEndPpct: Math.max(0, Number.parseInt(item.semesterOneEndPpct, 10) || 0),
@@ -775,6 +798,7 @@
                     const legacy = {
                         scope: 'all', grade: '', className: '',
                         subject: DEFAULT_TEACHER_PROFILE.subject,
+                        session: 'all',
                         fileName: 'Phân phối chương trình đã lưu từ bản cũ',
                         weeks, updatedAt: '', migrated: true,
                     };

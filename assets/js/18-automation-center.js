@@ -10,8 +10,8 @@
                 : escapeHTML(cleanText(value));
         }
 
-        function automationCourseKey(className, subject) {
-            return `${normalizeClassKey(className)}|${normalizeLookupText(subject)}`;
+        function automationCourseKey(className, subject, session = '') {
+            return `${normalizeClassKey(className)}|${normalizeLookupText(subject)}|${normalizeCurriculumSession(session)}`;
         }
 
         function getAutomationReferenceWeek(today = new Date()) {
@@ -101,7 +101,7 @@
                 ordered.forEach((item, index) => {
                     if (!cleanText(item?.class) || !cleanText(item?.subject)) return;
                     if (!item.notTeaching && !item.makeupLesson) return;
-                    events.push({ week, index, item, key:automationCourseKey(item.class, item.subject) });
+                    events.push({ week, index, item, key:automationCourseKey(item.class, item.subject, item.session) });
                 });
             }
             events.sort((a, b) => a.week - b.week || a.index - b.index);

@@ -68,16 +68,16 @@
             const attention = rows.filter(row => row.status === 'behind' || row.status === 'missing' || row.forecastState === 'risk')
                 .sort((a, b) => Number(a.status !== 'behind') - Number(b.status !== 'behind') || (a.difference || 0) - (b.difference || 0));
             const onTrack = rows.filter(row => ['ontrack','ahead','completed'].includes(row.status)).length;
-            summary.textContent = rows.length ? `${onTrack}/${rows.length} lớp–môn ổn · ${attention.length} cần chú ý` : 'Chưa có lớp–môn để theo dõi';
+            summary.textContent = rows.length ? `${onTrack}/${rows.length} lớp–môn–buổi ổn · ${attention.length} cần chú ý` : 'Chưa có lớp–môn–buổi để theo dõi';
             list.innerHTML = attention.length ? attention.slice(0, 4).map(row => {
                 const danger = row.status === 'behind' || row.forecastState === 'risk';
                 const detail = row.status === 'missing' ? 'Chưa có đủ PPCT' : `${row.statusLabel}${row.forecastState === 'risk' ? ' · ' + row.forecastLabel : ''}`;
                 return `<div class="command-item ${danger ? 'danger' : 'warning'}">
                     <span class="command-item-icon">${danger ? '⏳' : '📚'}</span>
-                    <span class="command-item-main"><strong>${commandEscape(row.className)} · ${commandEscape(row.subject)}</strong><small>${commandEscape(detail)}</small></span>
+                    <span class="command-item-main"><strong>${commandEscape(row.className)} · ${commandEscape(row.subject)} · ${commandEscape(row.session || '')}</strong><small>${commandEscape(detail)}</small></span>
                     <span class="command-item-badge">${Number.isFinite(row.progressPercent) ? row.progressPercent + '%' : '—'}</span>
                 </div>`;
-            }).join('') : (rows.length ? '<div class="command-item good"><span class="command-item-icon">✓</span><span class="command-item-main"><strong>Tiến độ đang tốt</strong><small>Không có lớp–môn chậm hoặc thiếu PPCT đến tuần hiện tại.</small></span><span class="command-item-badge">Ổn</span></div>' : '<div class="command-empty">Chưa có dữ liệu tiến độ.</div>');
+            }).join('') : (rows.length ? '<div class="command-item good"><span class="command-item-icon">✓</span><span class="command-item-main"><strong>Tiến độ đang tốt</strong><small>Không có lớp–môn–buổi chậm hoặc thiếu PPCT đến tuần hiện tại.</small></span><span class="command-item-badge">Ổn</span></div>' : '<div class="command-empty">Chưa có dữ liệu tiến độ.</div>');
         }
 
         function renderTeacherCommandCenter() {

@@ -16,23 +16,54 @@
             return success;
         }
 
+        function getCurriculumTargetTimetableSessions(className, subject) {
+            const classKey = normalizeClassKey(className);
+            const sessions = new Set();
+            if (!classKey) return sessions;
+            Object.values(state.timetablesByWeek || {}).forEach(timetable => {
+                (timetable?.sessions || []).forEach(session => {
+                    const sessionKey = normalizeCurriculumSession(session.label || session.key);
+                    (session.periods || []).forEach(period => {
+                        (period.cells || []).forEach(cell => {
+                            if (normalizeClassKey(cell.className) !== classKey) return;
+                            if (!curriculumSubjectMatches(subject, cell.subject || cell.content)) return;
+                            if (sessionKey !== 'all') sessions.add(sessionKey);
+                        });
+                    });
+                });
+            });
+            return sessions;
+        }
+
         function updateCurriculumTargetUI() {
             const isClass = curriculumScopeSelect.value === 'class';
             curriculumClassField.hidden = !isClass;
             const grade = curriculumGradeSelect.value;
             const className = cleanText(curriculumClassInput.value).toUpperCase();
             const subject = cleanText(curriculumSubjectInput.value) || state.teacherProfile.subject;
+            const session = normalizeCurriculumSession(curriculumSessionSelect?.value);
+            const sessionLabel = curriculumSessionLabel(session);
+            const sessionNote = session === 'all'
+                ? 'cả hai buổi (chỉ dùng dự phòng nếu chưa có PPCT riêng theo buổi)'
+                : sessionLabel.toLowerCase();
+            const timetableSessions = isClass && className
+                ? getCurriculumTargetTimetableSessions(className, subject)
+                : new Set();
+            const shouldSplitBySession = session === 'all'
+                && timetableSessions.has('morning') && timetableSessions.has('afternoon');
             curriculumTargetNote.textContent = isClass
                 ? className
-                    ? `File sắp tải sẽ chỉ áp dụng cho lớp ${className}, môn ${subject}; dữ liệu này sẽ ưu tiên hơn phân phối Khối ${inferGradeFromClass(className) || grade}.`
+                    ? `File sắp tải sẽ chỉ áp dụng cho lớp ${className}, môn ${subject}, ${sessionNote}; dữ liệu lớp cụ thể ưu tiên hơn phân phối Khối ${inferGradeFromClass(className) || grade}.${shouldSplitBySession ? ' ⚠️ TKB hiện có môn này ở cả buổi sáng và buổi chiều. Nên tải PPCT Buổi sáng và PPCT Buổi chiều thành hai bộ riêng; “Cả hai buổi” chỉ dùng làm dự phòng.' : ''}`
                     : 'Nhập tên lớp chính xác như trong thời khóa biểu, ví dụ 10A1, 11A3 hoặc 12A2.'
-                : `File sắp tải sẽ áp dụng cho tất cả các lớp thuộc Khối ${grade}, môn ${subject}.`;
+                : `File sắp tải sẽ áp dụng cho tất cả các lớp thuộc Khối ${grade}, môn ${subject}, ${sessionNote}.`;
+            curriculumTargetNote.classList.toggle('warn', shouldSplitBySession);
             updateCurriculumSemesterBoundaryUI();
         }
 
         function getSelectedCurriculumTarget() {
             const scope = curriculumScopeSelect.value === 'class' ? 'class' : 'grade';
             const subject = cleanText(curriculumSubjectInput.value) || state.teacherProfile.subject;
+            const session = normalizeCurriculumSession(curriculumSessionSelect?.value);
             let grade = cleanText(curriculumGradeSelect.value);
             let className = '';
             if (scope === 'class') {
@@ -44,14 +75,25 @@
                 curriculumGradeSelect.value = grade;
             }
             if (!['10', '11', '12'].includes(grade)) throw new Error('Khối học chưa hợp lệ');
-            const target = { scope, grade, className, subject };
+            const target = { scope, grade, className, subject, session };
             target.id = curriculumTargetId(target);
             return target;
         }
 
+        function curriculumTargetIdentityMatches(profile, target) {
+            if (!profile || !target) return false;
+            if (profile.scope !== target.scope) return false;
+            if (cleanText(profile.grade) !== cleanText(target.grade)) return false;
+            if (normalizeClassKey(profile.className) !== normalizeClassKey(target.className)) return false;
+            if (canonicalScheduleSubjectKey(profile.subject) !== canonicalScheduleSubjectKey(target.subject)) return false;
+            return normalizeCurriculumSession(profile.session) === normalizeCurriculumSession(target.session);
+        }
+
         function getCurriculumProfileForTarget(target) {
-            if (!target?.id) return null;
-            return (state.curriculumProfiles || []).find(profile => profile.id === target.id) || null;
+            if (!target) return null;
+            return (state.curriculumProfiles || []).find(profile => profile.id === target.id)
+                || (state.curriculumProfiles || []).find(profile => curriculumTargetIdentityMatches(profile, target))
+                || null;
         }
 
         function getCurriculumBoundaryDisplay(profile) {
@@ -141,7 +183,11 @@
                 const gradeDiff = (Number.parseInt(a.grade, 10) || 99) - (Number.parseInt(b.grade, 10) || 99);
                 if (gradeDiff) return gradeDiff;
                 if (a.scope !== b.scope) return a.scope === 'grade' ? -1 : a.scope === 'class' ? 0 : 1;
-                return cleanText(a.className).localeCompare(cleanText(b.className), 'vi');
+                const classDiff = cleanText(a.className).localeCompare(cleanText(b.className), 'vi', { numeric: true });
+                if (classDiff) return classDiff;
+                const sessionOrder = { morning: 0, afternoon: 1, all: 2 };
+                return (sessionOrder[normalizeCurriculumSession(a.session)] ?? 9)
+                    - (sessionOrder[normalizeCurriculumSession(b.session)] ?? 9);
             });
             if (profiles.length === 0) {
                 curriculumProfileList.innerHTML = '<div class="curriculum-empty">Chưa có bộ phân phối nào. Chọn khối hoặc lớp ở trên rồi tải file Word/Excel.</div>';
@@ -190,6 +236,7 @@
             curriculumGradeSelect.value = profile.grade;
             curriculumClassInput.value = profile.className;
             curriculumSubjectInput.value = profile.subject;
+            if (curriculumSessionSelect) curriculumSessionSelect.value = normalizeCurriculumSession(profile.session);
             updateCurriculumTargetUI();
             curriculumUploadZone.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
             showToast(`Đã chọn ${curriculumProfileLabel(profile)}; tải file mới để cập nhật`, 'info');
@@ -197,6 +244,7 @@
 
         function curriculumTargetMatchesScheduleItem(target, item) {
             if (!curriculumSubjectMatches(target.subject, item.subject)) return false;
+            if (!curriculumSessionMatches(target.session, item.session)) return false;
             if (target.scope === 'all') return true;
             if (target.scope === 'class') return normalizeClassKey(target.className) === normalizeClassKey(item.class);
             return cleanText(target.grade) === inferGradeFromClass(item.class);
@@ -213,7 +261,9 @@
         }
 
         function saveCurriculumProfile(target, weeks, fileName) {
-            const existingIndex = state.curriculumProfiles.findIndex(profile => profile.id === target.id);
+            const existingIndex = state.curriculumProfiles.findIndex(profile =>
+                profile.id === target.id || curriculumTargetIdentityMatches(profile, target)
+            );
             const existingProfile = existingIndex >= 0 ? state.curriculumProfiles[existingIndex] : null;
             if (existingIndex >= 0
                 && !confirm(`${curriculumProfileLabel(existingProfile)} đã có phân phối. Thay bằng file ${fileName}?`)) return false;
@@ -387,6 +437,7 @@
             updateCurriculumTargetUI();
         });
         curriculumSubjectInput.addEventListener('input', updateCurriculumTargetUI);
+        curriculumSessionSelect?.addEventListener('change', updateCurriculumTargetUI);
         curriculumSubjectInput.addEventListener('blur', updateCurriculumSemesterBoundaryUI);
         curriculumSemester1EndInput.addEventListener('input', () => {
             curriculumBoundarySuggestionPrefill = false;

@@ -10,9 +10,13 @@
 
         function curriculumProfileLabel(profile) {
             if (!profile) return 'Chưa có phân phối';
-            if (profile.scope === 'class') return `Lớp ${profile.className}`;
-            if (profile.scope === 'grade') return `Khối ${profile.grade}`;
-            return 'Dùng chung (dữ liệu cũ)';
+            const base = profile.scope === 'class'
+                ? `Lớp ${profile.className}`
+                : profile.scope === 'grade'
+                    ? `Khối ${profile.grade}`
+                    : 'Dùng chung (dữ liệu cũ)';
+            const session = normalizeCurriculumSession(profile.session);
+            return session === 'all' ? base : `${base} · ${curriculumSessionLabel(session)}`;
         }
 
         function curriculumSubjectMatches(profileSubject, lessonSubject) {
@@ -65,52 +69,85 @@
             return cleanText(matchedProfile?.subject) || requestedSubject;
         }
 
-        function getCurriculumForClass(week, className, subject = '') {
+        function getCurriculumForClass(week, className, subject = '', session = '') {
             const classKey = normalizeClassKey(className);
             const grade = inferGradeFromClass(className);
+            const requestedSession = normalizeCurriculumSession(session);
             const candidates = (state.curriculumProfiles || []).map(profile => {
                 const weekData = profile.weeks?.find(item => Number.parseInt(item.week, 10) === Number.parseInt(week, 10));
                 if (!weekData || !curriculumSubjectMatches(profile.subject, subject)) return null;
+                const profileSession = normalizeCurriculumSession(profile.session);
+                if (requestedSession !== 'all' && profileSession !== 'all' && profileSession !== requestedSession) return null;
                 let priority = 0;
                 if (profile.scope === 'class' && normalizeClassKey(profile.className) === classKey) priority = 300;
                 else if (profile.scope === 'grade' && cleanText(profile.grade) === grade) priority = 200;
                 else if (profile.scope === 'all') priority = 100;
                 if (!priority) return null;
                 if (normalizeLookupText(profile.subject) === normalizeLookupText(subject)) priority += 10;
-                return { profile, weekData, priority };
-            }).filter(Boolean).sort((a, b) => b.priority - a.priority);
-            const selected = candidates[0];
+                return { profile, weekData, profileSession, priority };
+            }).filter(Boolean);
+            // Hồ sơ đúng buổi luôn thắng hồ sơ "Cả hai buổi". Hồ sơ all chỉ là dự phòng.
+            const sessionCandidates = requestedSession !== 'all'
+                ? (candidates.some(item => item.profileSession === requestedSession)
+                    ? candidates.filter(item => item.profileSession === requestedSession)
+                    : candidates.filter(item => item.profileSession === 'all'))
+                : candidates;
+            if (requestedSession === 'all') {
+                sessionCandidates.forEach(item => {
+                    if (item.profileSession === 'all') item.priority += 20;
+                });
+            }
+            sessionCandidates.sort((a, b) => b.priority - a.priority);
+            const selected = sessionCandidates[0];
             return selected ? {
                 topics: selected.weekData.topics,
                 lessons: normalizeCurriculumLessons(selected.weekData.lessons),
                 profileId: selected.profile.id,
                 sourceLabel: curriculumProfileLabel(selected.profile),
                 scope: selected.profile.scope,
-            } : { topics: '', lessons: [], profileId: '', sourceLabel: 'Chưa có phân phối', scope: '' };
+                session: normalizeCurriculumSession(selected.profile.session),
+            } : { topics: '', lessons: [], profileId: '', sourceLabel: 'Chưa có phân phối', scope: '', session: 'all' };
         }
 
-        function getPreferredCurriculumProfileForCourse(className, subject = '') {
+        function getPreferredCurriculumProfileForCourse(className, subject = '', session = '') {
             const classKey = normalizeClassKey(className);
             const grade = inferGradeFromClass(className);
             const subjectKey = normalizeLookupText(subject);
+            const requestedSession = normalizeCurriculumSession(session);
             const candidates = (state.curriculumProfiles || []).map(profile => {
                 if (!curriculumSubjectMatches(profile.subject, subject)) return null;
+                const profileSession = normalizeCurriculumSession(profile.session);
+                if (requestedSession !== 'all' && profileSession !== 'all' && profileSession !== requestedSession) return null;
                 let priority = 0;
                 if (profile.scope === 'class' && normalizeClassKey(profile.className) === classKey) priority = 300;
                 else if (profile.scope === 'grade' && cleanText(profile.grade) === grade) priority = 200;
                 else if (profile.scope === 'all') priority = 100;
                 if (!priority) return null;
                 if (subjectKey && normalizeLookupText(profile.subject) === subjectKey) priority += 10;
-                return { profile, priority };
-            }).filter(Boolean).sort((a, b) => b.priority - a.priority);
-            return candidates[0]?.profile || null;
+                return { profile, profileSession, priority };
+            }).filter(Boolean);
+            const sessionCandidates = requestedSession !== 'all'
+                ? (candidates.some(item => item.profileSession === requestedSession)
+                    ? candidates.filter(item => item.profileSession === requestedSession)
+                    : candidates.filter(item => item.profileSession === 'all'))
+                : candidates;
+            if (requestedSession === 'all') {
+                sessionCandidates.forEach(item => {
+                    if (item.profileSession === 'all') item.priority += 20;
+                });
+            }
+            sessionCandidates.sort((a, b) => b.priority - a.priority);
+            return sessionCandidates[0]?.profile || null;
         }
 
-        function countTimetableLessonsForClass(timetable, className, subject) {
+        function countTimetableLessonsForClass(timetable, className, subject, requestedSession = '') {
             const classKey = normalizeClassKey(className);
             const subjectKey = normalizeLookupText(subject);
+            const sessionKey = normalizeCurriculumSession(requestedSession);
             let count = 0;
             for (const session of timetable?.sessions || []) {
+                const timetableSession = normalizeCurriculumSession(session.label || session.key);
+                if (sessionKey !== 'all' && timetableSession !== sessionKey) continue;
                 for (const period of session.periods || []) {
                     for (const cell of period.cells || []) {
                         if (normalizeClassKey(cell.className) !== classKey) continue;
@@ -123,8 +160,9 @@
             return count;
         }
 
-        function getAutomaticPpctStart(week, className, subject) {
+        function getAutomaticPpctStart(week, className, subject, session = '') {
             const classKey = normalizeClassKey(className);
+            const sessionKey = normalizeCurriculumSession(session);
             let previousActualCount = 0;
             let previousScheduleMax = 0;
             for (let previousWeek = 1; previousWeek < week; previousWeek++) {
@@ -134,9 +172,9 @@
                 if (hasSavedSchedule) {
                     const actualItems = (state.teachingSchedule[previousWeek] || []).filter(item =>
                         !item.notTeaching
-                        &&
-                        normalizeClassKey(item.class) === classKey
+                        && normalizeClassKey(item.class) === classKey
                         && curriculumSubjectMatches(subject, item.subject)
+                        && (sessionKey === 'all' || normalizeCurriculumSession(item.session) === sessionKey)
                     );
                     previousActualCount += actualItems.length;
                     actualItems.forEach(item => {
@@ -145,22 +183,24 @@
                     });
                 } else {
                     const timetableCount = countTimetableLessonsForClass(
-                        state.timetablesByWeek?.[previousWeek], className, subject
+                        state.timetablesByWeek?.[previousWeek], className, subject, session
                     );
                     if (timetableCount > 0) previousActualCount += timetableCount;
-                    else previousActualCount += getCurriculumForClass(previousWeek, className, subject).lessons?.length || 0;
+                    else previousActualCount += getCurriculumForClass(previousWeek, className, subject, session).lessons?.length || 0;
                 }
             }
             return Math.max(previousActualCount + 1, previousScheduleMax + 1, 1);
         }
 
         function scheduleClassSubjectKey(item) {
-            return `${normalizeClassKey(item?.class)}|${canonicalScheduleSubjectKey(item?.subject)}`;
+            return `${normalizeClassKey(item?.class)}|${canonicalScheduleSubjectKey(item?.subject)}|${normalizeCurriculumSession(item?.session)}`;
         }
 
-        function scheduleItemsShareCourse(item, className, subject) {
+        function scheduleItemsShareCourse(item, className, subject, session = '') {
+            const requestedSession = normalizeCurriculumSession(session);
             return normalizeClassKey(item?.class) === normalizeClassKey(className)
-                && canonicalScheduleSubjectKey(item?.subject) === canonicalScheduleSubjectKey(subject);
+                && canonicalScheduleSubjectKey(item?.subject) === canonicalScheduleSubjectKey(subject)
+                && (requestedSession === 'all' || normalizeCurriculumSession(item?.session) === requestedSession);
         }
 
         function unlockPpctSequenceAfterMakeup(week, makeupItem) {
@@ -175,7 +215,7 @@
                     }
                     return;
                 }
-                if (!reachedMakeup || !scheduleItemsShareCourse(item, makeupItem.class, makeupItem.subject)) return;
+                if (!reachedMakeup || !scheduleItemsShareCourse(item, makeupItem.class, makeupItem.subject, makeupItem.session)) return;
                 if (item.manualPpct) {
                     item.manualPpct = false;
                     changed = true;
@@ -187,7 +227,7 @@
                 .sort((a, b) => a - b)
                 .forEach(futureWeek => {
                     (state.teachingSchedule[futureWeek] || []).forEach(item => {
-                        if (!scheduleItemsShareCourse(item, makeupItem.class, makeupItem.subject) || !item.manualPpct) return;
+                        if (!scheduleItemsShareCourse(item, makeupItem.class, makeupItem.subject, makeupItem.session) || !item.manualPpct) return;
                         item.manualPpct = false;
                         changed = true;
                     });
@@ -221,11 +261,11 @@
             return changed;
         }
 
-        function buildCurriculumLessonMap(className, subject) {
+        function buildCurriculumLessonMap(className, subject, session = '') {
             const lessonsByPpct = new Map();
             let nextPpct = 1;
             for (let week = 1; week <= MAX_SCHOOL_WEEKS; week++) {
-                const curriculum = getCurriculumForClass(week, className, subject);
+                const curriculum = getCurriculumForClass(week, className, subject, session);
                 const lessons = curriculum.lessons?.length
                     ? curriculum.lessons
                     : parseCurriculumTopicMappings(curriculum.topics);
@@ -252,11 +292,12 @@
             return lessonsByPpct;
         }
 
-        function getCurriculumLessonByPpct(className, subject, ppctPeriod, cache = new Map()) {
+        function getCurriculumLessonByPpct(className, subject, ppctPeriod, cache = new Map(), session = '') {
             const ppct = Number.parseInt(ppctPeriod, 10);
             if (!(ppct > 0)) return null;
-            const key = `${normalizeClassKey(className)}|${canonicalScheduleSubjectKey(subject)}`;
-            if (!cache.has(key)) cache.set(key, buildCurriculumLessonMap(className, subject));
+            const sessionKey = normalizeCurriculumSession(session);
+            const key = `${normalizeClassKey(className)}|${canonicalScheduleSubjectKey(subject)}|${sessionKey}`;
+            if (!cache.has(key)) cache.set(key, buildCurriculumLessonMap(className, subject, session));
             return cache.get(key).get(ppct) || null;
         }
 
@@ -279,13 +320,13 @@
                 }
                 const key = scheduleClassSubjectKey(item);
                 let next = nextByClass.get(key);
-                if (!next) next = getAutomaticPpctStart(week, item.class, item.subject);
+                if (!next) next = getAutomaticPpctStart(week, item.class, item.subject, item.session);
                 const manualValue = item.manualPpct ? Number.parseInt(item.ppctPeriod, 10) : 0;
                 const assigned = manualValue > 0 ? manualValue : next;
                 const previousPpct = Number.parseInt(item.ppctPeriod, 10);
                 if (item.manualTopic === null) {
                     const previousLesson = getCurriculumLessonByPpct(
-                        item.class, item.subject, previousPpct, curriculumCache
+                        item.class, item.subject, previousPpct, curriculumCache, item.session
                     );
                     item.manualTopic = Boolean(
                         item.manualEdited
@@ -300,7 +341,7 @@
                     changed = true;
                 }
                 const lesson = getCurriculumLessonByPpct(
-                    item.class, item.subject, assigned, curriculumCache
+                    item.class, item.subject, assigned, curriculumCache, item.session
                 );
                 if (item.manualTopic && lesson?.topic && /[;\n]/.test(cleanText(item.topic))
                     && normalizeLookupText(item.topic).includes(normalizeLookupText(lesson.topic))) {
@@ -353,20 +394,24 @@
         function buildCurriculumMapForTimetable(week, timetable) {
             const unique = new Map();
             for (const session of timetable?.sessions || []) {
+                const sessionLabel = normalizeSessionLabel(session.label || session.key);
+                const sessionKey = normalizeCurriculumSession(sessionLabel);
                 for (const period of session.periods || []) {
                     for (const cell of period.cells || []) {
                         const className = cleanText(cell.className) || 'Chưa xác định';
                         const subject = cleanText(cell.subject) || state.teacherProfile.subject;
-                        const key = `${normalizeClassKey(className)}|${normalizeLookupText(subject)}`;
+                        const key = `${normalizeClassKey(className)}|${normalizeLookupText(subject)}|${sessionKey}`;
                         if (unique.has(key)) continue;
-                        const match = getCurriculumForClass(week, className, subject);
+                        const match = getCurriculumForClass(week, className, subject, sessionLabel);
                         unique.set(key, {
                             className,
                             grade: inferGradeFromClass(className),
                             subject,
+                            session: sessionLabel,
+                            sessionKey,
                             topics: match.topics,
                             lessons: match.lessons,
-                            ppctStart: getAutomaticPpctStart(week, className, subject),
+                            ppctStart: getAutomaticPpctStart(week, className, subject, sessionLabel),
                             sourceLabel: match.sourceLabel,
                             profileId: match.profileId,
                             scope: match.scope,
@@ -382,7 +427,7 @@
             const timetable = week ? state.timetablesByWeek[week] : null;
             if (!week) {
                 curriculumMatchSummary.className = 'curriculum-match-summary';
-                curriculumMatchSummary.textContent = 'Chọn tuần để kiểm tra phân phối phù hợp cho từng lớp trong thời khóa biểu.';
+                curriculumMatchSummary.textContent = 'Chọn tuần để kiểm tra phân phối phù hợp cho từng lớp/môn/buổi trong thời khóa biểu.';
                 return;
             }
             if (!timetable || getTimetableLessonCount(timetable) === 0) {
@@ -395,13 +440,13 @@
             const missing = mappings.filter(item => !item.topics);
             if (missing.length === 0) {
                 curriculumMatchSummary.className = 'curriculum-match-summary ok';
-                curriculumMatchSummary.innerHTML = `✅ Đã khớp phân phối tuần ${week} cho <strong>${matched.length} lớp/môn</strong>: ${matched.map(item => `${escapeHTML(item.className)} ← ${escapeHTML(item.sourceLabel)} · PPCT từ tiết ${item.ppctStart}`).join(' · ')}`;
+                curriculumMatchSummary.innerHTML = `✅ Đã khớp phân phối tuần ${week} cho <strong>${matched.length} lớp/môn/buổi</strong>: ${matched.map(item => `${escapeHTML(item.className)} · ${escapeHTML(item.session)} ← ${escapeHTML(item.sourceLabel)} · PPCT từ tiết ${item.ppctStart}`).join(' · ')}`;
             } else {
                 curriculumMatchSummary.className = 'curriculum-match-summary warn';
                 const missingText = missing.length
-                    ? ` Chưa có phân phối tuần ${week} cho: <strong>${missing.map(item => escapeHTML(item.className)).join(', ')}</strong>.`
+                    ? ` Chưa có phân phối tuần ${week} cho: <strong>${missing.map(item => `${escapeHTML(item.className)} · ${escapeHTML(item.session)}`).join(', ')}</strong>.`
                     : '';
-                curriculumMatchSummary.innerHTML = `⚠️ Đã khớp <strong>${matched.length}/${mappings.length}</strong> lớp/môn.${missingText} Tiết PPCT vẫn được tự đánh liên tục riêng cho từng lớp.`;
+                curriculumMatchSummary.innerHTML = `⚠️ Đã khớp <strong>${matched.length}/${mappings.length}</strong> lớp/môn/buổi.${missingText} Tiết PPCT được tự đánh liên tục riêng cho từng lớp + môn + buổi.`;
             }
         }
 
@@ -432,12 +477,13 @@
 
         function buildProgressCourseCatalog() {
             const courses = new Map();
-            const addCourse = (className, subject) => {
+            const addCourse = (className, subject, session = '') => {
                 const normalizedClass = normalizeClassKey(className);
                 const cleanSubject = cleanText(subject) || state.teacherProfile.subject;
                 const subjectKey = canonicalScheduleSubjectKey(cleanSubject);
+                const sessionKey = normalizeCurriculumSession(session);
                 if (!normalizedClass || !subjectKey) return;
-                const key = `${normalizedClass}|${subjectKey}`;
+                const key = `${normalizedClass}|${subjectKey}|${sessionKey}`;
                 const current = courses.get(key);
                 courses.set(key, {
                     key,
@@ -447,29 +493,44 @@
                     subjectKey,
                     subject: current?.subject && current.subject.length >= cleanSubject.length
                         ? current.subject : cleanSubject,
+                    sessionKey,
+                    session: sessionKey === 'all' ? 'Cả hai buổi' : curriculumSessionLabel(sessionKey),
+                    subjectFilterKey: `${subjectKey}|${sessionKey}`,
                 });
             };
             Object.values(state.teachingSchedule || {}).forEach(items => {
-                (items || []).forEach(item => addCourse(item.class, item.subject));
+                (items || []).forEach(item => addCourse(item.class, item.subject, item.session));
             });
             Object.values(state.timetablesByWeek || {}).forEach(timetable => {
                 for (const session of timetable?.sessions || []) {
+                    const sessionLabel = normalizeSessionLabel(session.label || session.key);
                     for (const period of session.periods || []) {
                         for (const cell of period.cells || []) {
-                            addCourse(cell.className, cell.subject || state.teacherProfile.subject);
+                            addCourse(cell.className, cell.subject || state.teacherProfile.subject, sessionLabel);
                         }
                     }
                 }
             });
             (state.curriculumProfiles || [])
                 .filter(profile => profile.scope === 'class')
-                .forEach(profile => addCourse(profile.className, profile.subject));
-            return Array.from(courses.values()).sort((a, b) => {
-                const gradeDiff = (Number.parseInt(a.grade, 10) || 99) - (Number.parseInt(b.grade, 10) || 99);
-                if (gradeDiff) return gradeDiff;
-                const classDiff = a.className.localeCompare(b.className, 'vi', { numeric: true });
-                return classDiff || a.subject.localeCompare(b.subject, 'vi');
-            });
+                .forEach(profile => addCourse(profile.className, profile.subject, profile.session));
+            const values = Array.from(courses.values());
+            const specificCourses = new Set(values
+                .filter(course => course.sessionKey !== 'all')
+                .map(course => `${course.classKey}|${course.subjectKey}`));
+            return values
+                .filter(course => course.sessionKey !== 'all'
+                    || !specificCourses.has(`${course.classKey}|${course.subjectKey}`))
+                .sort((a, b) => {
+                    const gradeDiff = (Number.parseInt(a.grade, 10) || 99) - (Number.parseInt(b.grade, 10) || 99);
+                    if (gradeDiff) return gradeDiff;
+                    const classDiff = a.className.localeCompare(b.className, 'vi', { numeric: true });
+                    if (classDiff) return classDiff;
+                    const subjectDiff = a.subject.localeCompare(b.subject, 'vi');
+                    if (subjectDiff) return subjectDiff;
+                    const sessionOrder = { morning: 0, afternoon: 1, all: 2 };
+                    return (sessionOrder[a.sessionKey] ?? 9) - (sessionOrder[b.sessionKey] ?? 9);
+                });
         }
 
         function replaceProgressFilterOptions(select, options, allLabel, preferredValue = select.value) {
@@ -507,7 +568,10 @@
             const previousSubject = progressSubjectSelect.value;
             const subjectMap = new Map();
             catalog.filter(course => (!grade || course.grade === grade) && (!classKey || course.classKey === classKey))
-                .forEach(course => subjectMap.set(course.subjectKey, course.subject));
+                .forEach(course => subjectMap.set(
+                    course.subjectFilterKey,
+                    `${course.subject} · ${course.session}`
+                ));
             const subjects = Array.from(subjectMap, ([value, label]) => ({ value, label }))
                 .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
             replaceProgressFilterOptions(progressSubjectSelect, subjects, 'Tất cả môn', previousSubject);
@@ -517,7 +581,7 @@
             const records = [];
             for (let week = 1; week <= referenceWeek; week++) {
                 getSortedScheduleItems(state.teachingSchedule[week] || []).forEach(item => {
-                    if (!scheduleItemsShareCourse(item, course.className, course.subject)) return;
+                    if (!scheduleItemsShareCourse(item, course.className, course.subject, course.sessionKey)) return;
                     records.push({ week, item });
                 });
             }
@@ -528,8 +592,8 @@
                 const value = Number.parseInt(record.item.ppctPeriod, 10);
                 return value > maximum ? value : maximum;
             }, 0);
-            const curriculumMap = buildCurriculumLessonMap(course.className, course.subject);
-            const curriculumProfile = getPreferredCurriculumProfileForCourse(course.className, course.subject);
+            const curriculumMap = buildCurriculumLessonMap(course.className, course.subject, course.sessionKey);
+            const curriculumProfile = getPreferredCurriculumProfileForCourse(course.className, course.subject, course.sessionKey);
             const semester = getSchoolSemesterInfo(referenceWeek);
             let plannedPpct = 0;
             curriculumMap.forEach((lesson, ppct) => {
@@ -547,7 +611,7 @@
             const semesterTargetPpct = semester.number === 1 ? semesterOneTargetPpct : totalPpct;
             const lastActive = activeRecords[activeRecords.length - 1] || null;
             const currentLesson = actualPpct > 0
-                ? getCurriculumLessonByPpct(course.className, course.subject, actualPpct)
+                ? getCurriculumLessonByPpct(course.className, course.subject, actualPpct, new Map(), course.sessionKey)
                 : null;
             const currentTopic = currentLesson?.topic || cleanText(lastActive?.item?.topic);
             const difference = totalPpct > 0 ? actualPpct - plannedPpct : null;
@@ -677,7 +741,7 @@
             const filteredCourses = catalog.filter(course =>
                 (!grade || course.grade === grade)
                 && (!classKey || course.classKey === classKey)
-                && (!subjectKey || course.subjectKey === subjectKey)
+                && (!subjectKey || course.subjectFilterKey === subjectKey)
             );
             const rows = filteredCourses.map(course => buildCourseProgressRow(course, referenceWeek));
             let finalizedWeeks = 0;
@@ -730,7 +794,7 @@
             }
             progressDashboardTable.innerHTML = `<div class="table-wrap"><table class="progress-table">
                 <thead><tr>
-                    <th>Lớp</th><th>Môn</th><th>PPCT dự kiến</th><th>PPCT thực tế</th><th>Chênh lệch</th>
+                    <th>Lớp</th><th>Môn</th><th>Buổi</th><th>PPCT dự kiến</th><th>PPCT thực tế</th><th>Chênh lệch</th>
                     <th>Bài đang dạy</th><th>Đã dạy</th><th>Không học</th><th>Học bù</th>
                     <th>Trạng thái</th><th>Mốc cuối học kỳ</th><th>Dự báo cuối học kỳ</th><th>Mở lịch</th>
                 </tr></thead><tbody>${snapshot.rows.map(row => {
@@ -742,6 +806,7 @@
                     return `<tr class="${rowClass}">
                         <td class="progress-course-name">${escapeHTML(row.className)}</td>
                         <td>${escapeHTML(row.subject)}</td>
+                        <td>${escapeHTML(row.session)}</td>
                         <td class="progress-number">${row.plannedPpct || '—'}</td>
                         <td class="progress-number">${row.actualPpct || '—'}${row.totalPpct ? `<div style="font-size:9px;color:#64748b;margin-top:3px;">${row.progressPercent}% của ${row.totalPpct} tiết</div>` : ''}</td>
                         <td class="progress-number">${escapeHTML(differenceText)}</td>
@@ -793,14 +858,14 @@
                 [`Tính đến tuần ${snapshot.referenceWeek}`],
                 [`Số lớp: ${snapshot.classCount}`, `Đúng tiến độ: ${snapshot.onTrackCount}`, `Chậm: ${snapshot.behindCount}`, `Tuần đã chốt: ${snapshot.finalizedWeeks}`, `Tuần chưa có lịch: ${snapshot.missingWeeks}`],
                 [],
-                ['Lớp', 'Môn', 'PPCT dự kiến', 'PPCT thực tế', 'Chênh lệch', 'Bài đang dạy', 'Số tiết đã dạy', 'Không học', 'Học bù', 'Trạng thái', 'Học kỳ', 'Mốc HKI xác nhận', 'Gợi ý mốc HKI', 'Mốc cuối HK', 'Dự báo cuối HK', 'Thiếu dự kiến'],
+                ['Lớp', 'Môn', 'Buổi', 'PPCT dự kiến', 'PPCT thực tế', 'Chênh lệch', 'Bài đang dạy', 'Số tiết đã dạy', 'Không học', 'Học bù', 'Trạng thái', 'Học kỳ', 'Mốc HKI xác nhận', 'Gợi ý mốc HKI', 'Mốc cuối HK', 'Dự báo cuối HK', 'Thiếu dự kiến'],
                 ...snapshot.rows.map(row => [
-                    row.className, row.subject, row.plannedPpct || '', row.actualPpct || '', row.difference ?? '',
+                    row.className, row.subject, row.session, row.plannedPpct || '', row.actualPpct || '', row.difference ?? '',
                     row.currentTopic || '', row.taughtCount, row.canceledCount, row.makeupCount, row.statusLabel, row.semesterLabel || '', row.semesterOneEndPpct || '', row.semesterOneSuggestedPpct || '', row.semesterTargetPpct || '', row.forecastLabel, row.forecastShortfall || 0,
                 ]),
             ];
             const sheet = XLSX.utils.aoa_to_sheet(rows);
-            sheet['!cols'] = [{ wch: 11 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 46 }, { wch: 14 }, { wch: 11 }, { wch: 9 }, { wch: 19 }, { wch: 12 }, { wch: 15 }, { wch: 14 }, { wch: 13 }, { wch: 34 }, { wch: 13 }];
+            sheet['!cols'] = [{ wch: 11 }, { wch: 16 }, { wch: 13 }, { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 46 }, { wch: 14 }, { wch: 11 }, { wch: 9 }, { wch: 19 }, { wch: 12 }, { wch: 15 }, { wch: 14 }, { wch: 13 }, { wch: 34 }, { wch: 13 }];
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, sheet, `Tien do tuan ${snapshot.referenceWeek}`);
             XLSX.writeFile(workbook, `tien-do-giang-day-${snapshot.academicYear}-tuan-${snapshot.referenceWeek}.xlsx`);
