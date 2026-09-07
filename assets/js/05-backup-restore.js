@@ -1,12 +1,78 @@
         // ================================================================
         //  DATA BACKUP & RESTORE
         // ================================================================
+        const SECURE_BACKUP_FORMAT = 'teacher-notebook-encrypted-backup';
+        const SECURE_BACKUP_VERSION = 1;
+        const SECURE_BACKUP_ITERATIONS = 210000;
+
+        function secureBackupBytesToBase64(bytes) {
+            let binary = '';
+            const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+            for (let index = 0; index < source.length; index += 0x8000) {
+                binary += String.fromCharCode(...source.subarray(index, Math.min(index + 0x8000, source.length)));
+            }
+            return btoa(binary);
+        }
+
+        function secureBackupBase64ToBytes(value) {
+            const binary = atob(String(value || ''));
+            return Uint8Array.from(binary, char => char.charCodeAt(0));
+        }
+
+        async function secureBackupDeriveKey(password, salt, usages) {
+            if (!globalThis.crypto?.subtle) throw new Error('Trình duyệt này chưa hỗ trợ Web Crypto để mã hóa sao lưu');
+            const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+            return crypto.subtle.deriveKey(
+                { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: SECURE_BACKUP_ITERATIONS },
+                material,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                usages
+            );
+        }
+
+        async function secureBackupEncryptPayload(payload, password) {
+            if (String(password || '').length < 6) throw new Error('Mật khẩu sao lưu cần ít nhất 6 ký tự');
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const key = await secureBackupDeriveKey(password, salt, ['encrypt']);
+            const plaintext = new TextEncoder().encode(JSON.stringify(payload));
+            const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+            return {
+                format: SECURE_BACKUP_FORMAT,
+                version: SECURE_BACKUP_VERSION,
+                appVersion: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '',
+                createdAt: new Date().toISOString(),
+                encryption: { algorithm: 'AES-GCM', keyLength: 256, kdf: 'PBKDF2-SHA256', iterations: SECURE_BACKUP_ITERATIONS },
+                salt: secureBackupBytesToBase64(salt),
+                iv: secureBackupBytesToBase64(iv),
+                ciphertext: secureBackupBytesToBase64(new Uint8Array(cipher)),
+            };
+        }
+
+        async function secureBackupDecryptWrapper(wrapper, password) {
+            if (!wrapper || wrapper.format !== SECURE_BACKUP_FORMAT) throw new Error('File không phải bản sao lưu mã hóa hợp lệ');
+            if (Number(wrapper.version) !== SECURE_BACKUP_VERSION) throw new Error('Phiên bản sao lưu mã hóa chưa được hỗ trợ');
+            if (!password) throw new Error('Cần mật khẩu để mở bản sao lưu');
+            try {
+                const salt = secureBackupBase64ToBytes(wrapper.salt);
+                const iv = secureBackupBase64ToBytes(wrapper.iv);
+                const cipher = secureBackupBase64ToBytes(wrapper.ciphertext);
+                const key = await secureBackupDeriveKey(password, salt, ['decrypt']);
+                const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+                return JSON.parse(new TextDecoder().decode(plain));
+            } catch (error) {
+                throw new Error('Mật khẩu không đúng hoặc file sao lưu đã bị thay đổi');
+            }
+        }
         function createBackupPayload() {
             captureActiveYearWorkspace();
             return {
                 format: BACKUP_FORMAT,
                 version: BACKUP_VERSION,
                 exportedAt: new Date().toISOString(),
+                appVersion: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '',
+                dataSchemaVersion: typeof DATA_SCHEMA_VERSION !== 'undefined' ? DATA_SCHEMA_VERSION : null,
                 security: {
                     apiKeyIncluded: false,
                     recognitionCacheIncluded: false,
@@ -301,6 +367,27 @@
             }
         });
 
+        document.getElementById('exportEncryptedBackupBtn')?.addEventListener('click', async () => {
+            try {
+                const password = prompt('Đặt mật khẩu cho bản sao lưu bảo mật (ít nhất 6 ký tự):');
+                if (password === null) return;
+                if (String(password).length < 6) throw new Error('Mật khẩu cần ít nhất 6 ký tự');
+                const confirmPassword = prompt('Nhập lại mật khẩu để xác nhận:');
+                if (confirmPassword === null) return;
+                if (password !== confirmPassword) throw new Error('Hai lần nhập mật khẩu chưa khớp');
+                const payload = createBackupPayload();
+                const wrapper = await secureBackupEncryptPayload(payload, password);
+                const blob = new Blob([JSON.stringify(wrapper)], { type: 'application/json;charset=utf-8' });
+                const date = new Date().toISOString().slice(0, 10);
+                downloadBlobFile(blob, `so-tay-giao-vien-bao-mat-${date}.stgv`);
+                try { localStorage.setItem('teacher_last_backup_at_v1', new Date().toISOString()); } catch (_) { /* noop */ }
+                updateDataSafetySummary();
+                showToast('✅ Đã tạo bản sao lưu mã hóa AES-GCM. Hãy giữ mật khẩu ở nơi an toàn.', 'success');
+            } catch (error) {
+                showToast('❌ Không thể tạo sao lưu bảo mật: ' + error.message, 'error');
+            }
+        });
+
         exportPreCloudBackupBtn.addEventListener('click', async () => {
             try {
                 const stored = window.teacherNotebookIndexedDB
@@ -322,8 +409,8 @@
             const file = restoreBackupInput.files?.[0];
             restoreBackupInput.value = '';
             if (!file) return;
-            if (!file.name.toLowerCase().endsWith('.json')) {
-                showToast('⚠️ Vui lòng chọn file sao lưu định dạng JSON', 'error');
+            if (!/\.(json|stgv)$/i.test(file.name)) {
+                showToast('⚠️ Vui lòng chọn file sao lưu .json hoặc .stgv', 'error');
                 return;
             }
             if (file.size > 10 * 1024 * 1024) {
@@ -332,7 +419,12 @@
             }
 
             try {
-                const parsed = JSON.parse(await file.text());
+                let parsed = JSON.parse(await file.text());
+                if (parsed?.format === SECURE_BACKUP_FORMAT) {
+                    const password = prompt('Nhập mật khẩu của bản sao lưu bảo mật:');
+                    if (password === null) return;
+                    parsed = await secureBackupDecryptWrapper(parsed, password);
+                }
                 const normalized = normalizeBackupPayload(parsed);
                 const counts = backupDataCounts(normalized);
                 const description = `${counts.years} năm học, ${counts.plans} tuần kế hoạch, ${counts.timetables} tuần TKB, ${counts.schedules} tuần lịch báo giảng`;

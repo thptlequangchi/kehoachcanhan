@@ -571,11 +571,8 @@
             return raw || 'bao-cao';
         }
 
-        function exportReportExcel() {
-            if (!window.XLSX?.utils) {
-                showToast('❌ Thư viện xuất Excel chưa tải được', 'error');
-                return;
-            }
+        async function exportReportExcel() {
+            try { await ensureVendorLibrary('xlsx'); } catch (error) { showToast('❌ ' + error.message, 'error'); return; }
             const snapshot = buildReportSnapshot();
             const rows = reportWorkbookRows(snapshot);
             const workbook = XLSX.utils.book_new();

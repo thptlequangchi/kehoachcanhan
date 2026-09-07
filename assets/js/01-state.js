@@ -45,8 +45,8 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '51.5.0';
-        const DATA_SCHEMA_VERSION = 3;
+        const APP_VERSION = '52.0.0';
+        const DATA_SCHEMA_VERSION = 4;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
         const GEMINI_MODEL = 'gemini-3.5-flash';
@@ -69,7 +69,7 @@
         const SELECTED_ACADEMIC_YEAR_STORAGE = 'teacher_selected_academic_year';
         const RECOGNITION_MODES = ['auto', 'accurate', 'economy', 'offline'];
         const BACKUP_FORMAT = 'teacher-notebook-backup';
-        const BACKUP_VERSION = 6;
+        const BACKUP_VERSION = 7;
         const PRE_RESTORE_BACKUP_KEY = 'teacher_pre_restore_backup_v1';
         const PRE_CLOUD_SYNC_BACKUP_KEY = 'teacher_pre_cloud_sync_backup_v1';
         const SHARED_PLAN_HISTORY_STORAGE = 'teacher_shared_plan_history_v1';
@@ -962,6 +962,22 @@
             };
         }
 
+        function normalizeGradebookHistoryEntry(value, fallbackIndex = 0) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const kind = ['score', 'undo', 'bulk'].includes(cleanText(value.kind)) ? cleanText(value.kind) : 'score';
+            return {
+                id: cleanText(value.id) || `gb-hist-${Date.now()}-${fallbackIndex}`,
+                at: cleanText(value.at),
+                kind,
+                studentId: cleanText(value.studentId),
+                studentName: cleanText(value.studentName),
+                field: cleanText(value.field),
+                oldValue: value.oldValue === '' ? '' : normalizeGradeScore(value.oldValue),
+                newValue: value.newValue === '' ? '' : normalizeGradeScore(value.newValue),
+                detail: cleanText(value.detail),
+            };
+        }
+
         function normalizeGradebookBook(value, fallbackId = '') {
             if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
             const className = cleanText(value.className);
@@ -982,6 +998,9 @@
                 semester,
                 regularColumns,
                 students,
+                locked: Boolean(value.locked),
+                lockedAt: cleanText(value.lockedAt),
+                history: Array.isArray(value.history) ? value.history.map((item, index) => normalizeGradebookHistoryEntry(item, index)).filter(Boolean).slice(-300) : [],
                 updatedAt: cleanText(value.updatedAt),
             };
         }
@@ -995,7 +1014,7 @@
                 if (normalized) books[normalized.id] = normalized;
             });
             return {
-                version: 1,
+                version: 2,
                 books,
                 selectedBookId: books[cleanText(source.selectedBookId)] ? cleanText(source.selectedBookId) : '',
                 selectedClassName: cleanText(source.selectedClassName),

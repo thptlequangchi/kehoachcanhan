@@ -843,11 +843,8 @@
             document.getElementById('teachingScheduleCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        function exportProgressDashboardExcel() {
-            if (!window.XLSX?.utils) {
-                showToast('❌ Thư viện xuất Excel chưa tải được', 'error');
-                return;
-            }
+        async function exportProgressDashboardExcel() {
+            try { await ensureVendorLibrary('xlsx'); } catch (error) { showToast('❌ ' + error.message, 'error'); return; }
             const snapshot = buildProgressDashboardSnapshot();
             if (!snapshot.rows.length) {
                 showToast('Chưa có dữ liệu tiến độ để xuất', 'info');

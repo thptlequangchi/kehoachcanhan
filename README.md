@@ -1,3 +1,16 @@
+# Sổ Tay Giáo Viên Pro 52
+
+Bản ổn định sau chuỗi v51.6 → v51.9. Giữ nguyên nền tảng cũ và chưa bổ sung liên thông mới giữa Sổ điểm và Sổ chủ nhiệm.
+
+## Điểm chính
+
+- Sao lưu thường và sao lưu mã hóa bằng mật khẩu.
+- Tải XLSX/Mammoth/Tesseract theo nhu cầu.
+- Sổ điểm Pro: tối đa 5 TX, dán bảng điểm, Enter xuống dòng, undo, lịch sử, khóa sổ.
+- Sổ chủ nhiệm Pro: tìm kiếm, lọc theo dõi, ẩn thông tin riêng tư.
+- Chế độ Tập trung: ẩn Dashboard năm học/Tự động hóa/Trợ lý tuần, giữ Tổng quan + các tab chính.
+- PPCT buổi sáng/buổi chiều vẫn độc lập như v51.3.
+
 # Sổ Tay Giáo Viên v51.5.0 — Sổ chủ nhiệm cá nhân
 
 Bản v51.5 phát triển trực tiếp từ v51.4 và **giữ nguyên toàn bộ chức năng cũ**: Kế hoạch trường, Thời khóa biểu, PPCT sáng/chiều riêng, Lịch báo giảng, Sổ điểm cá nhân, Công việc Pro, Báo cáo, PWA, IndexedDB và Firestore.

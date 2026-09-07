@@ -363,6 +363,7 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
         }
 
         async function runOfflineOcr(imageFile, onStage) {
+            await ensureVendorLibrary('tesseract');
             if (!window.Tesseract?.createWorker) {
                 throw new Error('Không tải được bộ OCR Tesseract.js');
             }
@@ -911,11 +912,13 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             let content = '';
             const lowerName = file.name.toLowerCase();
             if (lowerName.endsWith('.docx')) {
+                await ensureVendorLibrary('mammoth');
                 if (!window.mammoth) throw new Error('Không tải được thư viện đọc Word');
                 const arrayBuffer = await file.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer });
                 content = result.value;
             } else if (/\.xlsx?$/.test(lowerName)) {
+                await ensureVendorLibrary('xlsx');
                 if (!window.XLSX) throw new Error('Không tải được thư viện đọc Excel');
                 const arrayBuffer = await file.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });

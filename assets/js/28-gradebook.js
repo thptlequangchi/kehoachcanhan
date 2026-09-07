@@ -4,6 +4,7 @@
         // ================================================================
         let gradebookPersistTimer = null;
         let gradebookInitialized = false;
+        const gradebookUndoStack = [];
 
         function gradebookById(id) {
             return document.getElementById(id);
@@ -197,6 +198,190 @@
             return Math.round(average * 10) / 10;
         }
 
+        function gradebookCanEdit(book, quiet = false) {
+            if (!book?.locked) return true;
+            if (!quiet) showToast('🔒 Sổ điểm đang khóa. Mở khóa trước khi chỉnh sửa.', 'info');
+            return false;
+        }
+
+        function gradebookScoreFieldLabel(field, txIndex = null) {
+            if (field === 'tx') return `TX${Number(txIndex) + 1}`;
+            if (field === 'midterm') return 'Giữa kỳ';
+            if (field === 'final') return 'Cuối kỳ';
+            return field || 'Điểm';
+        }
+
+        function gradebookRecordHistory(book, entry) {
+            if (!book) return;
+            if (!Array.isArray(book.history)) book.history = [];
+            book.history.push({
+                id: gradebookCreateId('gb-hist'),
+                at: new Date().toISOString(),
+                kind: entry.kind || 'score',
+                studentId: entry.studentId || '',
+                studentName: entry.studentName || '',
+                field: entry.field || '',
+                oldValue: entry.oldValue === '' ? '' : entry.oldValue,
+                newValue: entry.newValue === '' ? '' : entry.newValue,
+                detail: entry.detail || '',
+            });
+            if (book.history.length > 300) book.history = book.history.slice(-300);
+        }
+
+        function gradebookPushUndo(change) {
+            gradebookUndoStack.push(change);
+            if (gradebookUndoStack.length > 100) gradebookUndoStack.splice(0, gradebookUndoStack.length - 100);
+        }
+
+        function gradebookRenderHistory(book = gradebookActiveBook()) {
+            const list = gradebookById('gradebookHistoryList');
+            if (!list) return;
+            const history = Array.isArray(book?.history) ? [...book.history].reverse().slice(0, 80) : [];
+            list.innerHTML = history.length ? history.map(item => {
+                const when = item.at ? new Date(item.at).toLocaleString('vi-VN') : '';
+                const label = item.detail || `${item.studentName || 'Học sinh'} · ${item.field || 'Điểm'}`;
+                const change = item.kind === 'bulk' ? 'Cập nhật hàng loạt' : `${item.oldValue === '' ? '—' : item.oldValue} → ${item.newValue === '' ? '—' : item.newValue}`;
+                return `<div class="gradebook-history-item"><div><strong>${gradebookEscapeHtml(label)}</strong><small>${gradebookEscapeHtml(when)}</small></div><span class="change">${gradebookEscapeHtml(change)}</span></div>`;
+            }).join('') : '<div class="gradebook-empty">Chưa có lịch sử chỉnh điểm.</div>';
+        }
+
+        function gradebookToggleLock() {
+            const book = gradebookActiveBook();
+            if (!book) return;
+            if (book.locked) {
+                if (!confirm('Mở khóa sổ điểm để tiếp tục chỉnh sửa?')) return;
+                book.locked = false;
+                book.lockedAt = '';
+                showToast('🔓 Đã mở khóa sổ điểm', 'success');
+            } else {
+                if (!confirm('Khóa sổ điểm hiện tại? Sau khi khóa, thầy vẫn xem và xuất Excel nhưng không chỉnh sửa cho đến khi mở khóa.')) return;
+                book.locked = true;
+                book.lockedAt = new Date().toISOString();
+                showToast('🔒 Đã khóa sổ điểm', 'success');
+            }
+            book.updatedAt = new Date().toISOString();
+            gradebookPersistNow();
+            renderGradebook();
+        }
+
+        function gradebookUndoLastEdit() {
+            const book = gradebookActiveBook();
+            if (!book || !gradebookCanEdit(book)) return;
+            const change = gradebookUndoStack.pop();
+            if (!change || change.bookId !== book.id) { showToast('Không còn thay đổi điểm để hoàn tác trong phiên này.', 'info'); return; }
+            const student = gradebookFindStudent(book, change.studentId);
+            if (!student) return;
+            if (change.field === 'tx') student.scores.tx[change.txIndex] = change.oldValue;
+            else if (change.field === 'midterm') student.scores.midterm = change.oldValue;
+            else if (change.field === 'final') student.scores.final = change.oldValue;
+            gradebookRecordHistory(book, { kind:'undo', studentId:student.id, studentName:student.name, field:gradebookScoreFieldLabel(change.field, change.txIndex), oldValue:change.newValue, newValue:change.oldValue, detail:`Hoàn tác · ${student.name} · ${gradebookScoreFieldLabel(change.field, change.txIndex)}` });
+            book.updatedAt = new Date().toISOString();
+            gradebookPersistNow();
+            renderGradebook();
+            showToast('↶ Đã hoàn tác lần sửa điểm gần nhất', 'success');
+        }
+
+        function gradebookParseScoreTable(text) {
+            const lines = String(text || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            if (!lines.length) return [];
+            const rows = lines.map(line => line.split('\t').map(cell => cell.trim()));
+            const header = rows[0].map(value => gradebookNormalizeKeyText(value));
+            const looksHeader = header.some(value => /họ.*tên|ho.*ten|tx\s*1|giữa.*kỳ|giu.*ky|cuối.*kỳ|cuoi.*ky/.test(value));
+            let map = null;
+            if (looksHeader) {
+                map = { name:-1, tx:[], midterm:-1, final:-1, note:-1, stt:-1 };
+                header.forEach((value, index) => {
+                    if (/^(stt|tt)$/.test(value)) map.stt = index;
+                    else if (/họ.*tên|ho.*ten|họ tên|ho ten/.test(value)) map.name = index;
+                    else if (/^tx\s*[1-5]$/.test(value.replace(/\./g,''))) map.tx[Number(value.match(/[1-5]/)?.[0]) - 1] = index;
+                    else if (/giữa.*kỳ|giu.*ky|^gk$/.test(value)) map.midterm = index;
+                    else if (/cuối.*kỳ|cuoi.*ky|^ck$/.test(value)) map.final = index;
+                    else if (/ghi.*chú|ghi.*chu|note/.test(value)) map.note = index;
+                });
+            }
+            const dataRows = looksHeader ? rows.slice(1) : rows;
+            return dataRows.map(cells => {
+                let offset = 0;
+                if (!map && /^\d+$/.test(cells[0] || '') && cells.length > 1) offset = 1;
+                const name = map ? cells[map.name] : cells[offset];
+                if (!cleanText(name)) return null;
+                const tx = Array(GRADEBOOK_MAX_REGULAR_COLUMNS).fill('');
+                let midterm = '', final = '', note = '', inferredTxCount = 0;
+                if (map) {
+                    map.tx.forEach((column, index) => { if (column >= 0) tx[index] = normalizeGradeScore(cells[column]); });
+                    midterm = normalizeGradeScore(cells[map.midterm]);
+                    final = normalizeGradeScore(cells[map.final]);
+                    note = cleanText(cells[map.note]);
+                    inferredTxCount = map.tx.filter(index => Number.isInteger(index) && index >= 0).length;
+                } else {
+                    const tail = cells.slice(offset + 1);
+                    const scoreCells = [];
+                    for (const cell of tail) {
+                        const normalized = normalizeGradeScore(cell);
+                        if (normalized === '' && cleanText(cell)) { note = tail.slice(scoreCells.length).join(' · '); break; }
+                        scoreCells.push(normalized);
+                    }
+                    if (scoreCells.length >= 2) {
+                        midterm = scoreCells[scoreCells.length - 2];
+                        final = scoreCells[scoreCells.length - 1];
+                        inferredTxCount = Math.min(GRADEBOOK_MAX_REGULAR_COLUMNS, Math.max(0, scoreCells.length - 2));
+                        for (let index = 0; index < inferredTxCount; index++) tx[index] = scoreCells[index];
+                    } else {
+                        inferredTxCount = Math.min(GRADEBOOK_MAX_REGULAR_COLUMNS, scoreCells.length);
+                        for (let index = 0; index < inferredTxCount; index++) tx[index] = scoreCells[index];
+                    }
+                }
+                return {
+                    name: cleanText(name), tx, midterm, final, note,
+                    txCount: inferredTxCount,
+                };
+            }).filter(Boolean);
+        }
+
+        function gradebookApplyScoreTable() {
+            const book = gradebookActiveBook();
+            if (!book || !gradebookCanEdit(book)) return;
+            const rows = gradebookParseScoreTable(gradebookById('gradebookScoresTextarea')?.value);
+            if (!rows.length) { showToast('Chưa nhận được dòng điểm hợp lệ.', 'info'); return; }
+            const byName = new Map(book.students.map(student => [gradebookNormalizeKeyText(student.name), student]));
+            let added = 0, updated = 0, maxTx = book.regularColumns;
+            rows.forEach(row => {
+                let student = byName.get(gradebookNormalizeKeyText(row.name));
+                if (!student) {
+                    student = normalizeGradebookStudent({ id:gradebookCreateId('hs'), name:row.name }, book.students.length);
+                    book.students.push(student); byName.set(gradebookNormalizeKeyText(row.name), student); added += 1;
+                } else updated += 1;
+                row.tx.forEach((value, index) => { if (value !== '') student.scores.tx[index] = value; });
+                if (row.midterm !== '') student.scores.midterm = row.midterm;
+                if (row.final !== '') student.scores.final = row.final;
+                if (row.note) student.note = row.note;
+                maxTx = Math.max(maxTx, row.tx.reduce((count, value, index) => value !== '' ? Math.max(count, index + 1) : count, 0));
+            });
+            book.regularColumns = Math.min(GRADEBOOK_MAX_REGULAR_COLUMNS, Math.max(1, maxTx));
+            gradebookRecordHistory(book, { kind:'bulk', detail:`Dán bảng điểm · ${rows.length} học sinh (${updated} cập nhật, ${added} thêm mới)` });
+            book.updatedAt = new Date().toISOString();
+            gradebookPersistNow(); renderGradebook();
+            const panel = gradebookById('gradebookPasteScoresPanel'); if (panel) panel.hidden = true;
+            showToast(`✅ Đã áp dụng bảng điểm cho ${rows.length} học sinh`, 'success');
+        }
+
+        function gradebookHandleGridKeydown(event) {
+            const input = event.target.closest('[data-gradebook-score][data-gradebook-student-id]');
+            if (!input || event.key !== 'Enter') return;
+            event.preventDefault();
+            const inputs = [...gradebookById('gradebookTableWrap').querySelectorAll('[data-gradebook-score][data-gradebook-student-id]')];
+            const current = inputs.indexOf(input);
+            if (current < 0) return;
+            const row = input.closest('tr');
+            const rows = [...gradebookById('gradebookTableWrap').querySelectorAll('tbody tr')];
+            const rowIndex = rows.indexOf(row);
+            const colInputs = [...row.querySelectorAll('[data-gradebook-score]')];
+            const colIndex = colInputs.indexOf(input);
+            const nextRow = rows[rowIndex + 1];
+            const next = nextRow?.querySelectorAll('[data-gradebook-score]')?.[colIndex];
+            next?.focus(); next?.select?.();
+        }
+
         function gradebookRenderBookStrip() {
             const strip = gradebookById('gradebookBookStrip');
             if (!strip) return;
@@ -225,22 +410,23 @@
                 wrap.innerHTML = '<div class="gradebook-empty">Chọn lớp, môn, học kỳ rồi nhấn <strong>“Mở / Tạo sổ”</strong>.</div>';
                 return;
             }
+            const disabled = book.locked ? 'disabled aria-disabled="true"' : '';
             const txHeaders = Array.from({ length: book.regularColumns }, (_, index) => `<th class="gradebook-score-header">TX${index + 1}</th>`).join('');
             const rows = book.students.length ? book.students.map((student, rowIndex) => {
                 const txCells = Array.from({ length: book.regularColumns }, (_, txIndex) => {
                     const value = student.scores?.tx?.[txIndex];
-                    return `<td><input class="gradebook-score-input" type="number" min="0" max="10" step="0.1" inputmode="decimal" value="${value === '' ? '' : gradebookEscapeHtml(value)}" aria-label="${gradebookEscapeHtml(student.name || `Học sinh ${rowIndex + 1}`)} TX${txIndex + 1}" data-gradebook-score="tx" data-gradebook-tx-index="${txIndex}" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" /></td>`;
+                    return `<td><input class="gradebook-score-input" type="number" min="0" max="10" step="0.1" inputmode="decimal" value="${value === '' ? '' : gradebookEscapeHtml(value)}" aria-label="${gradebookEscapeHtml(student.name || `Học sinh ${rowIndex + 1}`)} TX${txIndex + 1}" data-gradebook-score="tx" data-gradebook-tx-index="${txIndex}" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" ${disabled} /></td>`;
                 }).join('');
                 const average = gradebookCalculateStudentAverage(student, book);
                 return `<tr data-gradebook-row-id="${gradebookEscapeHtml(student.id)}">
                     <td class="gradebook-stt">${rowIndex + 1}</td>
-                    <td><input class="gradebook-name-input" type="text" value="${gradebookEscapeHtml(student.name)}" placeholder="Họ và tên học sinh" autocomplete="off" data-gradebook-field="name" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" /></td>
+                    <td><input class="gradebook-name-input" type="text" value="${gradebookEscapeHtml(student.name)}" placeholder="Họ và tên học sinh" autocomplete="off" data-gradebook-field="name" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" ${disabled} /></td>
                     ${txCells}
-                    <td><input class="gradebook-score-input" type="number" min="0" max="10" step="0.1" inputmode="decimal" value="${student.scores?.midterm === '' ? '' : gradebookEscapeHtml(student.scores?.midterm)}" aria-label="Điểm giữa kỳ" data-gradebook-score="midterm" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" /></td>
-                    <td><input class="gradebook-score-input" type="number" min="0" max="10" step="0.1" inputmode="decimal" value="${student.scores?.final === '' ? '' : gradebookEscapeHtml(student.scores?.final)}" aria-label="Điểm cuối kỳ" data-gradebook-score="final" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" /></td>
+                    <td><input class="gradebook-score-input" type="number" min="0" max="10" step="0.1" inputmode="decimal" value="${student.scores?.midterm === '' ? '' : gradebookEscapeHtml(student.scores?.midterm)}" aria-label="Điểm giữa kỳ" data-gradebook-score="midterm" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" ${disabled} /></td>
+                    <td><input class="gradebook-score-input" type="number" min="0" max="10" step="0.1" inputmode="decimal" value="${student.scores?.final === '' ? '' : gradebookEscapeHtml(student.scores?.final)}" aria-label="Điểm cuối kỳ" data-gradebook-score="final" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" ${disabled} /></td>
                     <td class="gradebook-average${average === null ? ' pending' : ''}" data-gradebook-average-id="${gradebookEscapeHtml(student.id)}">${average === null ? '—' : average.toFixed(1)}</td>
-                    <td><input class="gradebook-note-input" type="text" value="${gradebookEscapeHtml(student.note)}" placeholder="Ghi chú" autocomplete="off" data-gradebook-field="note" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" /></td>
-                    <td style="text-align:center"><button class="gradebook-delete-row" type="button" title="Xóa học sinh" aria-label="Xóa ${gradebookEscapeHtml(student.name || `học sinh ${rowIndex + 1}`)}" data-gradebook-delete-student="${gradebookEscapeHtml(student.id)}">🗑️</button></td>
+                    <td><input class="gradebook-note-input" type="text" value="${gradebookEscapeHtml(student.note)}" placeholder="Ghi chú" autocomplete="off" data-gradebook-field="note" data-gradebook-student-id="${gradebookEscapeHtml(student.id)}" ${disabled} /></td>
+                    <td style="text-align:center"><button class="gradebook-delete-row" type="button" title="Xóa học sinh" aria-label="Xóa ${gradebookEscapeHtml(student.name || `học sinh ${rowIndex + 1}`)}" data-gradebook-delete-student="${gradebookEscapeHtml(student.id)}" ${book.locked ? 'disabled aria-disabled="true"' : ''}>🗑️</button></td>
                 </tr>`;
             }).join('') : `<tr><td colspan="${book.regularColumns + 7}"><div class="gradebook-empty">Sổ chưa có học sinh. Chọn <strong>＋ Học sinh</strong> hoặc <strong>📋 Dán danh sách</strong>.</div></td></tr>`;
 
@@ -271,7 +457,12 @@
                 addRegular.title = book?.regularColumns >= GRADEBOOK_MAX_REGULAR_COLUMNS ? 'Đã đạt tối đa 5 cột điểm thường xuyên' : 'Thêm một cột điểm thường xuyên';
             }
             if (removeRegular) removeRegular.disabled = !book || book.regularColumns <= 1;
-            [addStudent, pasteRoster, exportBtn, clearBtn].forEach(button => { if (button) button.disabled = !book; });
+            [addStudent, pasteRoster, clearBtn].forEach(button => { if (button) button.disabled = !book || Boolean(book?.locked); });
+            if (exportBtn) exportBtn.disabled = !book;
+            ['gradebookPasteScoresBtn','gradebookAddRegularBtn','gradebookRemoveRegularBtn'].forEach(id => { const button = gradebookById(id); if (button) button.disabled = !book || Boolean(book?.locked); });
+            const undoBtn = gradebookById('gradebookUndoBtn'); if (undoBtn) undoBtn.disabled = !book || Boolean(book?.locked) || !gradebookUndoStack.some(item => item.bookId === book?.id);
+            const historyBtn = gradebookById('gradebookHistoryBtn'); if (historyBtn) historyBtn.disabled = !book;
+            const lockBtn = gradebookById('gradebookLockBtn'); if (lockBtn) lockBtn.disabled = !book;
         }
 
         function renderGradebook() {
@@ -312,6 +503,10 @@
             gradebookRenderStats(book);
             gradebookRenderTable(book);
             gradebookUpdateButtons(book);
+            gradebookById('gradebookCard')?.classList.toggle('is-locked', Boolean(book?.locked));
+            const lockBtn = gradebookById('gradebookLockBtn');
+            if (lockBtn) lockBtn.textContent = book?.locked ? '🔓 Mở khóa' : '🔒 Khóa sổ';
+            gradebookRenderHistory(book);
         }
 
         function gradebookFindStudent(book, studentId) {
@@ -360,7 +555,7 @@
 
         function gradebookApplyRoster() {
             const book = gradebookActiveBook();
-            if (!book) return;
+            if (!book || !gradebookCanEdit(book)) return;
             const textarea = gradebookById('gradebookRosterTextarea');
             const names = gradebookParseRoster(textarea?.value);
             if (!names.length) {
@@ -388,7 +583,7 @@
 
         function gradebookAddRegularColumn() {
             const book = gradebookActiveBook();
-            if (!book) return;
+            if (!book || !gradebookCanEdit(book)) return;
             if (book.regularColumns >= GRADEBOOK_MAX_REGULAR_COLUMNS) {
                 showToast('ℹ️ Sổ điểm đã đạt tối đa 5 cột thường xuyên', 'info');
                 return;
@@ -418,7 +613,7 @@
 
         function gradebookDeleteStudent(studentId) {
             const book = gradebookActiveBook();
-            if (!book) return;
+            if (!book || !gradebookCanEdit(book)) return;
             const student = gradebookFindStudent(book, studentId);
             if (!student) return;
             if (!confirm(`Xóa ${student.name || 'học sinh này'} khỏi sổ điểm?`)) return;
@@ -451,13 +646,10 @@
             return cleanText(value).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '-').slice(0, 60) || 'so-diem';
         }
 
-        function gradebookExportExcel() {
+        async function gradebookExportExcel() {
             const book = gradebookActiveBook();
+            try { await ensureVendorLibrary('xlsx'); } catch (error) { showToast('❌ ' + error.message, 'error'); return; }
             if (!book) return;
-            if (!globalThis.XLSX) {
-                showToast('❌ Thư viện Excel chưa sẵn sàng. Hãy kiểm tra kết nối mạng rồi thử lại.', 'error');
-                return;
-            }
             try {
                 const headers = ['STT', 'Họ và tên', ...Array.from({ length: book.regularColumns }, (_, index) => `TX${index + 1}`), 'Giữa kỳ', 'Cuối kỳ', 'ĐTB HK', 'Ghi chú'];
                 const rows = book.students.map((student, index) => [
@@ -496,7 +688,7 @@
             const input = event.target.closest('[data-gradebook-student-id]');
             if (!input) return;
             const book = gradebookActiveBook();
-            if (!book) return;
+            if (!book || !gradebookCanEdit(book, true)) { renderGradebook(); return; }
             const student = gradebookFindStudent(book, input.dataset.gradebookStudentId);
             if (!student) return;
             if (input.dataset.gradebookField === 'name') student.name = cleanText(input.value);
@@ -509,7 +701,7 @@
             const input = event.target.closest('[data-gradebook-score][data-gradebook-student-id]');
             if (!input) return;
             const book = gradebookActiveBook();
-            if (!book) return;
+            if (!book || !gradebookCanEdit(book, true)) { renderGradebook(); return; }
             const student = gradebookFindStudent(book, input.dataset.gradebookStudentId);
             if (!student) return;
             const raw = String(input.value || '').trim();
@@ -520,13 +712,19 @@
             } else {
                 input.value = score === '' ? '' : String(score);
             }
-            if (input.dataset.gradebookScore === 'tx') {
-                const index = Number.parseInt(input.dataset.gradebookTxIndex, 10);
-                if (index >= 0 && index < GRADEBOOK_MAX_REGULAR_COLUMNS) student.scores.tx[index] = score;
-            } else if (input.dataset.gradebookScore === 'midterm') {
+            const field = input.dataset.gradebookScore;
+            const txIndex = field === 'tx' ? Number.parseInt(input.dataset.gradebookTxIndex, 10) : null;
+            const oldValue = field === 'tx' ? student.scores.tx[txIndex] : field === 'midterm' ? student.scores.midterm : student.scores.final;
+            if (field === 'tx') {
+                if (txIndex >= 0 && txIndex < GRADEBOOK_MAX_REGULAR_COLUMNS) student.scores.tx[txIndex] = score;
+            } else if (field === 'midterm') {
                 student.scores.midterm = score;
-            } else if (input.dataset.gradebookScore === 'final') {
+            } else if (field === 'final') {
                 student.scores.final = score;
+            }
+            if (oldValue !== score) {
+                gradebookPushUndo({ bookId:book.id, studentId:student.id, field, txIndex, oldValue, newValue:score });
+                gradebookRecordHistory(book, { kind:'score', studentId:student.id, studentName:student.name, field:gradebookScoreFieldLabel(field, txIndex), oldValue, newValue:score, detail:`${student.name} · ${gradebookScoreFieldLabel(field, txIndex)}` });
             }
             book.updatedAt = new Date().toISOString();
             gradebookRefreshStudentAverage(book, student.id);
@@ -565,6 +763,13 @@
                 if (panel) panel.hidden = true;
             });
             gradebookById('gradebookApplyRosterBtn')?.addEventListener('click', gradebookApplyRoster);
+            gradebookById('gradebookPasteScoresBtn')?.addEventListener('click', () => { const panel = gradebookById('gradebookPasteScoresPanel'); if (panel) panel.hidden = false; gradebookById('gradebookScoresTextarea')?.focus(); });
+            gradebookById('gradebookCloseScoresPasteBtn')?.addEventListener('click', () => { const panel = gradebookById('gradebookPasteScoresPanel'); if (panel) panel.hidden = true; });
+            gradebookById('gradebookApplyScoresBtn')?.addEventListener('click', gradebookApplyScoreTable);
+            gradebookById('gradebookUndoBtn')?.addEventListener('click', gradebookUndoLastEdit);
+            gradebookById('gradebookLockBtn')?.addEventListener('click', gradebookToggleLock);
+            gradebookById('gradebookHistoryBtn')?.addEventListener('click', () => { gradebookRenderHistory(); const panel = gradebookById('gradebookHistoryPanel'); if (panel) panel.hidden = false; });
+            gradebookById('gradebookCloseHistoryBtn')?.addEventListener('click', () => { const panel = gradebookById('gradebookHistoryPanel'); if (panel) panel.hidden = true; });
 
             ['gradebookClassInput', 'gradebookSubjectInput', 'gradebookSemesterSelect'].forEach(id => {
                 gradebookById(id)?.addEventListener('change', gradebookRememberSelectorDraft);
@@ -583,6 +788,7 @@
             });
             gradebookById('gradebookTableWrap')?.addEventListener('input', gradebookHandleTableInput);
             gradebookById('gradebookTableWrap')?.addEventListener('change', gradebookHandleScoreChange);
+            gradebookById('gradebookTableWrap')?.addEventListener('keydown', gradebookHandleGridKeydown);
             gradebookById('gradebookTableWrap')?.addEventListener('click', event => {
                 const button = event.target.closest('[data-gradebook-delete-student]');
                 if (button) gradebookDeleteStudent(button.dataset.gradebookDeleteStudent);

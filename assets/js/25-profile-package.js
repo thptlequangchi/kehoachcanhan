@@ -218,7 +218,8 @@
         showToast('✅ Đã xuất Word hồ sơ tự động', 'success');
     }
 
-    function exportExcel() {
+    async function exportExcel() {
+        try { await ensureVendorLibrary('xlsx'); } catch (error) { showToast('❌ ' + error.message, 'error'); return; }
         const snapshot = packageSnapshot();
         const workbook = workbookFromSnapshot(snapshot);
         if (!workbook) {
@@ -284,6 +285,7 @@
         card?.classList.add('is-busy');
         if (button) button.textContent = '⏳ Đang đóng gói…';
         try {
+            try { await ensureVendorLibrary('xlsx'); } catch (_) { /* ZIP vẫn tạo được nếu Excel không tải được */ }
             const snapshot = packageSnapshot();
             const sections = packageSections(snapshot);
             const base = filenameBase(snapshot);

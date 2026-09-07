@@ -90,11 +90,12 @@
         add(results, 'runtime', 'Lỗi kỹ thuật phiên này', recentSession.length ? 'warn' : 'pass',
             recentSession.length ? `${recentSession.length} lỗi/tài nguyên cần xem nhật ký` : 'Chưa ghi nhận lỗi runtime');
 
+        const vendorLoaderOk = Boolean(window.teacherVendorLoader?.ensure);
         const tesseractOk = Boolean(window.Tesseract?.createWorker);
-        add(results, 'ocr', 'OCR Tesseract', tesseractOk ? 'pass' : (navigator.onLine ? 'error' : 'warn'),
-            tesseractOk ? 'Thư viện OCR đã sẵn sàng' : 'Tesseract chưa được tải');
-        add(results, 'document-libs', 'Word / Excel', window.mammoth && window.XLSX ? 'pass' : 'warn',
-            window.mammoth && window.XLSX ? 'Mammoth + XLSX đã sẵn sàng' : 'Thiếu Mammoth hoặc XLSX');
+        add(results, 'ocr', 'OCR Tesseract', tesseractOk || vendorLoaderOk ? 'pass' : 'warn',
+            tesseractOk ? 'Thư viện OCR đã sẵn sàng' : vendorLoaderOk ? 'OCR sẽ được tải khi thầy dùng nhận dạng ảnh' : 'Chưa có bộ nạp OCR');
+        add(results, 'document-libs', 'Word / Excel', (window.mammoth && window.XLSX) || vendorLoaderOk ? 'pass' : 'warn',
+            window.mammoth && window.XLSX ? 'Mammoth + XLSX đã sẵn sàng' : vendorLoaderOk ? 'Word/Excel sẽ tải khi cần, giúp mở trang nhanh hơn' : 'Chưa có bộ nạp Word/Excel');
 
         const key = String(state?.apiKey || '');
         if (state?.dailyQuotaBlocked) add(results, 'gemini', 'Gemini', 'warn', 'API có key nhưng đang hết hạn mức · OCR sẽ thay thế');

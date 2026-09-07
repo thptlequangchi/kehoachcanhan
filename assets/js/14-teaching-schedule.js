@@ -1090,12 +1090,9 @@
             return downloadBlobFile(blob, filename);
         }
 
-        function exportScheduleExcel(week) {
+        async function exportScheduleExcel(week) {
             if (!week || !state.teachingSchedule[week]?.length) return;
-            if (!window.XLSX?.utils) {
-                showToast('❌ Thư viện xuất Excel chưa tải được', 'error');
-                return;
-            }
+            try { await ensureVendorLibrary('xlsx'); } catch (error) { showToast('❌ ' + error.message, 'error'); return; }
             const doc = getScheduleDocumentData(week);
             const rows = [
                 [doc.profile.schoolName],

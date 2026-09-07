@@ -19,12 +19,7 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
     <script src="assets/js/00-diagnostics-bootstrap.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js">
-    </script>
+    <script src="assets/js/30-lazy-vendors.js"></script>
         <script src="assets/js/config.js"></script>
         <link rel="stylesheet" href="assets/css/app.css" />
         <link rel="stylesheet" href="assets/css/premium-ui.css" />
@@ -40,6 +35,7 @@
     <link rel="stylesheet" href="assets/css/pro-workspace-v51.css" />
     <link rel="stylesheet" href="assets/css/gradebook-v51.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v51.css" />
+    <link rel="stylesheet" href="assets/css/release-v52.css" />
     <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
 </head>
 <body class="premium-ui">
@@ -54,7 +50,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>PPCT sáng/chiều độc lập · Sổ điểm cá nhân</span>
+                        <span>Sổ Tay Giáo Viên Pro 52 · Gọn · Nhanh · An toàn</span>
                         <i aria-hidden="true"></i>
                         <span>39 tuần lịch · 37 tuần PPCT · Trợ lý công việc · Hồ sơ</span>
                     </div>
@@ -65,6 +61,7 @@
                     <span class="header-context-label">Đang làm việc</span>
                     <strong id="headerAcademicContext">Đang tải năm học…</strong>
                 </div>
+                <button class="header-focus-trigger" id="focusModeToggle" type="button" aria-pressed="false" title="Ẩn các dashboard nâng cao để tập trung vào công việc chính">🧘 <span>Tập trung</span></button>
                 <button class="header-command-trigger" id="globalCommandBtn" type="button" aria-haspopup="dialog" aria-controls="globalCommandPalette" title="Tìm nhanh trong toàn bộ Sổ Tay (Ctrl+K)">
                     <span class="header-command-icon" aria-hidden="true">🔍</span>
                     <span class="header-command-label">Tìm nhanh</span>
@@ -315,13 +312,14 @@
                 <div class="data-safety-summary" id="dataSafetySummary">Đang kiểm tra dữ liệu đã lưu...</div>
             </div>
             <button class="btn btn-success btn-sm" id="exportBackupBtn" type="button">⬇️ Sao lưu dữ liệu</button>
+            <button class="btn btn-outline btn-sm" id="exportEncryptedBackupBtn" type="button" title="Mã hóa AES-GCM bằng mật khẩu trước khi lưu file" style="color:#6d28d9;border-color:#c4b5fd;">🔐 Sao lưu có mật khẩu</button>
             <button class="btn btn-outline btn-sm" id="restoreBackupBtn" type="button"
                     style="color:#166534;border-color:#86efac;">⬆️ Khôi phục</button>
             <button class="btn btn-outline btn-sm" id="undoRestoreBtn" type="button" hidden
                     style="color:#92400e;border-color:#fcd34d;">↶ Hoàn tác khôi phục</button>
             <button class="btn btn-outline btn-sm" id="exportPreCloudBackupBtn" type="button" hidden
                     style="color:#0369a1;border-color:#7dd3fc;">⬇️ Bản trước đồng bộ</button>
-            <input type="file" id="restoreBackupInput" accept="application/json,.json" hidden
+            <input type="file" id="restoreBackupInput" accept="application/json,.json,.stgv" hidden
                    aria-label="Chọn file sao lưu dữ liệu" />
         </section>
             </div>
@@ -910,7 +908,7 @@
 
                 <div class="gradebook-guide">
                     <span>💡</span>
-                    <div><strong>Điểm thường xuyên linh hoạt:</strong> bắt đầu với 2 cột TX và có thể thêm dần đến tối đa <strong>5 cột TX</strong>. ĐTB học kỳ chỉ hiện khi các cột đang dùng, giữa kỳ và cuối kỳ đã có điểm; công thức: tổng TX + 2×GK + 3×CK chia cho số điểm TX + 5.</div>
+                    <div><strong>Điểm thường xuyên linh hoạt:</strong> tối đa <strong>5 cột TX</strong>. Có thể dán nguyên bảng điểm từ Excel, nhấn <strong>Enter</strong> để xuống ô cùng cột, hoàn tác thay đổi gần nhất và khóa sổ sau khi hoàn tất. ĐTB học kỳ dùng hệ số TX×1, GK×2, CK×3.</div>
                 </div>
 
                 <div class="gradebook-toolbar">
@@ -944,9 +942,13 @@
                 <div class="gradebook-actions">
                     <button class="btn btn-success btn-sm" id="gradebookAddStudentBtn" type="button">＋ Học sinh</button>
                     <button class="btn btn-outline btn-sm" id="gradebookPasteRosterBtn" type="button" style="color:#0f766e;border-color:#5eead4;">📋 Dán danh sách</button>
+                    <button class="btn btn-outline btn-sm" id="gradebookPasteScoresBtn" type="button" style="color:#1d4ed8;border-color:#93c5fd;">📥 Dán bảng điểm</button>
                     <span class="gradebook-action-divider" aria-hidden="true"></span>
                     <button class="btn btn-outline btn-sm" id="gradebookRemoveRegularBtn" type="button">− Cột TX</button>
                     <button class="btn btn-primary btn-sm" id="gradebookAddRegularBtn" type="button">＋ Cột TX</button>
+                    <button class="btn btn-outline btn-sm" id="gradebookUndoBtn" type="button" title="Hoàn tác lần sửa điểm gần nhất">↶ Hoàn tác</button>
+                    <button class="btn btn-outline btn-sm" id="gradebookHistoryBtn" type="button">🕘 Lịch sử</button>
+                    <button class="btn btn-outline btn-sm" id="gradebookLockBtn" type="button" style="color:#7c2d12;border-color:#fdba74;">🔒 Khóa sổ</button>
                     <span class="gradebook-action-spacer"></span>
                     <button class="btn btn-success btn-sm" id="gradebookExportExcelBtn" type="button">📊 Xuất Excel</button>
                     <button class="btn btn-outline btn-sm" id="gradebookClearBookBtn" type="button" style="color:#b91c1c;border-color:#fca5a5;">🗑️ Xóa sổ</button>
@@ -964,6 +966,17 @@
                         <span id="gradebookPasteHint">Danh sách sẽ được nối vào cuối sổ hiện tại.</span>
                         <button class="btn btn-primary btn-sm" id="gradebookApplyRosterBtn" type="button">Thêm vào sổ</button>
                     </div>
+                </section>
+
+                <section class="gradebook-paste-panel" id="gradebookPasteScoresPanel" hidden aria-label="Dán bảng điểm từ Excel">
+                    <div class="gradebook-paste-head"><div><strong>📥 Dán bảng điểm từ Excel</strong><small>Hỗ trợ: STT · Họ tên · TX1…TX5 · GK · CK · Ghi chú. Có thể có hoặc không có hàng tiêu đề.</small></div><button class="btn btn-outline btn-sm" id="gradebookCloseScoresPasteBtn" type="button">✕ Đóng</button></div>
+                    <textarea id="gradebookScoresTextarea" rows="9" placeholder="Họ và tên&#9;TX1&#9;TX2&#9;TX3&#9;Giữa kỳ&#9;Cuối kỳ&#10;Nguyễn Văn An&#9;8&#9;7.5&#9;9&#9;8&#9;8.5"></textarea>
+                    <div class="gradebook-paste-actions"><span id="gradebookScoresPasteHint">Trùng tên sẽ cập nhật điểm; tên mới sẽ được thêm vào sổ.</span><button class="btn btn-primary btn-sm" id="gradebookApplyScoresBtn" type="button">Áp dụng bảng điểm</button></div>
+                </section>
+
+                <section class="gradebook-paste-panel" id="gradebookHistoryPanel" hidden aria-label="Lịch sử chỉnh điểm">
+                    <div class="gradebook-paste-head"><div><strong>🕘 Lịch sử chỉnh điểm</strong><small>Lưu tối đa 300 thay đổi gần nhất của sổ đang mở.</small></div><button class="btn btn-outline btn-sm" id="gradebookCloseHistoryBtn" type="button">✕ Đóng</button></div>
+                    <div id="gradebookHistoryList" class="gradebook-history-list"></div>
                 </section>
 
                 <div class="gradebook-table-wrap" id="gradebookTableWrap">
@@ -1034,6 +1047,12 @@
 
                 <section class="homeroom-section">
                     <div class="homeroom-section-title"><h3>👥 Hồ sơ học sinh</h3><small>Chỉnh trực tiếp trong bảng; dữ liệu tự lưu.</small></div>
+                    <div class="homeroom-filterbar">
+                        <label><span>Tìm học sinh</span><input id="homeroomSearchInput" type="search" placeholder="Nhập họ tên…" autocomplete="off" /></label>
+                        <label><span>Lọc nhanh</span><select id="homeroomFilterSelect"><option value="all">Tất cả</option><option value="attention">Cần theo dõi</option><option value="unexcused">Vắng không phép</option><option value="violation">Có vi phạm</option><option value="resolved">Đã xử lý</option></select></label>
+                        <button class="btn btn-outline btn-sm" id="homeroomPrivacyBtn" type="button" title="Ẩn/hiện SĐT và địa chỉ khi mở sổ trước lớp">👁️ Hiện thông tin riêng</button>
+                        <span class="homeroom-filter-count" id="homeroomFilterCount">0 học sinh</span>
+                    </div>
                     <div class="homeroom-roster-wrap" id="homeroomRosterWrap"><div class="homeroom-empty">Chọn lớp rồi nhấn <strong>“Mở / Tạo sổ”</strong>.</div></div>
                 </section>
 
@@ -1751,6 +1770,7 @@
     <script src="assets/js/23-global-command.js"></script>
     <script src="assets/js/24-storage-center.js"></script>
     <script src="assets/js/27-regression-tests.js"></script>
+    <script src="assets/js/31-release-shell.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

@@ -5,6 +5,9 @@
         // ================================================================
         let homeroomPersistTimer = null;
         let homeroomInitialized = false;
+        let homeroomRosterSearch = '';
+        let homeroomRosterFilter = 'all';
+        let homeroomPrivacyHidden = true;
 
         const HOMEROOM_TYPE_META = {
             absence_excused: { label: 'Vắng có phép', icon: '🟡', tone: 'warning' },
@@ -179,6 +182,45 @@
             return (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester)).length;
         }
 
+        function homeroomStudentFilterFlags(book, studentId) {
+            const semester = homeroomGetSelectedSemester();
+            const entries = (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester));
+            const unresolvedAttention = entries.some(entry => ['absence_unexcused','violation','support'].includes(entry.type) && !entry.resolved);
+            return {
+                attention: unresolvedAttention,
+                unexcused: entries.some(entry => entry.type === 'absence_unexcused'),
+                violation: entries.some(entry => entry.type === 'violation'),
+                resolved: entries.some(entry => ['absence_unexcused','violation','support'].includes(entry.type) && entry.resolved),
+            };
+        }
+
+        function homeroomApplyRosterFilters() {
+            const book = homeroomActiveBook();
+            const wrap = homeroomById('homeroomRosterWrap');
+            if (!wrap) return;
+            const query = homeroomNormalizeKeyText(homeroomRosterSearch);
+            let visible = 0;
+            wrap.querySelectorAll('[data-homeroom-student-row]').forEach(row => {
+                const name = homeroomNormalizeKeyText(row.dataset.homeroomSearch || '');
+                const matchesText = !query || name.includes(query);
+                const matchesFilter = homeroomRosterFilter === 'all' || row.dataset[`homeroom${homeroomRosterFilter[0].toUpperCase()}${homeroomRosterFilter.slice(1)}`] === '1';
+                row.hidden = !(matchesText && matchesFilter);
+                if (!row.hidden) visible += 1;
+            });
+            const count = homeroomById('homeroomFilterCount');
+            if (count) count.textContent = `${visible}/${book?.students?.length || 0} học sinh`;
+            const card = homeroomById('homeroomCard');
+            card?.classList.toggle('is-privacy-on', homeroomPrivacyHidden);
+            const privacyBtn = homeroomById('homeroomPrivacyBtn');
+            if (privacyBtn) privacyBtn.textContent = homeroomPrivacyHidden ? '👁️ Hiện thông tin riêng' : '🙈 Ẩn thông tin riêng';
+        }
+
+        function homeroomTogglePrivacy() {
+            homeroomPrivacyHidden = !homeroomPrivacyHidden;
+            try { sessionStorage.setItem('teacher_homeroom_privacy_hidden_v1', homeroomPrivacyHidden ? '1' : '0'); } catch (_) { /* noop */ }
+            homeroomApplyRosterFilters();
+        }
+
         function homeroomRenderRoster(book) {
             const wrap = homeroomById('homeroomRosterWrap');
             if (!wrap) return;
@@ -198,7 +240,8 @@
                 <tbody>${book.students.map((student, index) => {
                     const selected = homeroomEnsureState().selectedStudentId === student.id;
                     const entryCount = homeroomStudentEntryCount(book, student.id);
-                    return `<tr class="${selected ? 'is-selected' : ''}" data-homeroom-student-row="${homeroomEscapeHtml(student.id)}">
+                    const flags = homeroomStudentFilterFlags(book, student.id);
+                    return `<tr class="${selected ? 'is-selected' : ''}" data-homeroom-student-row="${homeroomEscapeHtml(student.id)}" data-homeroom-search="${homeroomEscapeHtml(student.name)}" data-homeroom-attention="${flags.attention ? '1' : '0'}" data-homeroom-unexcused="${flags.unexcused ? '1' : '0'}" data-homeroom-violation="${flags.violation ? '1' : '0'}" data-homeroom-resolved="${flags.resolved ? '1' : '0'}">
                         <td class="homeroom-stt">${index + 1}</td>
                         <td><input class="homeroom-cell-input homeroom-name-input" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="name" value="${homeroomEscapeHtml(student.name)}" placeholder="Họ và tên" /></td>
                         <td><input class="homeroom-cell-input" type="date" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="birthDate" value="${homeroomEscapeHtml(student.birthDate)}" /></td>
@@ -209,15 +252,16 @@
                             <option value="Khác" ${student.gender === 'Khác' ? 'selected' : ''}>Khác</option>
                         </select></td>
                         <td><input class="homeroom-cell-input" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="parentName" value="${homeroomEscapeHtml(student.parentName)}" placeholder="Họ tên PH" /></td>
-                        <td><input class="homeroom-cell-input homeroom-phone" inputmode="tel" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="parentPhone" value="${homeroomEscapeHtml(student.parentPhone)}" placeholder="SĐT" /></td>
-                        <td><input class="homeroom-cell-input homeroom-phone" inputmode="tel" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="studentPhone" value="${homeroomEscapeHtml(student.studentPhone)}" placeholder="SĐT" /></td>
-                        <td><input class="homeroom-cell-input homeroom-wide-input" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="address" value="${homeroomEscapeHtml(student.address)}" placeholder="Địa chỉ" /></td>
+                        <td><input class="homeroom-cell-input homeroom-phone homeroom-sensitive" inputmode="tel" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="parentPhone" value="${homeroomEscapeHtml(student.parentPhone)}" placeholder="SĐT" /></td>
+                        <td><input class="homeroom-cell-input homeroom-phone homeroom-sensitive" inputmode="tel" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="studentPhone" value="${homeroomEscapeHtml(student.studentPhone)}" placeholder="SĐT" /></td>
+                        <td><input class="homeroom-cell-input homeroom-wide-input homeroom-sensitive" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="address" value="${homeroomEscapeHtml(student.address)}" placeholder="Địa chỉ" /></td>
                         <td><input class="homeroom-cell-input homeroom-wide-input" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="note" value="${homeroomEscapeHtml(student.note)}" placeholder="Lưu ý" /></td>
                         <td><button class="homeroom-track-btn ${selected ? 'active' : ''}" type="button" data-homeroom-select-student="${homeroomEscapeHtml(student.id)}">📌 ${entryCount}</button></td>
                         <td><button class="homeroom-delete-btn" type="button" title="Xóa học sinh" data-homeroom-delete-student="${homeroomEscapeHtml(student.id)}">×</button></td>
                     </tr>`;
                 }).join('')}</tbody>
             </table>`;
+            homeroomApplyRosterFilters();
         }
 
         function homeroomEntryMeta(type) {
@@ -313,6 +357,7 @@
             homeroomRenderBookStrip();
             homeroomRenderStats(book);
             homeroomRenderRoster(book);
+            homeroomApplyRosterFilters();
             homeroomRenderStudentSelector(book);
             homeroomRenderStudentLog(book);
             homeroomRenderClassJournal(book);
@@ -597,13 +642,10 @@
             return cleanText(value).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '-').slice(0, 60) || 'lop';
         }
 
-        function homeroomExportExcel() {
+        async function homeroomExportExcel() {
             const book = homeroomActiveBook();
+            try { await ensureVendorLibrary('xlsx'); } catch (error) { showToast('❌ ' + error.message, 'error'); return; }
             if (!book) return;
-            if (!globalThis.XLSX) {
-                showToast('❌ Chưa nạp thư viện Excel. Hãy kết nối mạng rồi tải lại trang.', 'error');
-                return;
-            }
             try {
                 const semester = homeroomGetSelectedSemester();
                 const summary = homeroomSummarizeBook(book, semester);
@@ -676,6 +718,7 @@
 
         function initHomeroom() {
             if (homeroomInitialized) return;
+            try { homeroomPrivacyHidden = sessionStorage.getItem('teacher_homeroom_privacy_hidden_v1') !== '0'; } catch (_) { homeroomPrivacyHidden = true; }
             const card = homeroomById('homeroomCard');
             if (!card) return;
             homeroomInitialized = true;
@@ -684,6 +727,9 @@
             homeroomById('homeroomAddStudentBtn')?.addEventListener('click', homeroomAddStudent);
             homeroomById('homeroomImportGradebookBtn')?.addEventListener('click', homeroomImportFromGradebook);
             homeroomById('homeroomExportExcelBtn')?.addEventListener('click', homeroomExportExcel);
+            homeroomById('homeroomSearchInput')?.addEventListener('input', event => { homeroomRosterSearch = event.target.value || ''; homeroomApplyRosterFilters(); });
+            homeroomById('homeroomFilterSelect')?.addEventListener('change', event => { homeroomRosterFilter = event.target.value || 'all'; homeroomApplyRosterFilters(); });
+            homeroomById('homeroomPrivacyBtn')?.addEventListener('click', homeroomTogglePrivacy);
             homeroomById('homeroomClearBookBtn')?.addEventListener('click', homeroomDeleteCurrentBook);
             homeroomById('homeroomQuickLogBtn')?.addEventListener('click', () => {
                 homeroomById('homeroomStudentLogPanel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
