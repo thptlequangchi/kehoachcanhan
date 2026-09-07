@@ -1,4 +1,4 @@
-# TESTING — v51.4.0
+# TESTING — v51.5.0
 
 ## Kiểm thử tự động đã chạy
 - `python tests/run-static-audit.py`
@@ -6,39 +6,40 @@
 - `node tests/run-session-ppct-fixtures.js`
 - `node --check` cho toàn bộ JavaScript và Service Worker
 
-## Fixture Sổ điểm cá nhân
-- `GRADEBOOK_MAX_REGULAR_COLUMNS = 5`: PASS.
-- Sổ mới mặc định 2 cột TX: PASS.
-- Số cột TX lớn hơn 5 được chuẩn hóa về 5: PASS.
-- Điểm `9,5` chuẩn hóa thành `9.5`: PASS.
-- Điểm ngoài 0–10 bị loại: PASS.
-- Công thức ĐTB HK với fixture TX/GK/CK: PASS.
-- Thiếu một điểm trong cột TX đang dùng thì ĐTB HK chưa tính: PASS.
-- Sổ điểm được giữ trong `normalizeYearWorkspace`: PASS.
-- Personal Firestore payload có trường `gradebook`: PASS qua static audit.
-- Backup/Restore giữ gradebook theo year workspace: PASS qua static audit + normalize fixtures.
+## Fixture Sổ chủ nhiệm
+- `normalizeHomeroomBook`: PASS.
+- Sổ giữ đúng danh sách học sinh + ghi nhận theo học kỳ: PASS.
+- Vắng không phép chưa xử lý làm học sinh vào nhóm cần theo dõi: PASS.
+- Khen thưởng không làm tăng nhóm cần theo dõi: PASS.
+- `normalizeYearWorkspace` giữ `homeroom.selectedBookId`: PASS.
+- Personal Firestore payload có trường `homeroom`: PASS qua static audit.
+- Backup/Restore có `homeroom`: PASS qua static audit.
+- Module và stylesheet Sổ chủ nhiệm được nạp trước init / có trong APP_SHELL: PASS.
 
-## Fixture kế thừa v51.3
-- PPCT Buổi chiều riêng ưu tiên hơn bộ `Cả hai buổi`: PASS.
-- Tra tên bài cùng số PPCT nhưng khác buổi trả đúng bài: PASS.
-- Tuần 1: sáng và chiều đều có thể bắt đầu PPCT 1,2: PASS.
-- Tuần 2: mỗi buổi tiếp tục độc lập: PASS.
+## Fixture kế thừa
+- Sổ điểm tối đa 5 cột TX và công thức ĐTB: PASS.
+- PPCT sáng/chiều độc lập: PASS.
+- Lịch năm học 39 tuần (2 tuần phụ + 37 tuần chính): PASS.
+- So sánh lịch công tác điều chỉnh có selective apply: PASS.
 
-## Kết quả build v51.4
-- HTML IDs: 472/472 unique.
-- Named functions: 801/801 unique.
-- HTML resources: 51/51 tồn tại.
+## Kết quả build v51.5
+- HTML IDs: 512/512 unique.
+- Named functions: 852/852 unique.
+- HTML resources: 53/53 tồn tại.
 - Literal DOM refs: 196/196 hợp lệ.
-- APP_SHELL: 54/54 tài nguyên tồn tại.
-- APP_VERSION: 51.4.0.
-- DATA_SCHEMA_VERSION: 2.
+- APP_SHELL: 56/56 tài nguyên tồn tại.
+- APP_VERSION: 51.5.0.
+- DATA_SCHEMA_VERSION: 3.
+- BACKUP_VERSION: 6.
 
 ## Kiểm thử thực tế nên làm sau deploy
-1. Mở Sổ Điểm, tạo `12A2 · Toán · HKI`.
-2. Dán khoảng 40 học sinh từ Excel.
-3. Thêm TX3, TX4, TX5; xác nhận nút thêm bị khóa khi đã 5 cột.
-4. Nhập đủ TX/GK/CK cho một học sinh và đối chiếu ĐTB HK.
-5. Thử nhập 10.5 hoặc -1: hệ thống phải xóa điểm không hợp lệ.
-6. Xuất Excel và kiểm tra đủ các cột TX đang dùng.
-7. Chuyển năm học rồi quay lại: sổ điểm phải tách đúng theo năm học.
-8. Nếu dùng tài khoản nhóm, đăng nhập tài khoản khác: không được nhìn thấy Sổ điểm cá nhân của giáo viên này.
+1. Mở **Sổ Chủ Nhiệm**, tạo lớp `12A2`.
+2. Nhấn **Lấy DS từ Sổ điểm** và xác nhận không sinh học sinh trùng khi HKI/HKII đều có sổ điểm.
+3. Dán danh sách có STT, ngày sinh, giới tính, phụ huynh, SĐT để kiểm tra parser.
+4. Ghi một lượt vắng không phép cho học sinh A; KPI “HS cần theo dõi” phải tăng.
+5. Đánh dấu ghi nhận đó “Đã xử lý”; KPI cần theo dõi phải giảm nếu học sinh không còn việc chưa xử lý khác.
+6. Chuyển HKI ↔ HKII; nhật ký và KPI phải lọc đúng học kỳ.
+7. Thêm Sinh hoạt lớp / Họp phụ huynh vào Nhật ký lớp.
+8. Xuất Excel và kiểm tra đủ 4 sheet.
+9. Chuyển năm học rồi quay lại; Sổ chủ nhiệm phải tách đúng năm.
+10. Nếu dùng tài khoản nhóm, đăng nhập tài khoản giáo viên khác và xác nhận không nhìn thấy dữ liệu Sổ chủ nhiệm của giáo viên này.

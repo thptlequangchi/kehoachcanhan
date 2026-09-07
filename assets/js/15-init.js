@@ -97,6 +97,7 @@
             safeInitStage('An toàn dữ liệu', updateDataSafetySummary);
             safeInitStage('Sổ Công Việc Pro', () => { initWorkPro(); renderWorkWorkspace(); });
             safeInitStage('Sổ điểm cá nhân', () => { if (typeof initGradebook === 'function') initGradebook(); });
+            safeInitStage('Sổ chủ nhiệm', () => { if (typeof initHomeroom === 'function') initHomeroom(); });
             safeInitStage('Nhắc việc & Lịch công việc', () => { if (typeof initSmartReminderCenter === 'function') initSmartReminderCenter(); });
 
             safeInitStage('Khôi phục lịch báo giảng đang chọn', () => {

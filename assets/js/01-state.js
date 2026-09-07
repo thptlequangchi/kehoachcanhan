@@ -45,8 +45,8 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '51.4.0';
-        const DATA_SCHEMA_VERSION = 2;
+        const APP_VERSION = '51.5.0';
+        const DATA_SCHEMA_VERSION = 3;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
         const GEMINI_MODEL = 'gemini-3.5-flash';
@@ -69,7 +69,7 @@
         const SELECTED_ACADEMIC_YEAR_STORAGE = 'teacher_selected_academic_year';
         const RECOGNITION_MODES = ['auto', 'accurate', 'economy', 'offline'];
         const BACKUP_FORMAT = 'teacher-notebook-backup';
-        const BACKUP_VERSION = 5;
+        const BACKUP_VERSION = 6;
         const PRE_RESTORE_BACKUP_KEY = 'teacher_pre_restore_backup_v1';
         const PRE_CLOUD_SYNC_BACKUP_KEY = 'teacher_pre_cloud_sync_backup_v1';
         const SHARED_PLAN_HISTORY_STORAGE = 'teacher_shared_plan_history_v1';
@@ -77,6 +77,13 @@
         const GRADEBOOK_MAX_REGULAR_COLUMNS = 5;
         const GRADEBOOK_DEFAULT_REGULAR_COLUMNS = 2;
         const GRADEBOOK_SEMESTERS = ['1', '2'];
+        const HOMEROOM_SEMESTERS = ['1', '2'];
+        const HOMEROOM_GENDERS = ['', 'Nam', 'Nữ', 'Khác'];
+        const HOMEROOM_ENTRY_TYPES = [
+            'absence_excused', 'absence_unexcused', 'late', 'violation',
+            'commendation', 'parent_contact', 'support', 'note',
+            'class_meeting', 'parent_meeting', 'class_activity'
+        ];
         const WORK_SCOPE_STORAGE = 'teacher_work_scope_v1';
         const WORK_VIEW_STORAGE = 'teacher_work_view_v1';
         const WORK_SMART_FILTER_STORAGE = 'teacher_work_smart_filter_v1';
@@ -997,6 +1004,99 @@
             };
         }
 
+        function normalizeHomeroomDate(value) {
+            const text = cleanText(value);
+            if (!text) return '';
+            const iso = typeof normalizeISODate === 'function' ? normalizeISODate(text) : '';
+            if (iso) return iso;
+            const match = text.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+            if (!match) return '';
+            const day = String(Number(match[1])).padStart(2, '0');
+            const month = String(Number(match[2])).padStart(2, '0');
+            return `${match[3]}-${month}-${day}`;
+        }
+
+        function normalizeHomeroomStudent(value, fallbackIndex = 0) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const name = cleanText(value.name || value.fullName);
+            const genderRaw = cleanText(value.gender);
+            const gender = HOMEROOM_GENDERS.includes(genderRaw) ? genderRaw : '';
+            return {
+                id: cleanText(value.id) || `cn-hs-${Date.now()}-${fallbackIndex}-${Math.random().toString(36).slice(2, 8)}`,
+                name,
+                birthDate: normalizeHomeroomDate(value.birthDate || value.dob),
+                gender,
+                parentName: cleanText(value.parentName || value.guardianName),
+                parentPhone: cleanText(value.parentPhone || value.guardianPhone),
+                studentPhone: cleanText(value.studentPhone || value.phone),
+                address: cleanText(value.address),
+                note: cleanText(value.note),
+            };
+        }
+
+        function normalizeHomeroomEntry(value, fallbackIndex = 0) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const rawType = cleanText(value.type);
+            const type = HOMEROOM_ENTRY_TYPES.includes(rawType) ? rawType : 'note';
+            const semester = HOMEROOM_SEMESTERS.includes(String(value.semester)) ? String(value.semester) : '1';
+            return {
+                id: cleanText(value.id) || `cn-log-${Date.now()}-${fallbackIndex}-${Math.random().toString(36).slice(2, 8)}`,
+                studentId: cleanText(value.studentId),
+                date: normalizeHomeroomDate(value.date),
+                semester,
+                type,
+                content: cleanText(value.content || value.title),
+                followUp: cleanText(value.followUp),
+                resolved: Boolean(value.resolved),
+                createdAt: cleanText(value.createdAt),
+            };
+        }
+
+        function normalizeHomeroomBook(value, fallbackId = '') {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const className = cleanText(value.className || value.class);
+            if (!className) return null;
+            const students = Array.isArray(value.students)
+                ? value.students.map((student, index) => normalizeHomeroomStudent(student, index)).filter(Boolean)
+                : [];
+            const studentIds = new Set(students.map(student => student.id));
+            const entries = Array.isArray(value.entries)
+                ? value.entries.map((entry, index) => normalizeHomeroomEntry(entry, index)).filter(Boolean).map(entry => ({
+                    ...entry,
+                    studentId: entry.studentId && studentIds.has(entry.studentId) ? entry.studentId : '',
+                }))
+                : [];
+            return {
+                id: cleanText(value.id) || cleanText(fallbackId) || `cn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                className,
+                homeroomTeacher: cleanText(value.homeroomTeacher),
+                students,
+                entries,
+                updatedAt: cleanText(value.updatedAt),
+            };
+        }
+
+        function normalizeHomeroomWorkspace(value) {
+            const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            const rawBooks = source.books && typeof source.books === 'object' && !Array.isArray(source.books) ? source.books : {};
+            const books = {};
+            Object.entries(rawBooks).forEach(([id, book]) => {
+                const normalized = normalizeHomeroomBook(book, id);
+                if (normalized) books[normalized.id] = normalized;
+            });
+            const selectedBookId = cleanText(source.selectedBookId);
+            const activeBook = books[selectedBookId] || null;
+            const selectedStudentId = cleanText(source.selectedStudentId);
+            return {
+                version: 1,
+                books,
+                selectedBookId: activeBook ? selectedBookId : '',
+                selectedClassName: cleanText(source.selectedClassName),
+                selectedSemester: HOMEROOM_SEMESTERS.includes(String(source.selectedSemester)) ? String(source.selectedSemester) : '1',
+                selectedStudentId: activeBook?.students?.some(student => student.id === selectedStudentId) ? selectedStudentId : '',
+            };
+        }
+
         function normalizeTeachingScheduleBackup(value) {
             if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
             return Object.fromEntries(
@@ -1055,6 +1155,7 @@
                 scheduleMeta: normalizeScheduleMetaBackup(source.scheduleMeta),
                 workItems: normalizeWorkItems(source.workItems, 'personal'),
                 gradebook: normalizeGradebookWorkspace(source.gradebook),
+                homeroom: normalizeHomeroomWorkspace(source.homeroom),
                 selectedTimetableWeek: selectedTimetableWeek > 0 && selectedTimetableWeek <= MAX_SCHOOL_WEEKS
                     ? selectedTimetableWeek : 1,
                 selectedTeachingWeek: selectedTeachingWeek > 0 && selectedTeachingWeek <= MAX_SCHOOL_WEEKS
@@ -1088,6 +1189,7 @@
             scheduleMeta: readStoredJSON('teacher_schedule_meta', {}),
             workItems: [],
             gradebook: normalizeGradebookWorkspace(null),
+            homeroom: normalizeHomeroomWorkspace(null),
             sharedWorkItems: [],
             workScope: localStorage.getItem(WORK_SCOPE_STORAGE) === 'shared' ? 'shared' : 'personal',
             workView: ['kanban','calendar'].includes(localStorage.getItem(WORK_VIEW_STORAGE)) ? localStorage.getItem(WORK_VIEW_STORAGE) : 'list',
@@ -1219,6 +1321,7 @@
         state.scheduleMeta = activeYearWorkspace.scheduleMeta;
         state.workItems = activeYearWorkspace.workItems;
         state.gradebook = activeYearWorkspace.gradebook;
+        state.homeroom = activeYearWorkspace.homeroom;
         state.selectedTimetableWeek = activeYearWorkspace.selectedTimetableWeek;
         state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
         state.teacherProfile.academicYear = selectedAcademicYear;

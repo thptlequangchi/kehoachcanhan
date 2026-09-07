@@ -39,6 +39,7 @@
     <link rel="stylesheet" href="assets/css/regression-test.css" />
     <link rel="stylesheet" href="assets/css/pro-workspace-v51.css" />
     <link rel="stylesheet" href="assets/css/gradebook-v51.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-v51.css" />
     <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
 </head>
 <body class="premium-ui">
@@ -530,6 +531,9 @@
             <button class="tab-btn" data-tab="gradebook" role="tab" aria-selected="false" aria-controls="tab-gradebook">
                 <span class="icon">📒</span> Sổ Điểm
             </button>
+            <button class="tab-btn" data-tab="homeroom" role="tab" aria-selected="false" aria-controls="tab-homeroom">
+                <span class="icon">🏫</span> Sổ Chủ Nhiệm
+            </button>
             <button class="tab-btn" data-tab="reports" role="tab" aria-selected="false" aria-controls="tab-reports">
                 <span class="icon">📑</span> Báo Cáo & Hồ Sơ
             </button>
@@ -966,6 +970,102 @@
                     <div class="gradebook-empty">Chọn lớp, môn, học kỳ rồi nhấn <strong>“Mở / Tạo sổ”</strong>.</div>
                 </div>
                 <div class="gradebook-footnote" id="gradebookFootnote">Điểm hợp lệ từ 0 đến 10, hỗ trợ 1 chữ số thập phân. Dữ liệu được lưu tự động theo năm học hiện tại.</div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: SỔ CHỦ NHIỆM CÁ NHÂN                                    -->
+        <!-- ============================================================ -->
+        <div class="tab-content" id="tab-homeroom" role="tabpanel">
+            <div class="card homeroom-shell" id="homeroomCard">
+                <div class="card-header homeroom-header">
+                    <div>
+                        <h2>🏫 Sổ chủ nhiệm <small>hồ sơ · chuyên cần · nề nếp · phụ huynh</small></h2>
+                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, chuyên cần, nề nếp, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
+                    </div>
+                    <div class="homeroom-private-badge" title="Sổ chủ nhiệm được lưu trong vùng dữ liệu cá nhân của giáo viên, không đưa vào Kế hoạch trường dùng chung.">🔐 Cá nhân</div>
+                </div>
+
+                <div class="homeroom-guide">
+                    <span>💡</span>
+                    <div><strong>Một hồ sơ lớp dùng xuyên suốt năm học.</strong> Có thể lấy nhanh danh sách học sinh từ Sổ điểm, bổ sung thông tin phụ huynh, ghi vắng có phép/không phép, đi muộn, vi phạm, khen thưởng, hỗ trợ, trao đổi PHHS và nhật ký sinh hoạt lớp. Mỗi ghi nhận được tách theo học kỳ.</div>
+                </div>
+
+                <div class="homeroom-toolbar">
+                    <label class="homeroom-field"><span>Năm học</span><input id="homeroomYearDisplay" type="text" readonly /></label>
+                    <label class="homeroom-field"><span>Lớp chủ nhiệm</span>
+                        <input id="homeroomClassInput" type="text" list="homeroomClassSuggestions" placeholder="Ví dụ: 12A2" autocomplete="off" />
+                        <datalist id="homeroomClassSuggestions"></datalist>
+                    </label>
+                    <label class="homeroom-field"><span>Giáo viên chủ nhiệm</span><input id="homeroomTeacherInput" type="text" placeholder="Họ và tên giáo viên" autocomplete="off" /></label>
+                    <label class="homeroom-field"><span>Học kỳ đang xem</span>
+                        <select id="homeroomSemesterSelect"><option value="1">Học kỳ I</option><option value="2">Học kỳ II</option></select>
+                    </label>
+                    <button class="btn btn-primary homeroom-open-btn" id="homeroomOpenBtn" type="button">Mở / Tạo sổ</button>
+                </div>
+
+                <div class="homeroom-book-strip" id="homeroomBookStrip" aria-label="Các sổ chủ nhiệm đã tạo"></div>
+
+                <div class="homeroom-kpis" id="homeroomStats">
+                    <div class="homeroom-kpi"><span>👥</span><div><strong id="homeroomStudentCount">0</strong><small>Sĩ số</small></div></div>
+                    <div class="homeroom-kpi"><span>🟡</span><div><strong id="homeroomExcusedCount">0</strong><small>Vắng có phép</small></div></div>
+                    <div class="homeroom-kpi"><span>🔴</span><div><strong id="homeroomUnexcusedCount">0</strong><small>Vắng không phép</small></div></div>
+                    <div class="homeroom-kpi"><span>📌</span><div><strong id="homeroomAttentionCount">0</strong><small>HS cần theo dõi</small></div></div>
+                </div>
+
+                <div class="homeroom-actions">
+                    <button class="btn btn-success btn-sm" id="homeroomAddStudentBtn" type="button">＋ Học sinh</button>
+                    <button class="btn btn-outline btn-sm" id="homeroomPasteRosterBtn" type="button">📋 Dán danh sách</button>
+                    <button class="btn btn-outline btn-sm" id="homeroomImportGradebookBtn" type="button">🔗 Lấy DS từ Sổ điểm</button>
+                    <button class="btn btn-primary btn-sm" id="homeroomQuickLogBtn" type="button">📌 Ghi nhận nhanh</button>
+                    <span class="homeroom-action-spacer"></span>
+                    <button class="btn btn-success btn-sm" id="homeroomExportExcelBtn" type="button">📊 Xuất Excel</button>
+                    <button class="btn btn-outline btn-sm" id="homeroomClearBookBtn" type="button" style="color:#b91c1c;border-color:#fca5a5;">🗑️ Xóa sổ</button>
+                </div>
+
+                <section class="homeroom-paste-panel" id="homeroomPastePanel" hidden aria-label="Dán danh sách học sinh chủ nhiệm">
+                    <div class="homeroom-paste-head">
+                        <div><strong>📋 Dán danh sách học sinh</strong><small>Có thể chỉ dán Họ và tên; hoặc dán các cột: STT · Họ tên · Ngày sinh · Giới tính · Phụ huynh · SĐT PH · SĐT HS · Địa chỉ.</small></div>
+                        <button class="btn btn-outline btn-sm" id="homeroomClosePasteBtn" type="button">✕ Đóng</button>
+                    </div>
+                    <textarea id="homeroomRosterTextarea" rows="7" placeholder="1&#9;Nguyễn Văn An&#9;12/03/2009&#9;Nam&#9;Nguyễn Văn Bình&#9;0912345678&#10;2&#9;Trần Thị Minh&#9;25/07/2009&#9;Nữ"></textarea>
+                    <div class="homeroom-paste-actions"><span>Hệ thống tự bỏ học sinh trùng tên trong cùng sổ.</span><button class="btn btn-primary btn-sm" id="homeroomApplyRosterBtn" type="button">Thêm vào sổ</button></div>
+                </section>
+
+                <section class="homeroom-section">
+                    <div class="homeroom-section-title"><h3>👥 Hồ sơ học sinh</h3><small>Chỉnh trực tiếp trong bảng; dữ liệu tự lưu.</small></div>
+                    <div class="homeroom-roster-wrap" id="homeroomRosterWrap"><div class="homeroom-empty">Chọn lớp rồi nhấn <strong>“Mở / Tạo sổ”</strong>.</div></div>
+                </section>
+
+                <div class="homeroom-lower-grid">
+                    <section class="homeroom-panel" id="homeroomStudentLogPanel">
+                        <div class="homeroom-panel-head"><h3 id="homeroomStudentLogTitle">📌 Theo dõi học sinh</h3><span class="text-muted">theo học kỳ</span></div>
+                        <form class="homeroom-inline-form" id="homeroomStudentLogForm">
+                            <label><span>Học sinh</span><select id="homeroomStudentSelect"><option value="">— Chọn học sinh —</option></select></label>
+                            <label><span>Ngày</span><input id="homeroomStudentLogDate" type="date" /></label>
+                            <label><span>Loại ghi nhận</span><select id="homeroomStudentLogType">
+                                <option value="absence_excused">Vắng có phép</option><option value="absence_unexcused">Vắng không phép</option><option value="late">Đi muộn</option><option value="violation">Vi phạm</option><option value="commendation">Khen thưởng</option><option value="parent_contact">Trao đổi phụ huynh</option><option value="support">Hỗ trợ học sinh</option><option value="note">Ghi chú</option>
+                            </select></label>
+                            <label class="full"><span>Nội dung</span><textarea id="homeroomStudentLogContent" rows="2" placeholder="Ví dụ: Nghỉ tiết 1–2 do ốm; phụ huynh đã báo…"></textarea></label>
+                            <label class="full"><span>Theo dõi / biện pháp</span><input id="homeroomStudentLogFollowUp" type="text" placeholder="Ví dụ: Trao đổi phụ huynh, nhắc bổ sung bài…" /></label>
+                            <div class="homeroom-form-actions"><button class="btn btn-primary btn-sm" type="submit">＋ Thêm ghi nhận</button></div>
+                        </form>
+                        <div class="homeroom-log-list" id="homeroomStudentLogList"><div class="homeroom-mini-empty">Chọn học sinh để xem lịch sử theo dõi.</div></div>
+                    </section>
+
+                    <section class="homeroom-panel">
+                        <div class="homeroom-panel-head"><h3>🗓️ Nhật ký lớp chủ nhiệm</h3><span class="text-muted">sinh hoạt · họp PHHS · hoạt động</span></div>
+                        <form class="homeroom-inline-form" id="homeroomClassLogForm">
+                            <label><span>Ngày</span><input id="homeroomClassLogDate" type="date" /></label>
+                            <label><span>Loại</span><select id="homeroomClassLogType"><option value="class_meeting">Sinh hoạt lớp</option><option value="parent_meeting">Họp phụ huynh</option><option value="class_activity">Hoạt động lớp</option><option value="note">Ghi chú chung</option></select></label>
+                            <label class="full"><span>Nội dung</span><textarea id="homeroomClassLogContent" rows="3" placeholder="Nội dung sinh hoạt, kết luận cuộc họp, công việc của lớp…"></textarea></label>
+                            <div class="homeroom-form-actions"><button class="btn btn-primary btn-sm" type="submit">＋ Thêm nhật ký</button></div>
+                        </form>
+                        <div class="homeroom-class-journal-list" id="homeroomClassJournalList"><div class="homeroom-mini-empty">Chưa có nhật ký lớp.</div></div>
+                    </section>
+                </div>
+
+                <div class="homeroom-footnote">🔐 Sổ chủ nhiệm được lưu theo từng năm học trong vùng dữ liệu cá nhân. Khi dùng tài khoản nhóm, dữ liệu này đồng bộ vào hồ sơ riêng của giáo viên và không nằm trong Kế hoạch trường dùng chung.</div>
             </div>
         </div>
 
@@ -1644,6 +1744,7 @@
     <script src="assets/js/25-profile-package.js"></script>
     <script src="assets/js/26-reminder-calendar.js"></script>
     <script src="assets/js/28-gradebook.js"></script>
+    <script src="assets/js/29-homeroom.js"></script>
     <script src="assets/js/20-pwa.js"></script>
     <script src="assets/js/21-health-check.js"></script>
     <script src="assets/js/22-links-center.js"></script>

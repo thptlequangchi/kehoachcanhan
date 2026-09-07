@@ -21,6 +21,7 @@
                     renderProgressDashboard();
                 }
                 if (tabId === 'gradebook' && typeof renderGradebook === 'function') renderGradebook();
+                if (tabId === 'homeroom' && typeof renderHomeroom === 'function') renderHomeroom();
                 if (tabId === 'reports' && typeof renderReportCenter === 'function') renderReportCenter();
                 if (tabId === 'workspace') renderWorkWorkspace();
                 if (tabId === 'links' && typeof renderLinkCenter === 'function') renderLinkCenter();

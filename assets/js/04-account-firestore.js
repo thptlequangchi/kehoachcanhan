@@ -920,7 +920,7 @@ service cloud.firestore {
             const workspace = state.yearWorkspaces[academicYear] || getActiveYearWorkspace();
             const normalized = normalizeYearWorkspace(workspace);
             return {
-                schemaVersion: 4,
+                schemaVersion: 5,
                 academicYear,
                 timetablesByWeek: normalized.timetablesByWeek,
                 curriculumText: normalized.curriculumText,
@@ -929,6 +929,7 @@ service cloud.firestore {
                 scheduleMeta: normalized.scheduleMeta,
                 workItems: normalized.workItems,
                 gradebook: normalized.gradebook,
+                homeroom: normalized.homeroom,
                 selectedTimetableWeek: normalized.selectedTimetableWeek,
                 selectedTeachingWeek: normalized.selectedTeachingWeek,
             };
@@ -1083,6 +1084,7 @@ service cloud.firestore {
                 initializeProgressDashboardControls();
                 renderProgressDashboard();
                 if (typeof renderGradebook === 'function') renderGradebook();
+                if (typeof renderHomeroom === 'function') renderHomeroom();
             }
             updateDataSafetySummary();
             if (typeof renderYearDashboard === 'function') renderYearDashboard();
@@ -1149,6 +1151,7 @@ service cloud.firestore {
                 workspace.scheduleMeta = normalized.scheduleMeta;
                 workspace.workItems = normalized.workItems;
                 workspace.gradebook = normalized.gradebook;
+                workspace.homeroom = normalized.homeroom;
                 workspace.selectedTimetableWeek = normalized.selectedTimetableWeek;
                 workspace.selectedTeachingWeek = normalized.selectedTeachingWeek;
                 applyYearWorkspaceToRuntime(workspace, { includePlan:false });
@@ -2010,6 +2013,7 @@ service cloud.firestore {
                 ? source.scheduleMeta : {};
             state.workItems = Array.isArray(source.workItems) ? source.workItems : [];
             state.gradebook = normalizeGradebookWorkspace(source.gradebook);
+            state.homeroom = normalizeHomeroomWorkspace(source.homeroom);
             state.selectedTimetableWeek = Number.parseInt(source.selectedTimetableWeek, 10) || 1;
             state.timetableData = state.timetablesByWeek[state.selectedTimetableWeek] || null;
             return source;
@@ -2026,6 +2030,7 @@ service cloud.firestore {
             workspace.scheduleMeta = state.scheduleMeta;
             workspace.workItems = state.workItems;
             workspace.gradebook = normalizeGradebookWorkspace(state.gradebook);
+            workspace.homeroom = normalizeHomeroomWorkspace(state.homeroom);
             workspace.selectedTimetableWeek = state.selectedTimetableWeek;
             const selectedTeachingWeek = getSelectedScheduleWeek();
             if (selectedTeachingWeek) workspace.selectedTeachingWeek = selectedTeachingWeek;
@@ -2097,6 +2102,13 @@ service cloud.firestore {
                     const workspace = getActiveYearWorkspace();
                     if (workspace) workspace.gradebook = state.gradebook;
                     currentVersion = 2;
+                }
+                // Schema 3: thêm Sổ chủ nhiệm cá nhân theo năm học; không chạm dữ liệu các module trước.
+                if (currentVersion < 3) {
+                    state.homeroom = normalizeHomeroomWorkspace(state.homeroom);
+                    const workspace = getActiveYearWorkspace();
+                    if (workspace) workspace.homeroom = state.homeroom;
+                    currentVersion = 3;
                 }
 
                 localStorage.setItem(storageKey, String(DATA_SCHEMA_VERSION));
@@ -2219,6 +2231,7 @@ service cloud.firestore {
                 renderProgressDashboard();
                 renderWorkWorkspace();
                 if (typeof renderGradebook === 'function') renderGradebook();
+                if (typeof renderHomeroom === 'function') renderHomeroom();
                 updateDataSafetySummary();
                 try {
                     activateCloudDataSync();

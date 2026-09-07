@@ -22,6 +22,7 @@
                     teachingSchedule: state.teachingSchedule,
                     scheduleMeta: state.scheduleMeta,
                     gradebook: state.gradebook,
+                    homeroom: state.homeroom,
                     teacherProfile: state.teacherProfile,
                     selectedTeachingWeek: Number.parseInt(localStorage.getItem('teacher_selected_week'), 10) || null,
                     recognitionMode: state.recognitionMode,
@@ -92,6 +93,7 @@
                 teachingSchedule: normalizeTeachingScheduleBackup(data.teachingSchedule),
                 scheduleMeta: normalizeScheduleMetaBackup(data.scheduleMeta),
                 gradebook: normalizeGradebookWorkspace(data.gradebook ?? savedSelectedWorkspace?.gradebook),
+                homeroom: normalizeHomeroomWorkspace(data.homeroom ?? savedSelectedWorkspace?.homeroom),
                 selectedTeachingWeek: selectedTeachingWeek > 0 && selectedTeachingWeek <= MAX_SCHOOL_WEEKS
                     ? selectedTeachingWeek : savedSelectedWorkspace?.selectedTeachingWeek || null,
             });
@@ -112,6 +114,7 @@
                     teachingSchedule: normalizeTeachingScheduleBackup(data.teachingSchedule),
                     scheduleMeta: normalizeScheduleMetaBackup(data.scheduleMeta),
                     gradebook: normalizeGradebookWorkspace(data.gradebook ?? yearWorkspaces[selectedAcademicYear]?.gradebook),
+                    homeroom: normalizeHomeroomWorkspace(data.homeroom ?? yearWorkspaces[selectedAcademicYear]?.homeroom),
                     teacherProfile,
                     selectedTeachingWeek: selectedTeachingWeek > 0 && selectedTeachingWeek <= MAX_SCHOOL_WEEKS ? selectedTeachingWeek : null,
                     recognitionMode,
@@ -155,12 +158,21 @@
                         ? Object.values(workspace.gradebook.books).reduce((bookSum, book) => bookSum + (Array.isArray(book?.students) ? book.students.length : 0), 0)
                         : 0
                 ), 0),
+                homeroomBooks: workspaces.reduce((sum, workspace) => sum + (
+                    workspace.homeroom?.books && typeof workspace.homeroom.books === 'object'
+                        ? Object.keys(workspace.homeroom.books).length : 0
+                ), 0),
+                homeroomStudents: workspaces.reduce((sum, workspace) => sum + (
+                    workspace.homeroom?.books && typeof workspace.homeroom.books === 'object'
+                        ? Object.values(workspace.homeroom.books).reduce((bookSum, book) => bookSum + (Array.isArray(book?.students) ? book.students.length : 0), 0)
+                        : 0
+                ), 0),
             };
         }
 
         function updateDataSafetySummary() {
             const counts = backupDataCounts();
-            dataSafetySummary.textContent = `${counts.years} năm học · ${counts.plans} tuần kế hoạch · ${counts.timetables} tuần TKB · ${counts.schedules} tuần lịch báo giảng${counts.curriculum ? ` · ${counts.curriculum} bộ phân phối` : ''}${counts.gradebooks ? ` · ${counts.gradebooks} sổ điểm/${counts.gradebookStudents} học sinh` : ''}${counts.workItems ? ` · ${counts.workItems} mục công việc` : ''}. File sao lưu không chứa API key.`;
+            dataSafetySummary.textContent = `${counts.years} năm học · ${counts.plans} tuần kế hoạch · ${counts.timetables} tuần TKB · ${counts.schedules} tuần lịch báo giảng${counts.curriculum ? ` · ${counts.curriculum} bộ phân phối` : ''}${counts.gradebooks ? ` · ${counts.gradebooks} sổ điểm/${counts.gradebookStudents} học sinh` : ''}${counts.homeroomBooks ? ` · ${counts.homeroomBooks} sổ chủ nhiệm/${counts.homeroomStudents} học sinh` : ''}${counts.workItems ? ` · ${counts.workItems} mục công việc` : ''}. File sao lưu không chứa API key.`;
             const storageApi = window.teacherNotebookIndexedDB;
             if (storageApi) {
                 Promise.all([
@@ -256,6 +268,7 @@
             updateDataSafetySummary();
             renderWorkWorkspace();
             if (typeof renderGradebook === 'function') renderGradebook();
+            if (typeof renderHomeroom === 'function') renderHomeroom();
             if (typeof renderYearDashboard === 'function') renderYearDashboard();
         }
 
@@ -282,7 +295,7 @@
                 const counts = backupDataCounts(payload);
                 try { localStorage.setItem('teacher_last_backup_at_v1', new Date().toISOString()); } catch (_) { /* noop */ }
                 if (typeof refreshHealthCenterSummary === 'function') refreshHealthCenterSummary();
-                showToast(`✅ Đã sao lưu ${counts.years} năm học, ${counts.plans} tuần kế hoạch, ${counts.timetables} tuần TKB, ${counts.schedules} tuần lịch báo giảng${counts.gradebooks ? ` và ${counts.gradebooks} sổ điểm` : ''}`, 'success');
+                showToast(`✅ Đã sao lưu ${counts.years} năm học, ${counts.plans} tuần kế hoạch, ${counts.timetables} tuần TKB, ${counts.schedules} tuần lịch báo giảng${counts.gradebooks ? `, ${counts.gradebooks} sổ điểm` : ''}${counts.homeroomBooks ? ` và ${counts.homeroomBooks} sổ chủ nhiệm` : ''}`, 'success');
             } catch (error) {
                 showToast('❌ Không thể tạo file sao lưu: ' + error.message, 'error');
             }
