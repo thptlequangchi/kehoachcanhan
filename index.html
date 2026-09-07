@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="assets/css/pro-workspace-v51.css" />
     <link rel="stylesheet" href="assets/css/gradebook-v51.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v51.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-v52-2.css" />
     <link rel="stylesheet" href="assets/css/release-v52.css" />
     <link rel="stylesheet" href="assets/css/timetable-v52-1.css" />
     <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
@@ -1024,8 +1025,29 @@
                     <div class="homeroom-kpi"><span>👥</span><div><strong id="homeroomStudentCount">0</strong><small>Sĩ số</small></div></div>
                     <div class="homeroom-kpi"><span>🟡</span><div><strong id="homeroomExcusedCount">0</strong><small>Vắng có phép</small></div></div>
                     <div class="homeroom-kpi"><span>🔴</span><div><strong id="homeroomUnexcusedCount">0</strong><small>Vắng không phép</small></div></div>
+                    <div class="homeroom-kpi"><span>⏰</span><div><strong id="homeroomLateCount">0</strong><small>Đi muộn</small></div></div>
+                    <div class="homeroom-kpi"><span>⚠️</span><div><strong id="homeroomViolationCount">0</strong><small>Vi phạm</small></div></div>
                     <div class="homeroom-kpi"><span>📌</span><div><strong id="homeroomAttentionCount">0</strong><small>HS cần theo dõi</small></div></div>
                 </div>
+
+                <section class="homeroom-monitoring" id="homeroomMonitoringSection" aria-label="Theo dõi học sinh có tần suất vắng, đi muộn hoặc vi phạm cao">
+                    <div class="homeroom-monitoring-head">
+                        <div>
+                            <h3>🚦 Theo dõi chuyên cần &amp; nề nếp</h3>
+                            <small>Thống kê theo <strong>số lượt ghi nhận</strong> trong học kỳ đang xem. Ngưỡng chỉ dùng để nhắc giáo viên theo dõi, không tự xếp loại hay xử lý học sinh.</small>
+                        </div>
+                        <label class="homeroom-monitoring-view"><span>Hiển thị</span><select id="homeroomMonitoringViewSelect"><option value="flagged">Chỉ HS chạm/vượt ngưỡng</option><option value="all">Tất cả học sinh</option></select></label>
+                    </div>
+                    <div class="homeroom-thresholds" id="homeroomThresholds">
+                        <span class="homeroom-threshold-label">Ngưỡng nhắc theo dõi:</span>
+                        <label>Tổng vắng ≥ <input id="homeroomThresholdTotalAbsence" data-homeroom-threshold="totalAbsence" type="number" min="1" max="99" inputmode="numeric" value="3" /></label>
+                        <label>Vắng KP ≥ <input id="homeroomThresholdUnexcused" data-homeroom-threshold="unexcusedAbsence" type="number" min="1" max="99" inputmode="numeric" value="2" /></label>
+                        <label>Đi muộn ≥ <input id="homeroomThresholdLate" data-homeroom-threshold="late" type="number" min="1" max="99" inputmode="numeric" value="3" /></label>
+                        <label>Vi phạm ≥ <input id="homeroomThresholdViolation" data-homeroom-threshold="violation" type="number" min="1" max="99" inputmode="numeric" value="2" /></label>
+                    </div>
+                    <div class="homeroom-monitoring-summary" id="homeroomMonitoringSummary">Chưa mở sổ chủ nhiệm.</div>
+                    <div class="homeroom-monitoring-table-wrap" id="homeroomMonitoringTable"><div class="homeroom-mini-empty">Mở sổ để xem thống kê theo dõi.</div></div>
+                </section>
 
                 <div class="homeroom-actions">
                     <button class="btn btn-success btn-sm" id="homeroomAddStudentBtn" type="button">＋ Học sinh</button>
@@ -1050,7 +1072,7 @@
                     <div class="homeroom-section-title"><h3>👥 Hồ sơ học sinh</h3><small>Chỉnh trực tiếp trong bảng; dữ liệu tự lưu.</small></div>
                     <div class="homeroom-filterbar">
                         <label><span>Tìm học sinh</span><input id="homeroomSearchInput" type="search" placeholder="Nhập họ tên…" autocomplete="off" /></label>
-                        <label><span>Lọc nhanh</span><select id="homeroomFilterSelect"><option value="all">Tất cả</option><option value="attention">Cần theo dõi</option><option value="unexcused">Vắng không phép</option><option value="violation">Có vi phạm</option><option value="resolved">Đã xử lý</option></select></label>
+                        <label><span>Lọc nhanh</span><select id="homeroomFilterSelect"><option value="all">Tất cả</option><option value="attention">Cần theo dõi</option><option value="frequent">Chạm/vượt ngưỡng</option><option value="absence">Có vắng</option><option value="unexcused">Vắng không phép</option><option value="late">Có đi muộn</option><option value="violation">Có vi phạm</option><option value="resolved">Đã xử lý</option></select></label>
                         <button class="btn btn-outline btn-sm" id="homeroomPrivacyBtn" type="button" title="Ẩn/hiện SĐT và địa chỉ khi mở sổ trước lớp">👁️ Hiện thông tin riêng</button>
                         <span class="homeroom-filter-count" id="homeroomFilterCount">0 học sinh</span>
                     </div>

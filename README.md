@@ -1,25 +1,24 @@
-# Sổ Tay Giáo Viên Pro 52.1
+# Sổ Tay Giáo Viên Pro 52.2
 
-Bản v52.1 kế thừa trực tiếp v52.0 và tập trung **hoàn thiện Thời khóa biểu tuần**. Không xóa hay làm lại các module cũ.
+Bản v52.2 kế thừa trực tiếp v52.1 và tập trung nâng cấp **Sổ chủ nhiệm — theo dõi học sinh vắng nhiều, đi muộn nhiều, vi phạm nhiều**. Không xóa hay làm lại các module cũ.
 
-## Nền tảng đang có
-- Kế hoạch trường và cơ chế so sánh/cập nhật lịch công tác điều chỉnh.
-- Thời khóa biểu tuần Buổi sáng / Buổi chiều.
-- PPCT tách riêng theo **lớp + môn + buổi**.
-- Lịch báo giảng, tiến độ PPCT và báo cáo.
+## Nền tảng giữ nguyên
+- Kế hoạch trường + so sánh/cập nhật lịch công tác.
+- TKB sáng/chiều; PPCT tách riêng theo lớp + môn + buổi.
+- Lịch báo giảng, tiến độ PPCT, báo cáo.
 - Sổ điểm cá nhân tối đa 5 cột TX.
-- Sổ chủ nhiệm cá nhân.
-- Công việc, nhắc việc, dashboard, PWA/offline, backup thường và backup có mật khẩu.
+- Sổ chủ nhiệm, công việc, nhắc việc, dashboard, PWA/offline, backup thường và backup có mật khẩu.
 
-## Mới trong v52.1
-- Hiển thị rõ đủ Tiết TKB **1–5**, sửa dứt điểm lỗi Tiết 2/4 bị mờ do CSS zebra.
-- Cột Tiết TKB sticky khi cuộn ngang.
-- Tối ưu kích thước chữ, căn giữa và tiêu đề Buổi sáng/Buổi chiều.
-- Tooltip xem nhanh **PPCT sáng/chiều và tên bài** ngay trên ô TKB mà không phải mở Lịch báo giảng.
-- Tooltip ưu tiên dữ liệu lịch báo giảng hợp lệ; nếu chưa có, hệ thống tự suy ra từ PPCT đúng buổi.
+## Mới trong v52.2
+- Dashboard theo dõi chuyên cần & nề nếp theo từng học kỳ.
+- Đếm số lượt vắng CP/KP, tổng vắng, đi muộn, vi phạm và các ghi nhận chưa xử lý của từng học sinh.
+- Ngưỡng nhắc theo dõi có thể chỉnh riêng cho từng lớp; mặc định: tổng vắng 3, vắng KP 2, đi muộn 3, vi phạm 2.
+- Danh sách ưu tiên tự sắp các học sinh chạm/vượt ngưỡng lên trên; không dùng điểm số ẩn và không tự xếp loại hạnh kiểm.
+- Bộ lọc nhanh và badge V/M/VP ngay trong hồ sơ học sinh.
+- Excel có thêm sheet `Tần suất cần chú ý`.
 
 ## Cập nhật GitHub Pages
-Giải nén gói v52.1, chép **toàn bộ** nội dung vào repo hiện tại và Replace các file cũ. Commit/Push như bình thường. Service Worker dùng APP_VERSION `52.1.0`, vì vậy cache PWA sẽ được đổi sang bản mới.
+Giải nén gói v52.2, chép toàn bộ nội dung vào repo hiện tại và Replace file cũ. Service Worker dùng APP_VERSION `52.2.0` nên cache PWA sẽ chuyển sang bản mới.
 
 ## Dữ liệu
-Bản v52.1 **không đổi schema**, vì vậy dữ liệu từ v52.0/v51.x tiếp tục dùng trực tiếp. Tuy nhiên nên sao lưu trước khi thay file deploy.
+v52.2 thêm trường `monitoringThresholds` vào từng Sổ chủ nhiệm nhưng giữ tương thích ngược: sổ cũ tự nhận ngưỡng mặc định khi mở. Không cần nhập lại học sinh hoặc nhật ký. Nên sao lưu trước khi thay file deploy.

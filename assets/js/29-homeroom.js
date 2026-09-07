@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v51.5
+        //  PERSONAL HOMEROOM NOTEBOOK — v52.2
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -8,6 +8,7 @@
         let homeroomRosterSearch = '';
         let homeroomRosterFilter = 'all';
         let homeroomPrivacyHidden = true;
+        let homeroomMonitoringView = 'flagged';
 
         const HOMEROOM_TYPE_META = {
             absence_excused: { label: 'Vắng có phép', icon: '🟡', tone: 'warning' },
@@ -149,17 +150,96 @@
             return (book?.entries || []).filter(entry => String(entry.semester) === String(semester));
         }
 
+        function homeroomGetMonitoringThresholds(book) {
+            if (!book) return normalizeHomeroomMonitoringThresholds(null);
+            book.monitoringThresholds = normalizeHomeroomMonitoringThresholds(book.monitoringThresholds);
+            return book.monitoringThresholds;
+        }
+
+        function homeroomStudentMetrics(book, studentId, semester = homeroomGetSelectedSemester()) {
+            const entries = (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester));
+            const count = type => entries.filter(entry => entry.type === type).length;
+            const absenceExcused = count('absence_excused');
+            const absenceUnexcused = count('absence_unexcused');
+            const late = count('late');
+            const violation = count('violation');
+            const unresolved = entries.filter(entry => ['absence_unexcused', 'violation', 'support'].includes(entry.type) && !entry.resolved).length;
+            const lastEntry = [...entries].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')))[0] || null;
+            return {
+                absenceExcused,
+                absenceUnexcused,
+                absenceTotal: absenceExcused + absenceUnexcused,
+                late,
+                violation,
+                unresolved,
+                totalEntries: entries.length,
+                lastEntryDate: lastEntry?.date || '',
+            };
+        }
+
+        function homeroomStudentMonitoringStatus(metrics, thresholds) {
+            const alerts = [];
+            const groups = new Set();
+            if (metrics.absenceTotal >= thresholds.totalAbsence) {
+                alerts.push(`Tổng vắng ${metrics.absenceTotal}/${thresholds.totalAbsence}`);
+                groups.add('absence');
+            }
+            if (metrics.absenceUnexcused >= thresholds.unexcusedAbsence) {
+                alerts.push(`Vắng KP ${metrics.absenceUnexcused}/${thresholds.unexcusedAbsence}`);
+                groups.add('absence');
+            }
+            if (metrics.late >= thresholds.late) {
+                alerts.push(`Đi muộn ${metrics.late}/${thresholds.late}`);
+                groups.add('late');
+            }
+            if (metrics.violation >= thresholds.violation) {
+                alerts.push(`Vi phạm ${metrics.violation}/${thresholds.violation}`);
+                groups.add('violation');
+            }
+            const groupCount = groups.size;
+            return {
+                flagged: alerts.length > 0,
+                groupCount,
+                alerts,
+                level: groupCount >= 2 ? 'priority' : (groupCount === 1 ? 'watch' : 'normal'),
+                label: groupCount >= 2 ? 'Ưu tiên theo dõi' : (groupCount === 1 ? 'Cần theo dõi' : 'Bình thường'),
+            };
+        }
+
+        function homeroomBuildMonitoringRows(book, semester = homeroomGetSelectedSemester()) {
+            const thresholds = homeroomGetMonitoringThresholds(book);
+            return (book?.students || []).map(student => {
+                const metrics = homeroomStudentMetrics(book, student.id, semester);
+                const status = homeroomStudentMonitoringStatus(metrics, thresholds);
+                return { student, metrics, status };
+            }).sort((a, b) =>
+                Number(b.status.flagged) - Number(a.status.flagged)
+                || b.status.groupCount - a.status.groupCount
+                || (b.metrics.absenceTotal + b.metrics.late + b.metrics.violation) - (a.metrics.absenceTotal + a.metrics.late + a.metrics.violation)
+                || String(a.student.name || '').localeCompare(String(b.student.name || ''), 'vi', { numeric: true, sensitivity: 'base' })
+            );
+        }
+
         function homeroomSummarizeBook(book, semester = '1') {
             const entries = homeroomEntriesForSemester(book, semester);
             const individual = entries.filter(entry => entry.studentId);
-            const attentionTypes = new Set(['absence_unexcused', 'violation', 'support']);
-            const attentionStudentIds = new Set(individual.filter(entry => attentionTypes.has(entry.type) && !entry.resolved).map(entry => entry.studentId));
+            const monitoringRows = homeroomBuildMonitoringRows(book, semester);
+            const unresolvedAttentionIds = new Set(individual
+                .filter(entry => ['absence_unexcused', 'violation', 'support'].includes(entry.type) && !entry.resolved)
+                .map(entry => entry.studentId));
+            const attentionStudentIds = new Set([
+                ...unresolvedAttentionIds,
+                ...monitoringRows.filter(row => row.status.flagged).map(row => row.student.id),
+            ]);
             return {
                 students: Array.isArray(book?.students) ? book.students.length : 0,
                 absenceExcused: individual.filter(entry => entry.type === 'absence_excused').length,
                 absenceUnexcused: individual.filter(entry => entry.type === 'absence_unexcused').length,
+                late: individual.filter(entry => entry.type === 'late').length,
+                violations: individual.filter(entry => entry.type === 'violation').length,
                 commendations: individual.filter(entry => entry.type === 'commendation').length,
                 attentionStudents: attentionStudentIds.size,
+                thresholdStudents: monitoringRows.filter(row => row.status.flagged).length,
                 parentContacts: individual.filter(entry => entry.type === 'parent_contact').length,
                 entries: entries.length,
             };
@@ -171,10 +251,12 @@
             set('homeroomStudentCount', summary.students);
             set('homeroomExcusedCount', summary.absenceExcused);
             set('homeroomUnexcusedCount', summary.absenceUnexcused);
+            set('homeroomLateCount', summary.late);
+            set('homeroomViolationCount', summary.violations);
             set('homeroomAttentionCount', summary.attentionStudents);
             const subtitle = homeroomById('homeroomSubtitle');
             if (subtitle) subtitle.textContent = book
-                ? `${book.className} · Học kỳ ${homeroomGetSelectedSemester()} · ${summary.parentContacts} lượt trao đổi PHHS · ${summary.commendations} lượt khen thưởng.`
+                ? `${book.className} · Học kỳ ${homeroomGetSelectedSemester()} · ${summary.thresholdStudents} HS chạm/vượt ngưỡng · ${summary.parentContacts} lượt trao đổi PHHS.`
                 : 'Hồ sơ lớp, chuyên cần, nề nếp, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.';
         }
 
@@ -186,11 +268,18 @@
             const semester = homeroomGetSelectedSemester();
             const entries = (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester));
             const unresolvedAttention = entries.some(entry => ['absence_unexcused','violation','support'].includes(entry.type) && !entry.resolved);
+            const metrics = homeroomStudentMetrics(book, studentId, semester);
+            const status = homeroomStudentMonitoringStatus(metrics, homeroomGetMonitoringThresholds(book));
             return {
-                attention: unresolvedAttention,
-                unexcused: entries.some(entry => entry.type === 'absence_unexcused'),
-                violation: entries.some(entry => entry.type === 'violation'),
+                attention: unresolvedAttention || status.flagged,
+                frequent: status.flagged,
+                absence: metrics.absenceTotal > 0,
+                unexcused: metrics.absenceUnexcused > 0,
+                late: metrics.late > 0,
+                violation: metrics.violation > 0,
                 resolved: entries.some(entry => ['absence_unexcused','violation','support'].includes(entry.type) && entry.resolved),
+                metrics,
+                status,
             };
         }
 
@@ -241,7 +330,13 @@
                     const selected = homeroomEnsureState().selectedStudentId === student.id;
                     const entryCount = homeroomStudentEntryCount(book, student.id);
                     const flags = homeroomStudentFilterFlags(book, student.id);
-                    return `<tr class="${selected ? 'is-selected' : ''}" data-homeroom-student-row="${homeroomEscapeHtml(student.id)}" data-homeroom-search="${homeroomEscapeHtml(student.name)}" data-homeroom-attention="${flags.attention ? '1' : '0'}" data-homeroom-unexcused="${flags.unexcused ? '1' : '0'}" data-homeroom-violation="${flags.violation ? '1' : '0'}" data-homeroom-resolved="${flags.resolved ? '1' : '0'}">
+                    const m = flags.metrics;
+                    const compact = [
+                        m.absenceTotal ? `<span title="Tổng lượt vắng">V ${m.absenceTotal}</span>` : '',
+                        m.late ? `<span title="Lượt đi muộn">M ${m.late}</span>` : '',
+                        m.violation ? `<span title="Lượt vi phạm">VP ${m.violation}</span>` : '',
+                    ].filter(Boolean).join('');
+                    return `<tr class="${selected ? 'is-selected ' : ''}${flags.status.flagged ? 'is-monitoring' : ''}" data-homeroom-student-row="${homeroomEscapeHtml(student.id)}" data-homeroom-search="${homeroomEscapeHtml(student.name)}" data-homeroom-attention="${flags.attention ? '1' : '0'}" data-homeroom-frequent="${flags.frequent ? '1' : '0'}" data-homeroom-absence="${flags.absence ? '1' : '0'}" data-homeroom-unexcused="${flags.unexcused ? '1' : '0'}" data-homeroom-late="${flags.late ? '1' : '0'}" data-homeroom-violation="${flags.violation ? '1' : '0'}" data-homeroom-resolved="${flags.resolved ? '1' : '0'}">
                         <td class="homeroom-stt">${index + 1}</td>
                         <td><input class="homeroom-cell-input homeroom-name-input" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="name" value="${homeroomEscapeHtml(student.name)}" placeholder="Họ và tên" /></td>
                         <td><input class="homeroom-cell-input" type="date" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="birthDate" value="${homeroomEscapeHtml(student.birthDate)}" /></td>
@@ -256,12 +351,78 @@
                         <td><input class="homeroom-cell-input homeroom-phone homeroom-sensitive" inputmode="tel" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="studentPhone" value="${homeroomEscapeHtml(student.studentPhone)}" placeholder="SĐT" /></td>
                         <td><input class="homeroom-cell-input homeroom-wide-input homeroom-sensitive" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="address" value="${homeroomEscapeHtml(student.address)}" placeholder="Địa chỉ" /></td>
                         <td><input class="homeroom-cell-input homeroom-wide-input" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="note" value="${homeroomEscapeHtml(student.note)}" placeholder="Lưu ý" /></td>
-                        <td><button class="homeroom-track-btn ${selected ? 'active' : ''}" type="button" data-homeroom-select-student="${homeroomEscapeHtml(student.id)}">📌 ${entryCount}</button></td>
+                        <td class="homeroom-track-cell"><button class="homeroom-track-btn ${selected ? 'active' : ''}" type="button" data-homeroom-select-student="${homeroomEscapeHtml(student.id)}">📌 ${entryCount}</button>${compact ? `<div class="homeroom-mini-metrics ${flags.status.flagged ? 'flagged' : ''}">${compact}</div>` : ''}</td>
                         <td><button class="homeroom-delete-btn" type="button" title="Xóa học sinh" data-homeroom-delete-student="${homeroomEscapeHtml(student.id)}">×</button></td>
                     </tr>`;
                 }).join('')}</tbody>
             </table>`;
             homeroomApplyRosterFilters();
+        }
+
+        function homeroomRenderMonitoring(book) {
+            const summaryEl = homeroomById('homeroomMonitoringSummary');
+            const tableEl = homeroomById('homeroomMonitoringTable');
+            const viewSelect = homeroomById('homeroomMonitoringViewSelect');
+            const thresholds = homeroomGetMonitoringThresholds(book);
+            const thresholdInputs = {
+                totalAbsence: homeroomById('homeroomThresholdTotalAbsence'),
+                unexcusedAbsence: homeroomById('homeroomThresholdUnexcused'),
+                late: homeroomById('homeroomThresholdLate'),
+                violation: homeroomById('homeroomThresholdViolation'),
+            };
+            Object.entries(thresholdInputs).forEach(([key, input]) => {
+                if (!input) return;
+                input.value = String(thresholds[key]);
+                input.disabled = !book;
+            });
+            if (viewSelect) {
+                viewSelect.value = homeroomMonitoringView;
+                viewSelect.disabled = !book;
+            }
+            if (!summaryEl || !tableEl) return;
+            if (!book) {
+                summaryEl.textContent = 'Chưa mở sổ chủ nhiệm.';
+                tableEl.innerHTML = '<div class="homeroom-mini-empty">Mở sổ để xem thống kê theo dõi.</div>';
+                return;
+            }
+            const semester = homeroomGetSelectedSemester();
+            const rows = homeroomBuildMonitoringRows(book, semester);
+            const flaggedRows = rows.filter(row => row.status.flagged);
+            const priorityRows = flaggedRows.filter(row => row.status.level === 'priority');
+            summaryEl.innerHTML = `<strong>${flaggedRows.length}</strong>/${rows.length} học sinh chạm hoặc vượt ít nhất một ngưỡng trong HK${semester}`
+                + (priorityRows.length ? ` · <strong>${priorityRows.length}</strong> em cần ưu tiên theo dõi vì xuất hiện ở từ 2 nhóm trở lên.` : '.');
+            const shownRows = homeroomMonitoringView === 'all' ? rows : flaggedRows;
+            if (!shownRows.length) {
+                tableEl.innerHTML = '<div class="homeroom-monitoring-good">✅ Chưa có học sinh chạm ngưỡng theo dõi ở học kỳ đang xem.</div>';
+                return;
+            }
+            tableEl.innerHTML = `<table class="homeroom-monitor-table"><thead><tr>
+                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Vi phạm</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
+                </tr></thead><tbody>${shownRows.map(({ student, metrics, status }) => {
+                    const alertTitle = status.alerts.length ? status.alerts.join(' · ') : 'Chưa chạm ngưỡng';
+                    return `<tr class="monitor-${status.level}">
+                        <td><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></td>
+                        <td>${metrics.absenceExcused}</td><td>${metrics.absenceUnexcused}</td><td><strong>${metrics.absenceTotal}</strong></td>
+                        <td>${metrics.late}</td><td>${metrics.violation}</td><td>${metrics.unresolved}</td><td>${homeroomEscapeHtml(homeroomFormatDate(metrics.lastEntryDate) || '—')}</td>
+                        <td><span class="homeroom-monitor-status status-${status.level}" title="${homeroomEscapeHtml(alertTitle)}">${homeroomEscapeHtml(status.label)}</span>${status.alerts.length ? `<small>${homeroomEscapeHtml(status.alerts.join(' · '))}</small>` : ''}</td>
+                        <td><button type="button" class="btn btn-outline btn-sm" data-homeroom-monitor-student="${homeroomEscapeHtml(student.id)}">Xem</button></td>
+                    </tr>`;
+                }).join('')}</tbody></table>`;
+        }
+
+        function homeroomUpdateMonitoringThreshold(input) {
+            const book = homeroomActiveBook();
+            if (!book || !input) return;
+            const key = cleanText(input.dataset.homeroomThreshold);
+            if (!Object.prototype.hasOwnProperty.call(HOMEROOM_MONITORING_DEFAULTS, key)) return;
+            const parsed = Number.parseInt(input.value, 10);
+            const value = Number.isFinite(parsed) ? Math.min(99, Math.max(1, parsed)) : HOMEROOM_MONITORING_DEFAULTS[key];
+            book.monitoringThresholds = homeroomGetMonitoringThresholds(book);
+            book.monitoringThresholds[key] = value;
+            book.updatedAt = new Date().toISOString();
+            homeroomSchedulePersist();
+            renderHomeroom();
+            showToast('✅ Đã cập nhật ngưỡng theo dõi', 'success');
         }
 
         function homeroomEntryMeta(type) {
@@ -356,6 +517,7 @@
             homeroomRenderClassSuggestions();
             homeroomRenderBookStrip();
             homeroomRenderStats(book);
+            homeroomRenderMonitoring(book);
             homeroomRenderRoster(book);
             homeroomApplyRosterFilters();
             homeroomRenderStudentSelector(book);
@@ -677,6 +839,19 @@
                     'Loại': homeroomEntryMeta(entry.type).label,
                     'Nội dung': entry.content,
                 }));
+                const thresholds = homeroomGetMonitoringThresholds(book);
+                const monitoringRows = homeroomBuildMonitoringRows(book, semester).map(({ student, metrics, status }) => ({
+                    'Học sinh': student.name,
+                    'Vắng có phép': metrics.absenceExcused,
+                    'Vắng không phép': metrics.absenceUnexcused,
+                    'Tổng vắng': metrics.absenceTotal,
+                    'Đi muộn': metrics.late,
+                    'Vi phạm': metrics.violation,
+                    'Ghi nhận chưa xử lý': metrics.unresolved,
+                    'Lần gần nhất': homeroomFormatDate(metrics.lastEntryDate),
+                    'Trạng thái theo ngưỡng': status.label,
+                    'Ngưỡng đã chạm': status.alerts.join(' | '),
+                }));
                 const summaryRows = [
                     ['SỔ CHỦ NHIỆM CÁ NHÂN'],
                     ['Năm học', state.selectedAcademicYear],
@@ -686,13 +861,21 @@
                     ['Sĩ số', summary.students],
                     ['Vắng có phép', summary.absenceExcused],
                     ['Vắng không phép', summary.absenceUnexcused],
+                    ['Đi muộn', summary.late],
+                    ['Vi phạm', summary.violations],
+                    ['Học sinh chạm/vượt ngưỡng', summary.thresholdStudents],
                     ['Học sinh cần theo dõi', summary.attentionStudents],
+                    ['Ngưỡng tổng vắng', thresholds.totalAbsence],
+                    ['Ngưỡng vắng không phép', thresholds.unexcusedAbsence],
+                    ['Ngưỡng đi muộn', thresholds.late],
+                    ['Ngưỡng vi phạm', thresholds.violation],
                     ['Trao đổi phụ huynh', summary.parentContacts],
                     ['Khen thưởng', summary.commendations],
                 ];
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryRows), 'Tổng quan');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(profileRows), 'Hồ sơ học sinh');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(individualRows), 'Theo dõi học sinh');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monitoringRows), 'Tần suất cần chú ý');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classRows), 'Nhật ký lớp');
                 XLSX.writeFile(wb, `so-chu-nhiem-${homeroomSafeFilePart(book.className)}-${homeroomSafeFilePart(state.selectedAcademicYear)}.xlsx`);
                 showToast('✅ Đã xuất Sổ chủ nhiệm ra Excel', 'success');
@@ -729,6 +912,17 @@
             homeroomById('homeroomExportExcelBtn')?.addEventListener('click', homeroomExportExcel);
             homeroomById('homeroomSearchInput')?.addEventListener('input', event => { homeroomRosterSearch = event.target.value || ''; homeroomApplyRosterFilters(); });
             homeroomById('homeroomFilterSelect')?.addEventListener('change', event => { homeroomRosterFilter = event.target.value || 'all'; homeroomApplyRosterFilters(); });
+            homeroomById('homeroomMonitoringViewSelect')?.addEventListener('change', event => { homeroomMonitoringView = event.target.value === 'all' ? 'all' : 'flagged'; homeroomRenderMonitoring(homeroomActiveBook()); });
+            homeroomById('homeroomThresholds')?.addEventListener('change', event => {
+                const input = event.target.closest('[data-homeroom-threshold]');
+                if (input) homeroomUpdateMonitoringThreshold(input);
+            });
+            homeroomById('homeroomMonitoringTable')?.addEventListener('click', event => {
+                const button = event.target.closest('[data-homeroom-monitor-student]');
+                if (!button) return;
+                homeroomSelectStudent(button.dataset.homeroomMonitorStudent);
+                homeroomById('homeroomStudentLogPanel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
             homeroomById('homeroomPrivacyBtn')?.addEventListener('click', homeroomTogglePrivacy);
             homeroomById('homeroomClearBookBtn')?.addEventListener('click', homeroomDeleteCurrentBook);
             homeroomById('homeroomQuickLogBtn')?.addEventListener('click', () => {

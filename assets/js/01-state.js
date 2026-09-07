@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '52.1.0';
+        const APP_VERSION = '52.2.0';
         const DATA_SCHEMA_VERSION = 4;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -79,6 +79,12 @@
         const GRADEBOOK_SEMESTERS = ['1', '2'];
         const HOMEROOM_SEMESTERS = ['1', '2'];
         const HOMEROOM_GENDERS = ['', 'Nam', 'Nữ', 'Khác'];
+        const HOMEROOM_MONITORING_DEFAULTS = Object.freeze({
+            totalAbsence: 3,
+            unexcusedAbsence: 2,
+            late: 3,
+            violation: 2,
+        });
         const HOMEROOM_ENTRY_TYPES = [
             'absence_excused', 'absence_unexcused', 'late', 'violation',
             'commendation', 'parent_contact', 'support', 'note',
@@ -1035,6 +1041,20 @@
             return `${match[3]}-${month}-${day}`;
         }
 
+        function normalizeHomeroomMonitoringThresholds(value) {
+            const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            const clamp = (raw, fallback) => {
+                const parsed = Number.parseInt(raw, 10);
+                return Number.isFinite(parsed) ? Math.min(99, Math.max(1, parsed)) : fallback;
+            };
+            return {
+                totalAbsence: clamp(source.totalAbsence, HOMEROOM_MONITORING_DEFAULTS.totalAbsence),
+                unexcusedAbsence: clamp(source.unexcusedAbsence, HOMEROOM_MONITORING_DEFAULTS.unexcusedAbsence),
+                late: clamp(source.late, HOMEROOM_MONITORING_DEFAULTS.late),
+                violation: clamp(source.violation, HOMEROOM_MONITORING_DEFAULTS.violation),
+            };
+        }
+
         function normalizeHomeroomStudent(value, fallbackIndex = 0) {
             if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
             const name = cleanText(value.name || value.fullName);
@@ -1091,6 +1111,7 @@
                 homeroomTeacher: cleanText(value.homeroomTeacher),
                 students,
                 entries,
+                monitoringThresholds: normalizeHomeroomMonitoringThresholds(value.monitoringThresholds),
                 updatedAt: cleanText(value.updatedAt),
             };
         }
