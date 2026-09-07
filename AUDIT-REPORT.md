@@ -1,66 +1,39 @@
-# AUDIT REPORT — v52.0.0
+# AUDIT REPORT — v52.1.0
 
-- JavaScript: 1,118,471 bytes
-- CSS: 255,279 bytes
-- Mốc nâng cấp: Stable Release + Focus Mode + sticky navigation
-- Kết quả: PASS toàn bộ static audit + state fixtures + PPCT sáng/chiều fixtures.
+## Kết quả
+- HTML IDs: **530/530 unique**.
+- HTML resources: **57** tài nguyên được tham chiếu và đều tồn tại.
+- Literal DOM refs: **198/198** hợp lệ.
+- Named functions: **882/882 unique**.
+- Service Worker APP_SHELL: **60/60** tài nguyên tồn tại.
+- APP_VERSION: **52.1.0** đồng bộ giữa state và Service Worker.
+- Toàn bộ JavaScript và Service Worker: **PASS `node --check`**.
+- PPCT sáng/chiều độc lập: **PASS**.
+- 39 tuần năm học: **PASS**.
+- Sổ điểm tối đa 5 cột TX: **PASS**.
+- Sổ chủ nhiệm/personal workspace: **PASS**.
 
-## Kiểm thử
+## Audit riêng Thời khóa biểu v52.1
+- Stylesheet `timetable-v52-1.css` được nạp **sau Premium/Pro Workspace** nên có đủ specificity để sửa lỗi hàng chẵn.
+- `plan-revision-v51.css` vẫn là stylesheet cuối cùng, giữ nguyên quy tắc hồi quy của bản cũ.
+- Selector bảo vệ `tbody tr:nth-child(even) td.period-cell` tồn tại: **PASS**.
+- Cột Tiết TKB 1–5 được ép nền xanh/chữ trắng kể cả zebra/hover: **PASS**.
+- Sticky cột Tiết TKB trên vùng cuộn ngang: **PASS static audit**.
+- Helper tạo preview PPCT từ TKB + PPCT: **PASS**.
+- Tooltip `data-tt-detail` được gắn cho ô có tiết học: **PASS**.
+- Tooltip ưu tiên Lịch báo giảng không stale, fallback về PPCT đúng buổi: **PASS code-path audit**.
+- Nhấp/Enter để sửa ô vẫn giữ nguyên: **PASS code-path audit**.
 
+## Quy mô build
+- JavaScript modules: **37** file, 1,125,365 bytes.
+- CSS modules: **17** file, 258,989 bytes.
+- Không thay đổi DATA_SCHEMA_VERSION/BACKUP schema ở v52.1.
+
+## Lệnh đã chạy
 ```text
-$ python3 tests/run-static-audit.py
-PASS: HTML IDs 530/530 unique
-PASS: HTML resources 56 present
-PASS: DOM refs 198 resolved
-PASS: named functions 875/875 unique
-PASS: APP_SHELL 59 resources present
-PASS: APP_VERSION 52.0.0
-PASS: Professional UI + plan revision styles load in safe order
-PASS: personal gradebook loaded, private workspace persisted, TX columns capped at 5
-PASS: personal homeroom notebook loaded and private workspace persisted
-PASS: centralized data-change listeners 1
-PASS: centralized minute heartbeat 1
-PASS: PPCT uses unified suggestion engine
-PASS: Reminder/System Suggestions de-duplicated
-PASS: semester forecast uses teacher-confirmed HKI boundary
-PASS: progress status shows remaining periods by semester
-PASS: academic calendar supports 39 weeks (2 auxiliary + 37 main)
-PASS: same-week plan uploads use guarded revision comparison
-PASS: all JavaScript node --check
-$ node tests/run-state-fixtures.js
-year PASS
-academic calendar 39 weeks PASS
-plan PASS
-plan revision diff PASS
-plan revision selective apply PASS
-timetable PASS
-work legacy PASS
-gradebook max 5 regular columns PASS
-gradebook default regular columns PASS
-gradebook score validation PASS
-gradebook semester average PASS
-gradebook incomplete average PASS
-gradebook workspace persistence shape PASS
-homeroom workspace persistence shape PASS
-curriculum boundary persistence PASS
-curriculum session normalize PASS
-curriculum session target ids PASS
-legacy curriculum session fallback PASS
-schedule PASS
-final status PASS
-ppct attention PASS
-semester split PASS
-semester targets confirmed PASS
-semester boundary suggestion PASS
-semester remaining status PASS
-semester forecast safe PASS
-semester forecast risk PASS
-semester2 different load PASS
-$ node tests/run-session-ppct-fixtures.js
-afternoon profile overrides all PASS
-lesson lookup separated by session PASS
-exact session beats all fallback across scopes PASS
-week 1 ppct restarts by session PASS
-week 2 continues each session independently PASS
-course key contains session PASS
+python tests/run-static-audit.py
+node tests/run-state-fixtures.js
+node tests/run-session-ppct-fixtures.js
 ```
+
+Tất cả kiểm thử tự động trên đều **PASS**.

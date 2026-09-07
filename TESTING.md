@@ -1,45 +1,25 @@
-# TESTING — v51.5.0
+# TESTING — v52.1.0
 
-## Kiểm thử tự động đã chạy
+## Kiểm thử tự động
+Chạy:
 - `python tests/run-static-audit.py`
 - `node tests/run-state-fixtures.js`
 - `node tests/run-session-ppct-fixtures.js`
 - `node --check` cho toàn bộ JavaScript và Service Worker
 
-## Fixture Sổ chủ nhiệm
-- `normalizeHomeroomBook`: PASS.
-- Sổ giữ đúng danh sách học sinh + ghi nhận theo học kỳ: PASS.
-- Vắng không phép chưa xử lý làm học sinh vào nhóm cần theo dõi: PASS.
-- Khen thưởng không làm tăng nhóm cần theo dõi: PASS.
-- `normalizeYearWorkspace` giữ `homeroom.selectedBookId`: PASS.
-- Personal Firestore payload có trường `homeroom`: PASS qua static audit.
-- Backup/Restore có `homeroom`: PASS qua static audit.
-- Module và stylesheet Sổ chủ nhiệm được nạp trước init / có trong APP_SHELL: PASS.
+## Kiểm thử riêng Thời khóa biểu v52.1
+1. Mở TKB có đủ 5 dòng; cột Tiết TKB phải nhìn rõ **1, 2, 3, 4, 5** ở cả hai buổi.
+2. Rê chuột vào `12A2 - Toán` buổi sáng: tooltip phải ghi **PPCT sáng**.
+3. Rê chuột vào `12A2 - Toán` buổi chiều: tooltip phải ghi **PPCT chiều** và không cộng nối PPCT sáng.
+4. Nếu đã có Lịch báo giảng hợp lệ, tooltip dùng PPCT/tên bài hiện tại của lịch đó.
+5. Nếu chưa có Lịch báo giảng, tooltip vẫn suy ra PPCT/tên bài từ PPCT tương ứng.
+6. Nhấp ô vẫn mở luồng sửa thủ công như bản cũ.
+7. Thu nhỏ màn hình và kéo ngang: cột Tiết TKB phải bám bên trái.
+8. Kiểm tra hover hàng chẵn: số Tiết 2/4 không được đổi sang chữ trắng trên nền trắng.
 
-## Fixture kế thừa
-- Sổ điểm tối đa 5 cột TX và công thức ĐTB: PASS.
-- PPCT sáng/chiều độc lập: PASS.
-- Lịch năm học 39 tuần (2 tuần phụ + 37 tuần chính): PASS.
-- So sánh lịch công tác điều chỉnh có selective apply: PASS.
-
-## Kết quả build v51.5
-- HTML IDs: 512/512 unique.
-- Named functions: 852/852 unique.
-- HTML resources: 53/53 tồn tại.
-- Literal DOM refs: 196/196 hợp lệ.
-- APP_SHELL: 56/56 tài nguyên tồn tại.
-- APP_VERSION: 51.5.0.
-- DATA_SCHEMA_VERSION: 3.
-- BACKUP_VERSION: 6.
-
-## Kiểm thử thực tế nên làm sau deploy
-1. Mở **Sổ Chủ Nhiệm**, tạo lớp `12A2`.
-2. Nhấn **Lấy DS từ Sổ điểm** và xác nhận không sinh học sinh trùng khi HKI/HKII đều có sổ điểm.
-3. Dán danh sách có STT, ngày sinh, giới tính, phụ huynh, SĐT để kiểm tra parser.
-4. Ghi một lượt vắng không phép cho học sinh A; KPI “HS cần theo dõi” phải tăng.
-5. Đánh dấu ghi nhận đó “Đã xử lý”; KPI cần theo dõi phải giảm nếu học sinh không còn việc chưa xử lý khác.
-6. Chuyển HKI ↔ HKII; nhật ký và KPI phải lọc đúng học kỳ.
-7. Thêm Sinh hoạt lớp / Họp phụ huynh vào Nhật ký lớp.
-8. Xuất Excel và kiểm tra đủ 4 sheet.
-9. Chuyển năm học rồi quay lại; Sổ chủ nhiệm phải tách đúng năm.
-10. Nếu dùng tài khoản nhóm, đăng nhập tài khoản giáo viên khác và xác nhận không nhìn thấy dữ liệu Sổ chủ nhiệm của giáo viên này.
+## Hồi quy cần giữ
+- PPCT sáng/chiều độc lập.
+- 39 tuần năm học (2 tuần phụ + 37 tuần chính).
+- Sổ điểm tối đa 5 cột TX.
+- Sổ chủ nhiệm và dữ liệu cá nhân.
+- Backup/Restore và PWA/offline.

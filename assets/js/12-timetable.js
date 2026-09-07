@@ -1211,7 +1211,105 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
             handleTimetableFile(e.dataTransfer.files[0]);
         });
 
+        let timetableLessonTooltip = null;
+
+        function timetablePreviewSlotKey(sessionLabel, period, day) {
+            return `${normalizeCurriculumSession(sessionLabel)}|${Number.parseInt(period, 10) || 0}|${normalizeDayName(day) || cleanText(day)}`;
+        }
+
+        function buildTimetableLessonPreviewMap(week, timetable) {
+            const previewMap = new Map();
+            if (!(Number.parseInt(week, 10) > 0) || !timetable) return previewMap;
+            try {
+                const curriculumMap = buildCurriculumMapForTimetable(week, timetable);
+                if (typeof generateFallbackSchedule === 'function') {
+                    generateFallbackSchedule(week, timetable, curriculumMap).forEach(item => {
+                        previewMap.set(
+                            timetablePreviewSlotKey(item.session, item.period, item.day),
+                            { ...item, previewSource: 'curriculum' }
+                        );
+                    });
+                }
+            } catch (error) {
+                console.warn('Không tạo được bản xem nhanh PPCT từ TKB:', error);
+            }
+
+            const scheduleMeta = state.scheduleMeta?.[week] || {};
+            if (!scheduleMeta.stale && Array.isArray(state.teachingSchedule?.[week])) {
+                state.teachingSchedule[week].forEach(item => {
+                    if (item?.makeupLesson) return;
+                    previewMap.set(
+                        timetablePreviewSlotKey(item.session, item.period, item.day),
+                        { ...item, previewSource: 'teaching-schedule' }
+                    );
+                });
+            }
+            return previewMap;
+        }
+
+        function buildTimetableLessonDetail(cell, session, period, day, preview) {
+            if (!cell) return '';
+            const className = cleanText(cell.className) || 'Chưa xác định lớp';
+            const subject = cleanText(cell.subject) || cleanText(cell.content) || state.teacherProfile.subject || 'Chưa xác định môn';
+            const sessionLabel = normalizeSessionLabel(session?.label || session?.key);
+            const sessionKey = normalizeCurriculumSession(sessionLabel);
+            const sessionShort = sessionKey === 'afternoon' ? 'chiều' : sessionKey === 'morning' ? 'sáng' : cleanText(sessionLabel).toLowerCase();
+            const lines = [
+                `${className} · ${subject}`,
+                `${cleanText(day)} · ${sessionLabel} · Tiết TKB ${period}`,
+            ];
+
+            if (preview?.notTeaching) {
+                lines.push(`PPCT ${sessionShort}: Không tính (Không học)`);
+            } else {
+                lines.push(`PPCT ${sessionShort}: ${cleanText(preview?.ppctPeriod) || 'Chưa xác định'}`);
+                const topic = cleanText(preview?.topic);
+                if (topic) lines.push(`Bài: ${topic}`);
+            }
+            const source = cleanText(preview?.curriculumSource);
+            if (source && source !== 'Chưa có phân phối') lines.push(`Nguồn: ${source}`);
+            return lines.join('\n');
+        }
+
+        function ensureTimetableLessonTooltip() {
+            if (timetableLessonTooltip?.isConnected) return timetableLessonTooltip;
+            timetableLessonTooltip = document.createElement('div');
+            timetableLessonTooltip.className = 'timetable-lesson-tooltip';
+            timetableLessonTooltip.setAttribute('role', 'tooltip');
+            timetableLessonTooltip.hidden = true;
+            document.body.appendChild(timetableLessonTooltip);
+            return timetableLessonTooltip;
+        }
+
+        function positionTimetableLessonTooltip(cell) {
+            const tooltip = ensureTimetableLessonTooltip();
+            if (tooltip.hidden || !cell) return;
+            const cellRect = cell.getBoundingClientRect();
+            const tipRect = tooltip.getBoundingClientRect();
+            const gap = 8;
+            let left = cellRect.left + (cellRect.width - tipRect.width) / 2;
+            left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+            let top = cellRect.top - tipRect.height - gap;
+            if (top < 8) top = Math.min(window.innerHeight - tipRect.height - 8, cellRect.bottom + gap);
+            tooltip.style.left = `${Math.round(left)}px`;
+            tooltip.style.top = `${Math.round(Math.max(8, top))}px`;
+        }
+
+        function showTimetableLessonTooltip(cell) {
+            const detail = cleanText(cell?.dataset?.ttDetail);
+            if (!detail) return;
+            const tooltip = ensureTimetableLessonTooltip();
+            tooltip.textContent = detail;
+            tooltip.hidden = false;
+            positionTimetableLessonTooltip(cell);
+        }
+
+        function hideTimetableLessonTooltip() {
+            if (timetableLessonTooltip) timetableLessonTooltip.hidden = true;
+        }
+
         function renderTimetable() {
+            hideTimetableLessonTooltip();
             const data = state.timetableData;
             if (!data || !Array.isArray(data.sessions)) {
                 timetableDisplay.innerHTML = `
@@ -1225,6 +1323,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
             }
             const comparison = timetableDiffOpen ? compareTimetableWeeks(state.selectedTimetableWeek) : null;
             const sourceInfo = getRecognitionSourceInfo(data);
+            const lessonPreviewMap = buildTimetableLessonPreviewMap(state.selectedTimetableWeek, data);
             let html = `<div class="recognition-note"><span>${sourceInfo.icon}</span><div><strong>${escapeHTML(sourceInfo.title)}</strong> ${escapeHTML(sourceInfo.text)} Có thể nhấp vào bất kỳ ô nào để sửa hoặc bổ sung thủ công.</div></div>`;
             html += `<div class="weekly-timetable">`;
             for (const session of data.sessions) {
@@ -1241,9 +1340,16 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                         const cellHtml = diffItem?.type === 'removed' && !cell
                             ? `<span class="removed-lesson-hint">Đã bỏ: ${escapeHTML(timetableCellText(diffItem.before))}</span>`
                             : formatTimetableCell(cell);
+                        const preview = lessonPreviewMap.get(timetablePreviewSlotKey(session.label || session.key, period.period, day));
+                        const detail = buildTimetableLessonDetail(cell, session, period.period, day, preview);
+                        const detailForAttribute = detail ? escapeHTML(detail).replace(/\n/g, '&#10;') : '';
+                        const detailAttrs = detail
+                            ? ` data-tt-has-detail="1" data-tt-detail="${detailForAttribute}"`
+                            : '';
+                        const ariaDetail = detail ? `; ${detail.replace(/\n/g, '; ')}` : '';
                         html += `<td class="tt-editable${diffClass}" tabindex="0" role="button"
-                                     data-tt-session="${escapeHTML(session.key)}" data-tt-period="${period.period}" data-tt-day="${escapeHTML(day)}"
-                                     aria-label="Sửa ${escapeHTML(session.label)}, tiết ${period.period}, ${escapeHTML(day)}">${cellHtml}</td>`;
+                                     data-tt-session="${escapeHTML(session.key)}" data-tt-period="${period.period}" data-tt-day="${escapeHTML(day)}"${detailAttrs}
+                                     aria-label="Sửa ${escapeHTML(session.label)}, tiết ${period.period}, ${escapeHTML(day)}${escapeHTML(ariaDetail)}">${cellHtml}</td>`;
                     }
                     html += `</tr>`;
                 }
@@ -1315,6 +1421,31 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
             showToast('✅ Đã cập nhật ô thời khóa biểu', 'success');
         }
 
+        timetableDisplay.addEventListener('mouseover', event => {
+            const cell = event.target.closest('td[data-tt-detail]');
+            if (!cell || cell.contains(event.relatedTarget)) return;
+            showTimetableLessonTooltip(cell);
+        });
+
+        timetableDisplay.addEventListener('mouseout', event => {
+            const cell = event.target.closest('td[data-tt-detail]');
+            if (!cell || cell.contains(event.relatedTarget)) return;
+            hideTimetableLessonTooltip();
+        });
+
+        timetableDisplay.addEventListener('focusin', event => {
+            const cell = event.target.closest('td[data-tt-detail]');
+            if (cell) showTimetableLessonTooltip(cell);
+        });
+
+        timetableDisplay.addEventListener('focusout', event => {
+            const cell = event.target.closest('td[data-tt-detail]');
+            if (cell) hideTimetableLessonTooltip();
+        });
+
+        window.addEventListener('scroll', hideTimetableLessonTooltip, { passive: true });
+        window.addEventListener('resize', hideTimetableLessonTooltip, { passive: true });
+
         timetableDisplay.addEventListener('click', event => {
             const copyButton = event.target.closest('button[data-tt-action="copy-ocr"]');
             if (copyButton) {
@@ -1323,6 +1454,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
             }
             const cell = event.target.closest('td[data-tt-session][data-tt-period][data-tt-day]');
             if (!cell) return;
+            hideTimetableLessonTooltip();
             editTimetableCell(cell.dataset.ttSession, cell.dataset.ttPeriod, cell.dataset.ttDay);
         });
 
@@ -1331,6 +1463,7 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
             const cell = event.target.closest('td[data-tt-session][data-tt-period][data-tt-day]');
             if (!cell) return;
             event.preventDefault();
+            hideTimetableLessonTooltip();
             editTimetableCell(cell.dataset.ttSession, cell.dataset.ttPeriod, cell.dataset.ttDay);
         });
 
