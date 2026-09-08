@@ -1,0 +1,19 @@
+/* ================================================================
+   SỔ TAY GIÁO VIÊN v52.4 — GVCN PRIORITY & TREND
+   Ghi đè nhẹ trên v52.3, giữ nguyên các style nền cũ.
+   ================================================================ */
+.homeroom-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+.homeroom-kpi-improving{border-color:#bbf7d0;background:#f0fdf4}.homeroom-kpi-improving strong{color:#15803d}
+.homeroom-kpi-declining{border-color:#fed7aa;background:#fff7ed}.homeroom-kpi-declining strong{color:#c2410c}
+.homeroom-trend-up-text{color:#15803d!important}.homeroom-trend-down-text{color:#c2410c!important}
+.homeroom-monitor-table{min-width:1480px}
+.homeroom-trend-badge,.homeroom-serious-state{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:800;white-space:nowrap}
+.homeroom-trend-badge.trend-improving{background:#dcfce7;color:#166534}.homeroom-trend-badge.trend-declining{background:#ffedd5;color:#9a3412}.homeroom-trend-badge.trend-stable{background:#f1f5f9;color:#64748b}
+.homeroom-serious-state.active{background:#7f1d1d;color:#fff}.homeroom-serious-state.history{background:#e2e8f0;color:#334155}.homeroom-muted-dash{color:#94a3b8}
+.homeroom-serious-badge.resolved{background:#e2e8f0;color:#334155}
+.homeroom-mini-metrics span.history{background:#e2e8f0;color:#475569}.homeroom-mini-metrics span.trend-up{background:#dcfce7;color:#166534}.homeroom-mini-metrics span.trend-down{background:#ffedd5;color:#9a3412}
+.homeroom-monitor-table td small{display:block;margin-top:4px;color:#64748b;max-width:210px;line-height:1.35}
+.homeroom-monitor-table tr.monitor-normal td{background:#fff}.homeroom-monitor-table tr.monitor-watch td:first-child{box-shadow:inset 3px 0 #f59e0b}.homeroom-monitor-table tr.monitor-priority td:first-child{box-shadow:inset 3px 0 #f97316}
+@media(max-width:1450px){.homeroom-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:1100px){.homeroom-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.homeroom-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}

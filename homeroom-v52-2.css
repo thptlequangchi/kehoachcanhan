@@ -1,0 +1,97 @@
+/* ================================================================
+   SỔ TAY GIÁO VIÊN v52.2 — THEO DÕI HỌC SINH CẦN CHÚ Ý
+   Chỉ bổ sung lớp hiển thị cho Sổ chủ nhiệm; không thay nền v51.x.
+   ================================================================ */
+
+.homeroom-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+
+.homeroom-monitoring{
+  margin:2px 16px 14px;
+  border:1px solid #dbeafe;
+  border-radius:14px;
+  background:linear-gradient(180deg,#f8fbff 0%,#fff 100%);
+  overflow:hidden;
+}
+.homeroom-monitoring-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  padding:13px 14px 10px;
+  border-bottom:1px solid #e2e8f0;
+}
+.homeroom-monitoring-head h3{margin:0 0 4px;font-size:15px;color:#0f172a}
+.homeroom-monitoring-head small{display:block;max-width:820px;color:#64748b;line-height:1.5}
+.homeroom-monitoring-view{display:grid;gap:4px;min-width:210px}
+.homeroom-monitoring-view>span{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+.homeroom-monitoring-view select{min-height:34px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:6px 8px;color:#0f172a}
+
+.homeroom-thresholds{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:10px 14px;
+  background:#f8fafc;
+  border-bottom:1px solid #e2e8f0;
+}
+.homeroom-threshold-label{font-size:12px;font-weight:800;color:#334155;margin-right:2px}
+.homeroom-thresholds label{
+  display:inline-flex;
+  gap:5px;
+  align-items:center;
+  font-size:11px;
+  font-weight:700;
+  color:#475569;
+  padding:5px 7px;
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:8px;
+}
+.homeroom-thresholds input{
+  width:48px;
+  height:28px;
+  border:1px solid #cbd5e1;
+  border-radius:6px;
+  text-align:center;
+  font-weight:800;
+  color:#0f172a;
+  background:#fff;
+}
+.homeroom-thresholds input:focus{outline:2px solid rgba(59,130,246,.15);border-color:#60a5fa}
+.homeroom-thresholds input:disabled{opacity:.55;background:#f1f5f9}
+
+.homeroom-monitoring-summary{padding:9px 14px;font-size:12px;color:#475569;background:#fff}
+.homeroom-monitoring-summary strong{color:#0f172a}
+.homeroom-monitoring-table-wrap{overflow:auto;max-height:360px;border-top:1px solid #f1f5f9;background:#fff}
+.homeroom-monitor-table{width:100%;min-width:930px;border-collapse:separate;border-spacing:0;font-size:12px}
+.homeroom-monitor-table th{position:sticky;top:0;z-index:2;background:#f8fafc;padding:8px 7px;color:#475569;font-size:10px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid #e2e8f0;white-space:nowrap;text-align:center}
+.homeroom-monitor-table th:first-child{text-align:left}
+.homeroom-monitor-table td{padding:8px 7px;border-bottom:1px solid #f1f5f9;text-align:center;vertical-align:middle;color:#334155}
+.homeroom-monitor-table td:first-child{text-align:left;min-width:170px}
+.homeroom-monitor-table tr.monitor-watch td{background:#fffbeb}
+.homeroom-monitor-table tr.monitor-priority td{background:#fff7f7}
+.homeroom-monitor-table tr:hover td{box-shadow:inset 0 0 0 999px rgba(15,23,42,.018)}
+.homeroom-monitor-status{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:800}
+.homeroom-monitor-status.status-normal{background:#f1f5f9;color:#475569}
+.homeroom-monitor-status.status-watch{background:#fef3c7;color:#92400e}
+.homeroom-monitor-status.status-priority{background:#fee2e2;color:#991b1b}
+.homeroom-monitor-table td small{display:block;margin-top:4px;max-width:270px;color:#64748b;font-size:10px;line-height:1.35}
+.homeroom-monitoring-good{padding:18px;text-align:center;color:#166534;background:#f0fdf4;font-weight:700}
+
+.homeroom-table tr.is-monitoring td{background:#fffdf7}
+.homeroom-table tr.is-monitoring.is-selected td{background:#f0fdf4}
+.homeroom-track-cell{min-width:116px}
+.homeroom-mini-metrics{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.homeroom-mini-metrics span{display:inline-flex;align-items:center;padding:2px 5px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:9px;font-weight:800;line-height:1.25}
+.homeroom-mini-metrics.flagged span{background:#fef3c7;color:#92400e}
+
+@media(max-width:1200px){
+  .homeroom-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .homeroom-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .homeroom-monitoring-head{flex-direction:column}
+  .homeroom-monitoring-view{width:100%;min-width:0}
+  .homeroom-threshold-label{width:100%}
+}

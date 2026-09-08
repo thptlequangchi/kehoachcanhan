@@ -1,0 +1,23 @@
+/* ================================================================
+   SỔ TAY GIÁO VIÊN v52.5 — TODAY EXPERIENCE
+   Bảng điều hành Hôm nay · 4 câu hỏi · Focus giữ lại việc quan trọng
+   ================================================================ */
+.today-command-center{border-color:#cbdcf0;background:linear-gradient(145deg,#fff 0%,#f8fbff 48%,#f2f8ff 100%)}
+.today-command-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.today-command-center .command-center-grid{grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+.today-command-center .command-panel{min-height:248px}
+.today-command-center .command-panel-homeroom{border-color:#d8b4fe;background:linear-gradient(160deg,#fff,#faf5ff)}
+.today-command-center .command-panel-homeroom .command-panel-title>span{background:#f3e8ff}
+.command-item-button{width:100%;font:inherit;text-align:left;cursor:pointer;color:inherit}
+.command-item-button:hover{border-color:#bfdbfe;box-shadow:0 5px 15px rgba(30,64,175,.08);transform:translateY(-1px)}
+.command-item-button:focus-visible{outline:3px solid rgba(37,99,235,.22);outline-offset:2px}
+.command-item-button{transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+body.teacher-focus-mode #teacherCommandCenter{display:block!important}
+body.teacher-focus-mode #teacherOverview{margin-bottom:12px}
+body.teacher-focus-mode #teacherCommandCenter{margin-bottom:12px}
+body.teacher-focus-mode #teacherCommandCenter .command-center-heading{margin-bottom:10px}
+body.teacher-focus-mode #teacherCommandCenter .command-panel{min-height:220px}
+body.teacher-focus-mode #todayFocusBtn{display:none}
+@media(max-width:1280px){.today-command-center .command-center-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.today-command-center .command-panel{min-height:220px}}
+@media(max-width:760px){.today-command-center .command-center-grid{grid-template-columns:1fr}.today-command-center .command-panel{min-height:0}.today-command-actions{width:100%;justify-content:stretch}.today-command-actions .overview-action{flex:1;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.command-item-button{transition:none}.command-item-button:hover{transform:none}}

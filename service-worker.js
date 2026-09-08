@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v52.3 — Service Worker */
-const APP_VERSION = '52.3.0';
+/* Sổ Tay Giáo Viên v52.5 — Service Worker */
+const APP_VERSION = '52.5.0';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -26,8 +26,10 @@ const APP_SHELL = [
     './assets/css/homeroom-v51.css',
     './assets/css/homeroom-v52-2.css',
     './assets/css/homeroom-v52-3.css',
+    './assets/css/homeroom-v52-4.css',
     './assets/css/plan-revision-v51.css',
     './assets/css/release-v52.css',
+    './assets/css/release-v52-5.css',
     './assets/css/timetable-v52-1.css',
     './assets/icons/apple-touch-icon.png',
     './assets/icons/icon-192.png',

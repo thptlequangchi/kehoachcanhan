@@ -37,8 +37,10 @@
     <link rel="stylesheet" href="assets/css/homeroom-v51.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v52-2.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v52-3.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-v52-4.css" />
     <link rel="stylesheet" href="assets/css/release-v52.css" />
     <link rel="stylesheet" href="assets/css/timetable-v52-1.css" />
+    <link rel="stylesheet" href="assets/css/release-v52-5.css" />
     <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
 </head>
 <body class="premium-ui">
@@ -368,6 +370,7 @@
                     <button class="overview-action" type="button" data-overview-tab="plan">📋 Kế hoạch</button>
                     <button class="overview-action" type="button" data-overview-tab="timetable">⏰ TKB</button>
                     <button class="overview-action" type="button" data-overview-tab="teaching">📖 Báo giảng</button>
+                    <button class="overview-action" type="button" data-overview-tab="homeroom">🏫 Chủ nhiệm</button>
                     <button class="overview-action" type="button" data-overview-tab="reports">📑 Báo cáo</button>
                     <button class="overview-action" type="button" data-overview-tab="workspace">✅ Công việc</button>
                     <button class="overview-action" type="button" data-overview-tab="links">🔗 Liên kết</button>
@@ -491,27 +494,36 @@
             </div>
         </section>
 
-        <section class="teacher-command-center" id="teacherCommandCenter" aria-label="Trợ lý công việc tuần">
+        <section class="teacher-command-center today-command-center" id="teacherCommandCenter" aria-label="Bảng điều hành hôm nay">
             <div class="command-center-heading">
                 <div>
-                    <span class="overview-eyebrow">TRỢ LÝ TUẦN</span>
-                    <h2>Việc cần làm ngay</h2>
-                    <p id="commandCenterSubtitle">Tự tổng hợp lịch dạy, công việc và tiến độ PPCT từ dữ liệu hiện có.</p>
+                    <span class="overview-eyebrow">BẢNG ĐIỀU HÀNH HÔM NAY</span>
+                    <h2>4 việc giáo viên cần biết ngay</h2>
+                    <p id="commandCenterSubtitle">Tự tổng hợp lịch dạy, việc cần làm, học sinh cần chú ý và tiến độ PPCT.</p>
                 </div>
-                <button class="overview-action" id="refreshCommandCenterBtn" type="button">↻ Làm mới</button>
+                <div class="today-command-actions">
+                    <button class="overview-action" id="todayFocusBtn" type="button" title="Chỉ giữ Tổng quan và Bảng điều hành Hôm nay">🧘 Tập trung</button>
+                    <button class="overview-action" id="refreshCommandCenterBtn" type="button">↻ Làm mới</button>
+                </div>
             </div>
             <div class="command-center-grid">
                 <article class="command-panel">
-                    <div class="command-panel-title"><span>🎓</span><div><strong>Lịch dạy hôm nay</strong><small id="todayTeachingSummary">Đang kiểm tra TKB…</small></div></div>
+                    <div class="command-panel-title"><span>🎓</span><div><strong>Hôm nay dạy gì?</strong><small id="todayTeachingSummary">Đang kiểm tra TKB…</small></div></div>
                     <div class="command-list" id="todayTeachingList"></div>
                     <button class="command-link" type="button" data-command-tab="timetable">Mở Thời khóa biểu →</button>
                 </article>
                 <article class="command-panel command-panel-priority">
-                    <div class="command-panel-title"><span>🎯</span><div><strong>Ưu tiên tuần này</strong><small id="weeklyPrioritySummary">Đang xác định việc quan trọng…</small></div></div>
+                    <div class="command-panel-title"><span>🎯</span><div><strong>Việc nào cần làm?</strong><small id="weeklyPrioritySummary">Đang xác định việc quan trọng…</small></div></div>
                     <div class="command-list" id="weeklyPriorityList"></div>
+                    <button class="command-link" type="button" data-command-tab="workspace">Mở Công việc Pro →</button>
+                </article>
+                <article class="command-panel command-panel-homeroom">
+                    <div class="command-panel-title"><span>🏫</span><div><strong>Học sinh nào cần chú ý?</strong><small id="homeroomAttentionSummary">Đang kiểm tra Sổ chủ nhiệm…</small></div></div>
+                    <div class="command-list" id="homeroomAttentionList"></div>
+                    <button class="command-link" type="button" data-command-tab="homeroom">Mở Sổ chủ nhiệm →</button>
                 </article>
                 <article class="command-panel">
-                    <div class="command-panel-title"><span>📈</span><div><strong>Tiến độ giảng dạy</strong><small id="teachingProgressSummary">Đang đối chiếu PPCT…</small></div></div>
+                    <div class="command-panel-title"><span>📈</span><div><strong>PPCT có vấn đề không?</strong><small id="teachingProgressSummary">Đang đối chiếu PPCT…</small></div></div>
                     <div class="command-list" id="teachingProgressList"></div>
                     <button class="command-link" type="button" data-command-tab="teaching" data-command-progress="1">Xem bảng tiến độ →</button>
                 </article>
@@ -1029,19 +1041,21 @@
                     <div class="homeroom-kpi"><span>⏰</span><div><strong id="homeroomLateCount">0</strong><small>Đi muộn</small></div></div>
                     <div class="homeroom-kpi"><span>⚠️</span><div><strong id="homeroomViolationCount">0</strong><small>Vi phạm</small></div></div>
                     <div class="homeroom-kpi"><span>📌</span><div><strong id="homeroomAttentionCount">0</strong><small>HS cần theo dõi</small></div></div>
-                    <div class="homeroom-kpi homeroom-kpi-critical"><span>🚨</span><div><strong id="homeroomCriticalCount">0</strong><small>Vi phạm nghiêm trọng</small></div></div>
+                    <div class="homeroom-kpi homeroom-kpi-critical"><span>🚨</span><div><strong id="homeroomCriticalCount">0</strong><small>Nghiêm trọng đang xử lý</small></div></div>
                     <div class="homeroom-kpi"><span>📉</span><div><strong id="homeroomLowWeekScoreCount">0</strong><small>Điểm tuần &lt; 90</small></div></div>
+                    <div class="homeroom-kpi homeroom-kpi-improving"><span>📈</span><div><strong id="homeroomImprovingCount">0</strong><small>Xu hướng tích cực</small></div></div>
+                    <div class="homeroom-kpi homeroom-kpi-declining"><span>↘️</span><div><strong id="homeroomDecliningCount">0</strong><small>Xu hướng giảm</small></div></div>
                 </div>
 
                 <section class="homeroom-monitoring" id="homeroomMonitoringSection" aria-label="Theo dõi học sinh có tần suất vắng, đi muộn hoặc vi phạm cao">
                     <div class="homeroom-monitoring-head">
                         <div>
-                            <h3>🚦 Theo dõi chuyên cần &amp; nề nếp</h3>
-                            <small>Thống kê theo <strong>số lượt ghi nhận</strong> trong học kỳ đang xem. Ngưỡng chỉ dùng để nhắc giáo viên theo dõi, không tự xếp loại hay xử lý học sinh.</small>
+                            <h3>🎯 Bảng ưu tiên GVCN</h3>
+                            <small>Kết hợp chuyên cần, nề nếp, điểm rèn luyện tuần, vi phạm nghiêm trọng <strong>chưa xử lý</strong> và xu hướng 4 tuần. Lịch sử đã xử lý vẫn được lưu nhưng không duy trì cảnh báo đỏ.</small>
                         </div>
                         <div class="homeroom-monitoring-controls">
                             <label class="homeroom-monitoring-view"><span>Tuần tính điểm</span><input id="homeroomWeekAnchorDate" type="date" /></label>
-                            <label class="homeroom-monitoring-view"><span>Hiển thị</span><select id="homeroomMonitoringViewSelect"><option value="flagged">Chỉ HS cần chú ý</option><option value="all">Tất cả học sinh</option></select></label>
+                            <label class="homeroom-monitoring-view"><span>Hiển thị</span><select id="homeroomMonitoringViewSelect"><option value="flagged">Cần xử lý / chú ý</option><option value="priority">Ưu tiên / can thiệp</option><option value="trends">Có xu hướng 4 tuần</option><option value="all">Tất cả học sinh</option></select></label>
                         </div>
                     </div>
                     <div class="homeroom-thresholds" id="homeroomThresholds">
@@ -1057,7 +1071,7 @@
 
                 <details class="homeroom-rules-panel" id="homeroomRulesPanel">
                     <summary>⚖️ Bảng điểm cộng – trừ mặc định <small>nhấn để xem toàn bộ quy tắc</small></summary>
-                    <div class="homeroom-rules-note">Điểm tuần bắt đầu từ <strong>100</strong>. Lỗi tái phạm cùng loại trong một tuần: lần 2 áp dụng <strong>×1,5</strong>, từ lần 3 áp dụng <strong>×2</strong>. Vi phạm mức <strong>Nghiêm trọng</strong> luôn giữ cờ cảnh báo, không bị xóa bởi điểm cộng.</div>
+                    <div class="homeroom-rules-note">Điểm tuần bắt đầu từ <strong>100</strong>. Lỗi tái phạm cùng loại trong một tuần: lần 2 áp dụng <strong>×1,5</strong>, từ lần 3 áp dụng <strong>×2</strong>. Vi phạm mức <strong>Nghiêm trọng</strong> luôn được lưu trong hồ sơ; <strong>chỉ vi phạm chưa xử lý mới giữ cảnh báo đỏ</strong>, còn sự việc đã xử lý chuyển sang lịch sử và không bị điểm cộng xóa khỏi hồ sơ.</div>
                     <div class="homeroom-rules-table-wrap" id="homeroomRulesTable"></div>
                 </details>
 
@@ -1084,7 +1098,7 @@
                     <div class="homeroom-section-title"><h3>👥 Hồ sơ học sinh</h3><small>Chỉnh trực tiếp trong bảng; dữ liệu tự lưu.</small></div>
                     <div class="homeroom-filterbar">
                         <label><span>Tìm học sinh</span><input id="homeroomSearchInput" type="search" placeholder="Nhập họ tên…" autocomplete="off" /></label>
-                        <label><span>Lọc nhanh</span><select id="homeroomFilterSelect"><option value="all">Tất cả</option><option value="attention">Cần theo dõi</option><option value="frequent">Chạm/vượt ngưỡng</option><option value="absence">Có vắng</option><option value="unexcused">Vắng không phép</option><option value="late">Có đi muộn</option><option value="violation">Có vi phạm</option><option value="resolved">Đã xử lý</option></select></label>
+                        <label><span>Lọc nhanh</span><select id="homeroomFilterSelect"><option value="all">Tất cả</option><option value="attention">Cần theo dõi</option><option value="frequent">Chạm/vượt ngưỡng</option><option value="absence">Có vắng</option><option value="unexcused">Vắng không phép</option><option value="late">Có đi muộn</option><option value="violation">Có vi phạm</option><option value="seriousCurrent">Nghiêm trọng đang xử lý</option><option value="seriousHistory">Có lịch sử nghiêm trọng</option><option value="improving">Xu hướng tích cực</option><option value="declining">Xu hướng giảm</option><option value="resolved">Đã xử lý</option></select></label>
                         <button class="btn btn-outline btn-sm" id="homeroomPrivacyBtn" type="button" title="Ẩn/hiện SĐT và địa chỉ khi mở sổ trước lớp">👁️ Hiện thông tin riêng</button>
                         <span class="homeroom-filter-count" id="homeroomFilterCount">0 học sinh</span>
                     </div>

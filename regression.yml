@@ -1,0 +1,30 @@
+name: Sổ Tay GV - Regression Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static audit
+        run: python tests/run-static-audit.py
+      - name: State fixtures
+        run: node tests/run-state-fixtures.js
+      - name: Session PPCT fixtures
+        run: node tests/run-session-ppct-fixtures.js

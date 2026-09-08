@@ -1,0 +1,139 @@
+/* ==========================================================================
+   SỔ TAY GIÁO VIÊN v52.1 — HOÀN THIỆN THỜI KHÓA BIỂU
+   Chỉ tinh chỉnh khu vực TKB; không thay đổi dữ liệu hoặc schema.
+   ========================================================================== */
+
+.premium-ui .weekly-table {
+    width: 100%;
+    min-width: 900px;
+    border: 1px solid #8db33f;
+    border-radius: 10px;
+    overflow: visible;
+}
+
+.premium-ui .weekly-table th,
+.premium-ui .weekly-table td {
+    height: 43px;
+    padding: 8px 10px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.premium-ui .weekly-table thead th {
+    background: #f3f6f9;
+    color: #334155;
+    border-color: #a6c25c;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+/* Cột Tiết TKB luôn xanh và luôn đọc rõ 1–5, kể cả hàng chẵn/hover. */
+.premium-ui .weekly-table .period-head,
+.premium-ui .weekly-table tbody td.period-cell,
+.premium-ui .weekly-table tbody tr:nth-child(even) td.period-cell,
+.premium-ui .weekly-table tbody tr:hover td.period-cell {
+    width: 58px;
+    min-width: 58px;
+    max-width: 58px;
+    background: #07851b !important;
+    color: #ffffff !important;
+    border-color: #a6c25c !important;
+    font-weight: 850;
+    font-size: 17px;
+    text-align: center;
+    opacity: 1 !important;
+}
+
+.premium-ui .weekly-table .period-head {
+    z-index: 7;
+    font-size: 11px;
+    line-height: 1.15;
+}
+
+/* Giữ cột Tiết TKB khi kéo ngang trên màn hình hẹp. */
+.premium-ui .weekly-table .period-head,
+.premium-ui .weekly-table .period-cell {
+    position: sticky;
+    left: 0;
+}
+.premium-ui .weekly-table .period-cell { z-index: 3; }
+
+.premium-ui .weekly-table .lesson-text {
+    display: inline-block;
+    color: #172033;
+    font-size: 15px;
+    font-weight: 540;
+    line-height: 1.35;
+}
+
+.premium-ui .weekly-table .class-code {
+    color: #1d4ed8;
+    font-weight: 700;
+}
+
+.premium-ui .weekly-table .tt-editable {
+    position: relative;
+    cursor: pointer;
+}
+
+.premium-ui .weekly-table .tt-editable:hover,
+.premium-ui .weekly-table .tt-editable:focus-visible {
+    background: #eff6ff !important;
+    box-shadow: inset 0 0 0 2px #60a5fa;
+    outline: none;
+}
+
+.timetable-lesson-tooltip {
+    position: fixed;
+    z-index: 10050;
+    width: min(340px, calc(100vw - 24px));
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.97);
+    color: #f8fafc;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.23);
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 560;
+    line-height: 1.45;
+    white-space: pre-line;
+    pointer-events: none;
+}
+.timetable-lesson-tooltip[hidden] { display: none !important; }
+
+.timetable-session .session-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 10px;
+    font-size: 19px;
+}
+.timetable-session .session-title::before {
+    content: "";
+    width: 4px;
+    height: 19px;
+    border-radius: 99px;
+    background: #07851b;
+}
+
+@media (max-width: 760px) {
+    .premium-ui .weekly-table { min-width: 820px; }
+    .premium-ui .weekly-table th,
+    .premium-ui .weekly-table td { padding: 7px 8px; }
+    .premium-ui .weekly-table .lesson-text { font-size: 14px; }
+    .premium-ui .weekly-table .period-head,
+    .premium-ui .weekly-table tbody td.period-cell {
+        width: 52px;
+        min-width: 52px;
+        max-width: 52px;
+    }
+}
+
+@media print {
+    .timetable-lesson-tooltip { display: none !important; }
+    .premium-ui .weekly-table .period-head,
+    .premium-ui .weekly-table .period-cell { position: static; }
+}
