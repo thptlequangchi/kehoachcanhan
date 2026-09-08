@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v52.5 — Service Worker */
-const APP_VERSION = '52.5.0';
+/* Sổ Tay Giáo Viên v53.0 STABLE — Service Worker */
+const APP_VERSION = '53.0.0';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -10,6 +10,7 @@ const APP_SHELL = [
     './',
     './index.html',
     './manifest.webmanifest',
+    './release-manifest.json',
     './assets/css/app.css',
     './assets/css/premium-ui.css',
     './assets/css/pwa.css',
@@ -35,6 +36,7 @@ const APP_SHELL = [
     './assets/icons/icon-192.png',
     './assets/icons/icon-512.png',
     './assets/icons/icon-maskable-512.png',
+    './assets/js/35-stable-guard.js',
     './assets/js/00-diagnostics-bootstrap.js',
     './assets/js/01-state.js',
     './assets/js/01-indexeddb-storage.js',
@@ -58,19 +60,17 @@ const APP_SHELL = [
     './assets/js/16-command-center.js',
     './assets/js/17-year-dashboard.js',
     './assets/js/18-automation-center.js',
-    './assets/js/19-report-center.js',
     './assets/js/20-pwa.js',
-    './assets/js/21-health-check.js',
-    './assets/js/22-links-center.js',
     './assets/js/23-global-command.js',
-    './assets/js/24-storage-center.js',
-    './assets/js/25-profile-package.js',
     './assets/js/26-reminder-calendar.js',
-    './assets/js/27-regression-tests.js',
     './assets/js/28-gradebook.js',
     './assets/js/29-homeroom.js',
     './assets/js/30-lazy-vendors.js',
     './assets/js/31-release-shell.js',
+    './assets/js/32-module-loader.js',
+    './assets/js/33-browser-smoke.js',
+    './assets/js/34-safety-snapshots.js',
+    './tests/browser-smoke.html',
     './assets/js/config.js'
 ];
 

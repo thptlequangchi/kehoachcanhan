@@ -1,16 +1,27 @@
-# Sổ Tay Giáo Viên Pro 52.5
+# Sổ Tay Giáo Viên Pro 53.0 — STABLE
 
-Bản v52.5 kế thừa trực tiếp v52.4 và tập trung vào **trải nghiệm Hôm nay**. Không xóa hoặc viết lại các module cũ.
+> Gói hiện tại: **v53.0 — STABLE**. Các changelog cũ được giữ để truy vết lịch sử.
 
-## Điểm mới
-- Bảng điều hành Hôm nay: Lịch dạy · Việc cần làm · Học sinh cần chú ý · Tiến độ PPCT.
-- Tích hợp cảnh báo Sổ chủ nhiệm v52.4 vào màn hình đầu.
-- Bấm học sinh cảnh báo để mở thẳng Sổ chủ nhiệm và hồ sơ tương ứng.
-- Chế độ Tập trung giữ lại Bảng Hôm nay, chỉ ẩn dashboard nâng cao.
-- Giao diện responsive 4/2/1 cột.
+Bản v53.0 kế thừa trực tiếp v52.9 và là mốc ổn định dài hạn. Không xóa dữ liệu hay viết lại các module nghiệp vụ cũ.
 
-## Cập nhật
-Giải nén gói v52.5 và chép toàn bộ nội dung vào repo hiện tại. Service Worker dùng APP_VERSION `52.5.0`, vì vậy PWA sẽ tạo cache mới.
+## Các mốc hoàn thiện từ v52.5 đến v53.0
+- **v52.5:** Bảng điều hành Hôm nay: lịch dạy, việc cần làm, học sinh cần chú ý, tiến độ PPCT.
+- **v52.6:** Feature module loader, giảm JavaScript chặn khởi động.
+- **v52.7:** Browser Smoke Suite cho kiểm thử trực tiếp sau khi triển khai.
+- **v52.8:** 5 điểm an toàn tự động, chu kỳ 12 giờ và phục hồi nhanh.
+- **v52.9:** Offline sync outbox, tự đồng bộ lại khi mạng trở về.
+- **v53.0:** Safe Boot Guard, release manifest và chốt kênh `stable`.
 
-## Dữ liệu
-Không có migration phá vỡ tương thích. Dữ liệu v52.4 được giữ nguyên.
+## Tương thích dữ liệu
+- `DATA_SCHEMA_VERSION = 4`.
+- `BACKUP_VERSION = 7`.
+- Không có migration phá vỡ tương thích từ v52.x.
+- 37 tuần chính + tối đa 2 tuần phụ trước khai giảng.
+- Sổ điểm: tối đa 5 cột đánh giá thường xuyên.
+- Sổ chủ nhiệm: theo dõi vi phạm, điểm rèn luyện tuần, xử lý/lịch sử vi phạm nghiêm trọng và xu hướng 4 tuần.
+
+## Triển khai
+Giải nén toàn bộ gói vào thư mục site/repository. Service Worker dùng `APP_VERSION = 53.0.0`, vì vậy cache v52.x sẽ tự được thay thế sau khi bản mới kích hoạt.
+
+## Kiểm thử nhanh sau triển khai
+Mở phần kiểm thử và bấm **🌐 Smoke test trình duyệt**, hoặc mở `tests/browser-smoke.html`.

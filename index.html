@@ -18,6 +18,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <script src="assets/js/35-stable-guard.js"></script>
     <script src="assets/js/00-diagnostics-bootstrap.js"></script>
     <script src="assets/js/30-lazy-vendors.js"></script>
         <script src="assets/js/config.js"></script>
@@ -225,6 +226,7 @@
                     <div class="regression-center-actions">
                         <button class="btn btn-primary btn-sm" id="runRegressionQuickBtn" type="button">⚡ Kiểm thử nhanh</button>
                         <button class="btn btn-outline btn-sm" id="runRegressionFullBtn" type="button" style="color:#6d28d9;border-color:#c4b5fd;">🧪 Kiểm thử đầy đủ</button>
+                        <button class="btn btn-outline btn-sm" id="runBrowserSmokeBtn" type="button">🌐 Smoke test trình duyệt</button>
                         <button class="btn btn-outline btn-sm" id="downloadRegressionReportBtn" type="button" style="color:#475569;border-color:#cbd5e1;">⬇️ Tải báo cáo</button>
                         <button class="btn btn-outline btn-sm" id="copyRegressionReportBtn" type="button" style="color:#1d4ed8;border-color:#93c5fd;">📋 Sao chép báo cáo</button>
                     </div>
@@ -324,6 +326,11 @@
                     style="color:#92400e;border-color:#fcd34d;">↶ Hoàn tác khôi phục</button>
             <button class="btn btn-outline btn-sm" id="exportPreCloudBackupBtn" type="button" hidden
                     style="color:#0369a1;border-color:#7dd3fc;">⬇️ Bản trước đồng bộ</button>
+            <button class="btn btn-outline btn-sm" id="createSafetySnapshotBtn" type="button"
+                    style="color:#0f766e;border-color:#99f6e4;">📸 Tạo điểm an toàn</button>
+            <button class="btn btn-outline btn-sm" id="restoreSafetySnapshotBtn" type="button" hidden
+                    style="color:#9a3412;border-color:#fdba74;">↩ Phục hồi điểm an toàn</button>
+            <span class="data-safety-summary" id="safetySnapshotSummary" aria-live="polite"></span>
             <input type="file" id="restoreBackupInput" accept="application/json,.json,.stgv" hidden
                    aria-label="Chọn file sao lưu dữ liệu" />
         </section>
@@ -1812,18 +1819,14 @@
     <script src="assets/js/16-command-center.js"></script>
     <script src="assets/js/17-year-dashboard.js"></script>
     <script src="assets/js/18-automation-center.js"></script>
-    <script src="assets/js/19-report-center.js"></script>
-    <script src="assets/js/25-profile-package.js"></script>
     <script src="assets/js/26-reminder-calendar.js"></script>
     <script src="assets/js/28-gradebook.js"></script>
     <script src="assets/js/29-homeroom.js"></script>
     <script src="assets/js/20-pwa.js"></script>
-    <script src="assets/js/21-health-check.js"></script>
-    <script src="assets/js/22-links-center.js"></script>
     <script src="assets/js/23-global-command.js"></script>
-    <script src="assets/js/24-storage-center.js"></script>
-    <script src="assets/js/27-regression-tests.js"></script>
     <script src="assets/js/31-release-shell.js"></script>
+    <script src="assets/js/32-module-loader.js"></script>
+    <script src="assets/js/34-safety-snapshots.js"></script>
     <script src="assets/js/15-init.js"></script>
 
 </body>

@@ -1,16 +1,16 @@
-# AUDIT REPORT — v52.5.0
+# AUDIT REPORT — v53.0.0 STABLE
 
-## Kết luận
-**PASS** các kiểm tra tĩnh và fixture nghiệp vụ của gói v52.5.
+**PASS** toàn bộ kiểm tra đóng gói.
 
-## Static audit
+## `python tests/run-static-audit.py`
+
 ```text
-PASS: HTML IDs 555/555 unique
-PASS: HTML resources 61 present
+PASS: HTML IDs 559/559 unique
+PASS: HTML resources 58 present
 PASS: DOM refs 202 resolved
-PASS: named functions 904/904 unique
+PASS: named functions 933/933 unique
 PASS: APP_SHELL 64 resources present
-PASS: APP_VERSION 52.5.0
+PASS: APP_VERSION 53.0.0
 PASS: Professional UI + timetable v52.1 + plan revision styles load in safe order
 PASS: timetable periods 1–5 protected from zebra/hover overrides and PPCT tooltip wired
 PASS: personal gradebook loaded, private workspace persisted, TX columns capped at 5
@@ -19,6 +19,11 @@ PASS: homeroom v52.2 frequency monitoring thresholds + dashboard wired
 PASS: homeroom v52.3 weekly conduct points + repeat multiplier + critical flag wired
 PASS: homeroom v52.4 resolved-serious history + 4-week trends + GVCN priority wired
 PASS: v52.5 Today command center + homeroom attention + focus-mode wiring
+PASS: v52.6 optional feature modules load on demand/idle
+PASS: v52.7 browser smoke suite + launcher wired
+PASS: v52.8 automatic 12h safety snapshots + restore controls wired
+PASS: v52.9 offline sync outbox + automatic reconnect flush wired
+PASS: v53.0 STABLE safe-boot guard + release manifest wired
 PASS: centralized data-change listeners 1
 PASS: centralized minute heartbeat 1
 PASS: PPCT uses unified suggestion engine
@@ -30,7 +35,8 @@ PASS: same-week plan uploads use guarded revision comparison
 PASS: all JavaScript node --check
 ```
 
-## State fixtures
+## `node tests/run-state-fixtures.js`
+
 ```text
 year PASS
 academic calendar 39 weeks PASS
@@ -67,7 +73,8 @@ semester2 different load PASS
 v52.5 today homeroom attention PASS
 ```
 
-## Session PPCT fixtures
+## `node tests/run-session-ppct-fixtures.js`
+
 ```text
 afternoon profile overrides all PASS
 lesson lookup separated by session PASS
@@ -77,13 +84,8 @@ week 2 continues each session independently PASS
 course key contains session PASS
 ```
 
-## Điểm bảo vệ v52.5
-- Bảng điều hành Hôm nay có 4 khối và tích hợp trực tiếp Sổ chủ nhiệm v52.4.
-- Vi phạm nghiêm trọng chưa xử lý được ưu tiên; lịch sử đã xử lý không bị biến thành cảnh báo đỏ mới.
-- Bấm cảnh báo học sinh mang theo cả lớp/sổ và student ID để mở đúng hồ sơ.
-- `teacher-data-changed` vẫn chỉ có một listener trung tâm; Bảng Hôm nay đăng ký qua registry dùng chung.
-- Chế độ Tập trung giữ lại Tổng quan + Bảng Hôm nay.
-- APP_VERSION `52.5.0` đồng bộ state/Service Worker.
+## Phát hành ổn định
 
-## Giới hạn kiểm thử
-Chưa có browser E2E thực thi trong môi trường đóng gói.
+- Browser Smoke Suite được đóng gói để chạy sau triển khai.
+- Không có migration phá vỡ dữ liệu v52.x.
+- APP_VERSION / Service Worker / release-manifest đều là 53.0.0.

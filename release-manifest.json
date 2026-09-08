@@ -1,0 +1,30 @@
+{
+  "application": "Sổ Tay Giáo Viên Pro",
+  "release": "53.0.0",
+  "channel": "stable",
+  "releasedAt": "2026-09-08",
+  "dataSchemaVersion": 4,
+  "backupVersion": 7,
+  "academicCalendar": {
+    "mainWeeks": 37,
+    "auxiliaryWeeks": 2,
+    "totalWeeks": 39
+  },
+  "features": {
+    "todayCommandCenter": true,
+    "homeroomPriorityAndTrend": true,
+    "lazyFeatureModules": true,
+    "browserSmokeSuite": true,
+    "safetySnapshots": {
+      "enabled": true,
+      "intervalHours": 12,
+      "retention": 5
+    },
+    "offlineSyncOutbox": true,
+    "safeBootGuard": true
+  },
+  "compatibility": {
+    "preservesV52Data": true,
+    "requiresDestructiveMigration": false
+  }
+}

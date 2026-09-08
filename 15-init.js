@@ -129,16 +129,18 @@
                 initAutomationCenter();
                 renderAutomationCenter();
             });
+            // v52.6: Báo cáo/Hồ sơ được tải khi mở tab để giảm chi phí khởi động.
             safeInitStage('Báo cáo & hồ sơ', () => {
-                initReportCenter();
-                renderReportCenter();
+                if (typeof initReportCenter === 'function') initReportCenter();
+                if (typeof renderReportCenter === 'function') renderReportCenter();
             });
             safeInitStage('Hồ sơ giáo viên tự động', () => {
                 if (typeof initProfilePackageCenter === 'function') initProfilePackageCenter();
                 if (typeof renderProfilePackageCenter === 'function') renderProfilePackageCenter();
             });
+            // v52.6: Chẩn đoán được tải theo nhu cầu/idle.
             safeInitStage('Trung tâm chẩn đoán', () => {
-                initHealthCenter();
+                if (typeof initHealthCenter === 'function') initHealthCenter();
             });
             safeInitStage('Trung tâm liên kết', () => {
                 if (typeof initLinkCenter === 'function') initLinkCenter();
