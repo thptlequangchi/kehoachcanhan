@@ -1,5 +1,5 @@
 // ================================================================
-//  RELEASE SHELL — v52.2
+//  RELEASE SHELL — v52.3
 //  Chế độ tập trung chỉ thay đổi cách hiển thị, không thay đổi dữ liệu.
 // ================================================================
 (() => {
@@ -28,7 +28,7 @@
         try { enabled = localStorage.getItem(STORAGE_KEY) === '1'; } catch (_) { enabled = false; }
         releaseV52ApplyFocusMode(enabled);
         document.getElementById('focusModeToggle')?.addEventListener('click', releaseV52ToggleFocusMode);
-        document.documentElement.dataset.teacherNotebookRelease = '52.2';
+        document.documentElement.dataset.teacherNotebookRelease = '52.3';
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', releaseV52Init, { once:true });

@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v52.2
+        //  PERSONAL HOMEROOM NOTEBOOK — v52.3
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -9,6 +9,7 @@
         let homeroomRosterFilter = 'all';
         let homeroomPrivacyHidden = true;
         let homeroomMonitoringView = 'flagged';
+        let homeroomWeekAnchorDate = '';
 
         const HOMEROOM_TYPE_META = {
             absence_excused: { label: 'Vắng có phép', icon: '🟡', tone: 'warning' },
@@ -23,6 +24,74 @@
             parent_meeting: { label: 'Họp phụ huynh', icon: '🏫', tone: 'info' },
             class_activity: { label: 'Hoạt động lớp', icon: '🎯', tone: 'success' },
         };
+
+        const HOMEROOM_SEVERITY_META = {
+            neutral: { label: 'Không xếp mức', short: '—', icon: '•' },
+            positive: { label: 'Tích cực', short: 'Tốt', icon: '✨' },
+            light: { label: 'Nhẹ', short: 'Nhẹ', icon: '🟢' },
+            medium: { label: 'Trung bình', short: 'TB', icon: '🟡' },
+            heavy: { label: 'Nặng', short: 'Nặng', icon: '🟠' },
+            critical: { label: 'Nghiêm trọng', short: 'Nghiêm trọng', icon: '🔴' },
+        };
+
+        const HOMEROOM_CONDUCT_RULES = [
+            { group:'Chuyên cần', id:'attendance_full_week', label:'Đi học đầy đủ, đúng giờ cả tuần', type:'commendation', points:2, severity:'positive' },
+            { group:'Chuyên cần', id:'late_under_5', label:'Đi muộn dưới 5 phút', type:'late', points:-1, severity:'light' },
+            { group:'Chuyên cần', id:'late_5_15', label:'Đi muộn từ 5–15 phút', type:'late', points:-2, severity:'light' },
+            { group:'Chuyên cần', id:'late_over_15', label:'Đi muộn trên 15 phút', type:'late', points:-3, severity:'medium' },
+            { group:'Chuyên cần', id:'absence_excused', label:'Vắng có phép', type:'absence_excused', points:0, severity:'neutral' },
+            { group:'Chuyên cần', id:'absence_unexcused_period', label:'Vắng không phép 1 tiết', type:'absence_unexcused', points:-4, severity:'medium' },
+            { group:'Chuyên cần', id:'absence_unexcused_session', label:'Vắng không phép 1 buổi', type:'absence_unexcused', points:-8, severity:'heavy' },
+            { group:'Chuyên cần', id:'skip_class', label:'Bỏ tiết / trốn tiết', type:'violation', points:-10, severity:'heavy' },
+            { group:'Học tập', id:'teacher_praise', label:'Được giáo viên bộ môn tuyên dương', type:'commendation', points:2, severity:'positive' },
+            { group:'Học tập', id:'academic_progress', label:'Có tiến bộ rõ rệt trong học tập', type:'commendation', points:2, severity:'positive' },
+            { group:'Học tập', id:'active_participation', label:'Tích cực phát biểu, xây dựng bài', type:'commendation', points:1, severity:'positive' },
+            { group:'Học tập', id:'help_study', label:'Giúp đỡ bạn học tập hiệu quả', type:'commendation', points:1, severity:'positive' },
+            { group:'Học tập', id:'unprepared', label:'Không học bài / không chuẩn bị bài', type:'violation', points:-2, severity:'light' },
+            { group:'Học tập', id:'homework_missing', label:'Không làm bài tập', type:'violation', points:-2, severity:'light' },
+            { group:'Học tập', id:'missing_materials', label:'Thiếu sách, vở hoặc đồ dùng học tập', type:'violation', points:-1, severity:'light' },
+            { group:'Học tập', id:'off_task', label:'Làm việc riêng trong giờ', type:'violation', points:-2, severity:'light' },
+            { group:'Học tập', id:'sleeping', label:'Ngủ trong giờ học', type:'violation', points:-2, severity:'light' },
+            { group:'Học tập', id:'cheating_light', label:'Gian lận trong kiểm tra mức nhẹ', type:'violation', points:-8, severity:'heavy' },
+            { group:'Học tập', id:'cheating_repeat', label:'Gian lận có tổ chức / tái phạm', type:'violation', points:-15, severity:'heavy' },
+            { group:'Nề nếp', id:'rules_good_week', label:'Thực hiện tốt nội quy cả tuần', type:'commendation', points:2, severity:'positive' },
+            { group:'Nề nếp', id:'uniform', label:'Không đúng đồng phục', type:'violation', points:-1, severity:'light' },
+            { group:'Nề nếp', id:'student_badge', label:'Không đeo thẻ học sinh', type:'violation', points:-1, severity:'light' },
+            { group:'Nề nếp', id:'eat_in_class', label:'Ăn quà trong lớp', type:'violation', points:-1, severity:'light' },
+            { group:'Nề nếp', id:'phone', label:'Sử dụng điện thoại trái quy định', type:'violation', points:-3, severity:'medium' },
+            { group:'Nề nếp', id:'phone_repeat', label:'Tái phạm sử dụng điện thoại', type:'violation', points:-5, severity:'medium' },
+            { group:'Nề nếp', id:'leave_class', label:'Tự ý ra khỏi lớp trong giờ', type:'violation', points:-3, severity:'medium' },
+            { group:'Nề nếp', id:'banned_item', label:'Mang vật dụng bị cấm đến trường', type:'violation', points:-10, severity:'heavy' },
+            { group:'Vệ sinh – tài sản', id:'cleaning_good', label:'Trực nhật tốt, lớp sạch đẹp', type:'commendation', points:1, severity:'positive' },
+            { group:'Vệ sinh – tài sản', id:'cleanliness_initiative', label:'Chủ động giữ gìn vệ sinh chung', type:'commendation', points:1, severity:'positive' },
+            { group:'Vệ sinh – tài sản', id:'skip_duty', label:'Không trực nhật / trực nhật không đạt', type:'violation', points:-2, severity:'light' },
+            { group:'Vệ sinh – tài sản', id:'littering', label:'Xả rác không đúng nơi quy định', type:'violation', points:-2, severity:'light' },
+            { group:'Vệ sinh – tài sản', id:'property_damage', label:'Cố ý làm hư hỏng tài sản', type:'violation', points:-12, severity:'heavy' },
+            { group:'Ứng xử – đạo đức', id:'good_deed', label:'Có việc tốt được ghi nhận', type:'commendation', points:2, severity:'positive' },
+            { group:'Ứng xử – đạo đức', id:'return_lost', label:'Nhặt được của rơi trả lại', type:'commendation', points:3, severity:'positive' },
+            { group:'Ứng xử – đạo đức', id:'help_friend', label:'Giúp đỡ bạn gặp khó khăn', type:'commendation', points:2, severity:'positive' },
+            { group:'Ứng xử – đạo đức', id:'swearing', label:'Nói tục, chửi bậy', type:'violation', points:-3, severity:'medium' },
+            { group:'Ứng xử – đạo đức', id:'insult_peer', label:'Trêu chọc, xúc phạm bạn', type:'violation', points:-5, severity:'medium' },
+            { group:'Ứng xử – đạo đức', id:'disunity', label:'Cãi nhau, gây mất đoàn kết', type:'violation', points:-5, severity:'medium' },
+            { group:'Ứng xử – đạo đức', id:'disrespect_teacher', label:'Thiếu lễ phép với giáo viên / người lớn', type:'violation', points:-8, severity:'heavy' },
+            { group:'Ứng xử – đạo đức', id:'insult_teacher', label:'Xúc phạm giáo viên', type:'violation', points:-20, severity:'critical' },
+            { group:'Ứng xử – đạo đức', id:'bullying', label:'Bắt nạt học sinh khác', type:'violation', points:-15, severity:'heavy' },
+            { group:'Ứng xử – đạo đức', id:'threat_coerce', label:'Đe dọa, ép buộc bạn', type:'violation', points:-15, severity:'heavy' },
+            { group:'Ứng xử – đạo đức', id:'minor_scuffle', label:'Xô xát nhẹ, chưa gây hậu quả', type:'violation', points:-12, severity:'heavy' },
+            { group:'Ứng xử – đạo đức', id:'fight', label:'Đánh nhau', type:'violation', points:-25, severity:'critical' },
+            { group:'Ứng xử – đạo đức', id:'fight_injury_org', label:'Đánh nhau gây thương tích / có tổ chức', type:'violation', points:-35, severity:'critical' },
+            { group:'Ứng xử – đạo đức', id:'violence_record_share', label:'Bạo lực học đường / quay, cổ vũ hoặc phát tán clip bạo lực', type:'violation', points:-25, severity:'critical' },
+            { group:'Tập thể', id:'task_good', label:'Hoàn thành tốt nhiệm vụ được giao', type:'commendation', points:2, severity:'positive' },
+            { group:'Tập thể', id:'class_activity', label:'Tích cực hoạt động lớp / trường', type:'commendation', points:2, severity:'positive' },
+            { group:'Tập thể', id:'school_award', label:'Có thành tích cấp trường', type:'commendation', points:3, severity:'positive' },
+            { group:'Tập thể', id:'higher_award', label:'Có thành tích cấp cao hơn', type:'commendation', points:5, severity:'positive' },
+            { group:'Tập thể', id:'skip_activity', label:'Không tham gia hoạt động tập thể không lý do', type:'violation', points:-2, severity:'light' },
+            { group:'Tập thể', id:'disrupt_collective', label:'Cố tình gây ảnh hưởng hoạt động tập thể', type:'violation', points:-5, severity:'medium' },
+            { group:'Ý thức tự quản', id:'admit_fix', label:'Tự giác nhận lỗi và khắc phục tốt', type:'commendation', points:1, severity:'positive' },
+            { group:'Ý thức tự quản', id:'clear_improvement', label:'Có tiến bộ rõ sau nhắc nhở', type:'commendation', points:2, severity:'positive' },
+            { group:'Ý thức tự quản', id:'help_remind', label:'Nhắc nhở, hỗ trợ bạn thực hiện nội quy đúng cách', type:'commendation', points:1, severity:'positive' },
+            { group:'Ý thức tự quản', id:'cover_serious', label:'Che giấu / bao che vi phạm nghiêm trọng', type:'violation', points:-5, severity:'medium' },
+        ];
 
         function homeroomById(id) {
             return document.getElementById(id);
@@ -59,6 +128,64 @@
             if (!iso) return '';
             const [year, month, day] = iso.split('-');
             return `${day}/${month}/${year}`;
+        }
+
+        function homeroomRuleById(ruleId) {
+            return HOMEROOM_CONDUCT_RULES.find(rule => rule.id === cleanText(ruleId)) || null;
+        }
+
+        function homeroomSeverityMeta(severity) {
+            return HOMEROOM_SEVERITY_META[severity] || HOMEROOM_SEVERITY_META.neutral;
+        }
+
+        function homeroomClampPoints(value) {
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return 0;
+            return Math.min(20, Math.max(-50, Math.round(parsed * 2) / 2));
+        }
+
+        function homeroomFormatPoints(value) {
+            const points = homeroomClampPoints(value);
+            return `${points > 0 ? '+' : ''}${Number.isInteger(points) ? points : points.toFixed(1)}`;
+        }
+
+        function homeroomWeekRange(anchorValue) {
+            const iso = normalizeHomeroomDate(anchorValue) || homeroomTodayISO();
+            const [y,m,d] = iso.split('-').map(Number);
+            const date = new Date(y, m - 1, d, 12, 0, 0, 0);
+            const weekday = date.getDay();
+            const diffToMonday = weekday === 0 ? -6 : 1 - weekday;
+            const monday = new Date(date); monday.setDate(date.getDate() + diffToMonday);
+            const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+            const toIso = item => `${item.getFullYear()}-${String(item.getMonth()+1).padStart(2,'0')}-${String(item.getDate()).padStart(2,'0')}`;
+            return { start: toIso(monday), end: toIso(sunday) };
+        }
+
+        function homeroomWeekLabel(anchorValue) {
+            const range = homeroomWeekRange(anchorValue);
+            return `${homeroomFormatDate(range.start)}–${homeroomFormatDate(range.end)}`;
+        }
+
+        function homeroomEntryInWeek(entry, anchorValue) {
+            const date = normalizeHomeroomDate(entry?.date);
+            if (!date) return false;
+            const range = homeroomWeekRange(anchorValue);
+            return date >= range.start && date <= range.end;
+        }
+
+        function homeroomRepeatInfo(book, studentId, ruleId, dateValue) {
+            if (!book || !studentId || !ruleId) return { repeatCount:0, multiplier:1 };
+            const count = (book.entries || []).filter(entry => entry.studentId === studentId && entry.ruleId === ruleId && homeroomEntryInWeek(entry, dateValue)).length;
+            return { repeatCount:count, multiplier: count === 0 ? 1 : (count === 1 ? 1.5 : 2) };
+        }
+
+        function homeroomScoreBand(score) {
+            if (score >= 105) return { label:'Tuyên dương', level:'excellent' };
+            if (score >= 100) return { label:'Tốt', level:'good' };
+            if (score >= 95) return { label:'Nhắc nhẹ', level:'soft' };
+            if (score >= 90) return { label:'Cần chú ý', level:'watch' };
+            if (score >= 80) return { label:'Theo dõi', level:'priority' };
+            return { label:'Cần can thiệp', level:'critical' };
         }
 
         function homeroomEnsureState() {
@@ -165,6 +292,12 @@
             const violation = count('violation');
             const unresolved = entries.filter(entry => ['absence_unexcused', 'violation', 'support'].includes(entry.type) && !entry.resolved).length;
             const lastEntry = [...entries].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')))[0] || null;
+            const weekEntries = entries.filter(entry => homeroomEntryInWeek(entry, homeroomWeekAnchorDate || homeroomTodayISO()));
+            const weekPoints = Math.round(weekEntries.reduce((sum, entry) => sum + homeroomClampPoints(entry.points), 0) * 2) / 2;
+            const weekScore = Math.round((100 + weekPoints) * 2) / 2;
+            const seriousEntries = entries.filter(entry => entry.seriousFlag || entry.severity === 'critical');
+            const heavyEntries = entries.filter(entry => entry.severity === 'heavy');
+            const maxSeverity = seriousEntries.length ? 'critical' : (heavyEntries.length ? 'heavy' : (violation ? 'medium' : 'neutral'));
             return {
                 absenceExcused,
                 absenceUnexcused,
@@ -174,6 +307,12 @@
                 unresolved,
                 totalEntries: entries.length,
                 lastEntryDate: lastEntry?.date || '',
+                weekPoints,
+                weekScore,
+                scoreBand: homeroomScoreBand(weekScore),
+                seriousCount: seriousEntries.length,
+                heavyCount: heavyEntries.length,
+                maxSeverity,
             };
         }
 
@@ -196,13 +335,23 @@
                 alerts.push(`Vi phạm ${metrics.violation}/${thresholds.violation}`);
                 groups.add('violation');
             }
+            if (metrics.weekScore < 95) {
+                alerts.push(`Điểm tuần ${homeroomFormatPoints(metrics.weekScore).replace('+','')}`);
+                groups.add('score');
+            }
+            if (metrics.seriousCount > 0) alerts.unshift(`Có ${metrics.seriousCount} vi phạm nghiêm trọng`);
             const groupCount = groups.size;
+            const level = metrics.seriousCount > 0 ? 'critical'
+                : (metrics.weekScore < 80 || groupCount >= 2 ? 'priority' : (groupCount === 1 ? 'watch' : 'normal'));
+            const label = metrics.seriousCount > 0 ? 'Vi phạm nghiêm trọng'
+                : (metrics.weekScore < 80 ? 'Cần can thiệp' : (groupCount >= 2 ? 'Ưu tiên theo dõi' : (groupCount === 1 ? 'Cần theo dõi' : 'Bình thường')));
             return {
                 flagged: alerts.length > 0,
                 groupCount,
                 alerts,
-                level: groupCount >= 2 ? 'priority' : (groupCount === 1 ? 'watch' : 'normal'),
-                label: groupCount >= 2 ? 'Ưu tiên theo dõi' : (groupCount === 1 ? 'Cần theo dõi' : 'Bình thường'),
+                level,
+                label,
+                serious: metrics.seriousCount > 0,
             };
         }
 
@@ -240,6 +389,8 @@
                 commendations: individual.filter(entry => entry.type === 'commendation').length,
                 attentionStudents: attentionStudentIds.size,
                 thresholdStudents: monitoringRows.filter(row => row.status.flagged).length,
+                criticalStudents: monitoringRows.filter(row => row.metrics.seriousCount > 0).length,
+                lowWeekScoreStudents: monitoringRows.filter(row => row.metrics.weekScore < 90).length,
                 parentContacts: individual.filter(entry => entry.type === 'parent_contact').length,
                 entries: entries.length,
             };
@@ -254,6 +405,8 @@
             set('homeroomLateCount', summary.late);
             set('homeroomViolationCount', summary.violations);
             set('homeroomAttentionCount', summary.attentionStudents);
+            set('homeroomCriticalCount', summary.criticalStudents);
+            set('homeroomLowWeekScoreCount', summary.lowWeekScoreStudents);
             const subtitle = homeroomById('homeroomSubtitle');
             if (subtitle) subtitle.textContent = book
                 ? `${book.className} · Học kỳ ${homeroomGetSelectedSemester()} · ${summary.thresholdStudents} HS chạm/vượt ngưỡng · ${summary.parentContacts} lượt trao đổi PHHS.`
@@ -335,6 +488,8 @@
                         m.absenceTotal ? `<span title="Tổng lượt vắng">V ${m.absenceTotal}</span>` : '',
                         m.late ? `<span title="Lượt đi muộn">M ${m.late}</span>` : '',
                         m.violation ? `<span title="Lượt vi phạm">VP ${m.violation}</span>` : '',
+                        `<span title="Điểm rèn luyện tuần ${homeroomEscapeHtml(homeroomWeekLabel(homeroomWeekAnchorDate || homeroomTodayISO()))}">Đ ${homeroomFormatPoints(m.weekScore).replace('+','')}</span>`,
+                        m.seriousCount ? `<span class="critical" title="Vi phạm nghiêm trọng">🚨 ${m.seriousCount}</span>` : '',
                     ].filter(Boolean).join('');
                     return `<tr class="${selected ? 'is-selected ' : ''}${flags.status.flagged ? 'is-monitoring' : ''}" data-homeroom-student-row="${homeroomEscapeHtml(student.id)}" data-homeroom-search="${homeroomEscapeHtml(student.name)}" data-homeroom-attention="${flags.attention ? '1' : '0'}" data-homeroom-frequent="${flags.frequent ? '1' : '0'}" data-homeroom-absence="${flags.absence ? '1' : '0'}" data-homeroom-unexcused="${flags.unexcused ? '1' : '0'}" data-homeroom-late="${flags.late ? '1' : '0'}" data-homeroom-violation="${flags.violation ? '1' : '0'}" data-homeroom-resolved="${flags.resolved ? '1' : '0'}">
                         <td class="homeroom-stt">${index + 1}</td>
@@ -363,6 +518,7 @@
             const summaryEl = homeroomById('homeroomMonitoringSummary');
             const tableEl = homeroomById('homeroomMonitoringTable');
             const viewSelect = homeroomById('homeroomMonitoringViewSelect');
+            const weekInput = homeroomById('homeroomWeekAnchorDate');
             const thresholds = homeroomGetMonitoringThresholds(book);
             const thresholdInputs = {
                 totalAbsence: homeroomById('homeroomThresholdTotalAbsence'),
@@ -379,6 +535,10 @@
                 viewSelect.value = homeroomMonitoringView;
                 viewSelect.disabled = !book;
             }
+            if (weekInput) {
+                weekInput.value = homeroomWeekAnchorDate || homeroomTodayISO();
+                weekInput.disabled = !book;
+            }
             if (!summaryEl || !tableEl) return;
             if (!book) {
                 summaryEl.textContent = 'Chưa mở sổ chủ nhiệm.';
@@ -388,22 +548,27 @@
             const semester = homeroomGetSelectedSemester();
             const rows = homeroomBuildMonitoringRows(book, semester);
             const flaggedRows = rows.filter(row => row.status.flagged);
-            const priorityRows = flaggedRows.filter(row => row.status.level === 'priority');
-            summaryEl.innerHTML = `<strong>${flaggedRows.length}</strong>/${rows.length} học sinh chạm hoặc vượt ít nhất một ngưỡng trong HK${semester}`
-                + (priorityRows.length ? ` · <strong>${priorityRows.length}</strong> em cần ưu tiên theo dõi vì xuất hiện ở từ 2 nhóm trở lên.` : '.');
+            const priorityRows = flaggedRows.filter(row => ['priority','critical'].includes(row.status.level));
+            const criticalRows = rows.filter(row => row.metrics.seriousCount > 0);
+            summaryEl.innerHTML = `Tuần <strong>${homeroomEscapeHtml(homeroomWeekLabel(homeroomWeekAnchorDate || homeroomTodayISO()))}</strong> · <strong>${flaggedRows.length}</strong>/${rows.length} học sinh cần chú ý trong HK${semester}`
+                + (priorityRows.length ? ` · <strong>${priorityRows.length}</strong> em ưu tiên theo dõi` : '')
+                + (criticalRows.length ? ` · <strong class="homeroom-critical-text">${criticalRows.length}</strong> em có vi phạm nghiêm trọng, cảnh báo giữ độc lập với điểm cộng.` : '.');
             const shownRows = homeroomMonitoringView === 'all' ? rows : flaggedRows;
             if (!shownRows.length) {
                 tableEl.innerHTML = '<div class="homeroom-monitoring-good">✅ Chưa có học sinh chạm ngưỡng theo dõi ở học kỳ đang xem.</div>';
                 return;
             }
             tableEl.innerHTML = `<table class="homeroom-monitor-table"><thead><tr>
-                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Vi phạm</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
+                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Vi phạm</th><th>Điểm tuần</th><th>Mức cao nhất</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
                 </tr></thead><tbody>${shownRows.map(({ student, metrics, status }) => {
                     const alertTitle = status.alerts.length ? status.alerts.join(' · ') : 'Chưa chạm ngưỡng';
                     return `<tr class="monitor-${status.level}">
                         <td><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></td>
                         <td>${metrics.absenceExcused}</td><td>${metrics.absenceUnexcused}</td><td><strong>${metrics.absenceTotal}</strong></td>
-                        <td>${metrics.late}</td><td>${metrics.violation}</td><td>${metrics.unresolved}</td><td>${homeroomEscapeHtml(homeroomFormatDate(metrics.lastEntryDate) || '—')}</td>
+                        <td>${metrics.late}</td><td>${metrics.violation}</td>
+                        <td><strong class="homeroom-week-score score-${metrics.scoreBand.level}">${homeroomEscapeHtml(homeroomFormatPoints(metrics.weekScore).replace('+',''))}</strong><small>${homeroomEscapeHtml(metrics.scoreBand.label)} · ${homeroomEscapeHtml(homeroomFormatPoints(metrics.weekPoints))}</small></td>
+                        <td><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(metrics.maxSeverity)}">${homeroomEscapeHtml(homeroomSeverityMeta(metrics.maxSeverity).short)}</span>${metrics.seriousCount ? `<small>🚨 ${metrics.seriousCount} nghiêm trọng</small>` : ''}</td>
+                        <td>${metrics.unresolved}</td><td>${homeroomEscapeHtml(homeroomFormatDate(metrics.lastEntryDate) || '—')}</td>
                         <td><span class="homeroom-monitor-status status-${status.level}" title="${homeroomEscapeHtml(alertTitle)}">${homeroomEscapeHtml(status.label)}</span>${status.alerts.length ? `<small>${homeroomEscapeHtml(status.alerts.join(' · '))}</small>` : ''}</td>
                         <td><button type="button" class="btn btn-outline btn-sm" data-homeroom-monitor-student="${homeroomEscapeHtml(student.id)}">Xem</button></td>
                     </tr>`;
@@ -423,6 +588,47 @@
             homeroomSchedulePersist();
             renderHomeroom();
             showToast('✅ Đã cập nhật ngưỡng theo dõi', 'success');
+        }
+
+        function homeroomRenderRuleCatalog() {
+            const select = homeroomById('homeroomConductRuleSelect');
+            const table = homeroomById('homeroomRulesTable');
+            const groups = [...new Set(HOMEROOM_CONDUCT_RULES.map(rule => rule.group))];
+            if (select) {
+                select.innerHTML = '<option value="">— Ghi nhận tự do / không tính điểm —</option>' + groups.map(group => {
+                    const options = HOMEROOM_CONDUCT_RULES.filter(rule => rule.group === group).map(rule => `<option value="${homeroomEscapeHtml(rule.id)}">${homeroomEscapeHtml(rule.label)} · ${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</option>`).join('');
+                    return `<optgroup label="${homeroomEscapeHtml(group)}">${options}</optgroup>`;
+                }).join('');
+            }
+            if (table) {
+                table.innerHTML = `<table class="homeroom-rules-table"><thead><tr><th>Nhóm</th><th>Nội dung</th><th>Điểm</th><th>Mức độ</th></tr></thead><tbody>${HOMEROOM_CONDUCT_RULES.map(rule => `<tr class="${rule.severity === 'critical' ? 'is-critical-rule' : ''}"><td>${homeroomEscapeHtml(rule.group)}</td><td>${homeroomEscapeHtml(rule.label)}</td><td><strong class="${rule.points < 0 ? 'points-negative' : (rule.points > 0 ? 'points-positive' : '')}">${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</strong></td><td><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(rule.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(rule.severity).label)}</span></td></tr>`).join('')}</tbody></table>`;
+            }
+        }
+
+        function homeroomUpdateRulePreview({ forceRuleDefaults = false } = {}) {
+            const book = homeroomActiveBook();
+            const data = homeroomEnsureState();
+            const ruleSelect = homeroomById('homeroomConductRuleSelect');
+            const baseInput = homeroomById('homeroomStudentLogBasePoints');
+            const severitySelect = homeroomById('homeroomStudentLogSeverity');
+            const typeSelect = homeroomById('homeroomStudentLogType');
+            const contentInput = homeroomById('homeroomStudentLogContent');
+            const preview = homeroomById('homeroomRepeatPreview');
+            const rule = homeroomRuleById(ruleSelect?.value);
+            if (rule && forceRuleDefaults) {
+                if (baseInput) baseInput.value = String(rule.points);
+                if (severitySelect) severitySelect.value = rule.severity;
+                if (typeSelect) typeSelect.value = rule.type;
+                if (contentInput && !cleanText(contentInput.value)) contentInput.value = rule.label;
+            }
+            const date = normalizeHomeroomDate(homeroomById('homeroomStudentLogDate')?.value) || homeroomTodayISO();
+            const info = homeroomRepeatInfo(book, data.selectedStudentId, rule?.id || '', date);
+            const basePoints = homeroomClampPoints(baseInput?.value);
+            const multiplier = basePoints < 0 && rule ? info.multiplier : 1;
+            const applied = homeroomClampPoints(basePoints * multiplier);
+            if (preview) preview.value = rule && basePoints < 0
+                ? (info.repeatCount === 0 ? `Lần đầu · ${homeroomFormatPoints(applied)}` : `Đã ${info.repeatCount} lần · ×${String(multiplier).replace('.',',')} → ${homeroomFormatPoints(applied)}`)
+                : `Không · ${homeroomFormatPoints(applied)}`;
         }
 
         function homeroomEntryMeta(type) {
@@ -458,6 +664,7 @@
                     <div class="homeroom-log-icon">${meta.icon}</div>
                     <div class="homeroom-log-main">
                         <div class="homeroom-log-head"><strong>${homeroomEscapeHtml(meta.label)}</strong><span>${homeroomEscapeHtml(homeroomFormatDate(entry.date) || 'Chưa ngày')}</span></div>
+                        <div class="homeroom-log-badges"><span class="homeroom-point-badge ${entry.points < 0 ? 'negative' : (entry.points > 0 ? 'positive' : 'neutral')}">${homeroomEscapeHtml(homeroomFormatPoints(entry.points))}</span><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(entry.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(entry.severity).label)}</span>${entry.repeatMultiplier > 1 ? `<span class="homeroom-repeat-badge">Tái phạm ×${homeroomEscapeHtml(String(entry.repeatMultiplier).replace('.',','))}</span>` : ''}${entry.seriousFlag ? '<span class="homeroom-serious-badge">🚨 Cờ nghiêm trọng</span>' : ''}</div>
                         ${entry.content ? `<p>${homeroomEscapeHtml(entry.content)}</p>` : ''}
                         ${entry.followUp ? `<small>↳ Theo dõi: ${homeroomEscapeHtml(entry.followUp)}</small>` : ''}
                         <div class="homeroom-log-actions">
@@ -554,6 +761,7 @@
             state.homeroom = data;
             homeroomSchedulePersist();
             renderHomeroom();
+            homeroomUpdateRulePreview();
         }
 
         function homeroomSelectBook(bookId) {
@@ -714,18 +922,31 @@
                 showToast('⚠️ Hãy chọn học sinh cần ghi nhận', 'info');
                 return;
             }
+            const rule = homeroomRuleById(homeroomById('homeroomConductRuleSelect')?.value);
             const type = cleanText(homeroomById('homeroomStudentLogType')?.value);
-            const content = cleanText(homeroomById('homeroomStudentLogContent')?.value);
+            const content = cleanText(homeroomById('homeroomStudentLogContent')?.value) || rule?.label || '';
             const followUp = cleanText(homeroomById('homeroomStudentLogFollowUp')?.value);
             const date = normalizeHomeroomDate(homeroomById('homeroomStudentLogDate')?.value) || homeroomTodayISO();
+            const severityRaw = cleanText(homeroomById('homeroomStudentLogSeverity')?.value);
+            const severity = HOMEROOM_SEVERITIES.includes(severityRaw) ? severityRaw : (rule?.severity || 'neutral');
+            const basePoints = homeroomClampPoints(homeroomById('homeroomStudentLogBasePoints')?.value ?? rule?.points ?? 0);
+            const repeat = rule && basePoints < 0 ? homeroomRepeatInfo(book, student.id, rule.id, date) : { repeatCount:0, multiplier:1 };
+            const points = homeroomClampPoints(basePoints * repeat.multiplier);
             const entry = normalizeHomeroomEntry({
                 id: homeroomCreateId('cn-log'),
                 studentId: student.id,
                 date,
                 semester: homeroomGetSelectedSemester(),
                 type,
+                ruleId: rule?.id || '',
                 content,
                 followUp,
+                basePoints,
+                points,
+                severity,
+                repeatCount: repeat.repeatCount,
+                repeatMultiplier: repeat.multiplier,
+                seriousFlag: severity === 'critical',
                 resolved: false,
                 createdAt: new Date().toISOString(),
             }, book.entries.length);
@@ -733,9 +954,14 @@
             book.updatedAt = new Date().toISOString();
             homeroomById('homeroomStudentLogContent').value = '';
             homeroomById('homeroomStudentLogFollowUp').value = '';
+            homeroomById('homeroomConductRuleSelect').value = '';
+            homeroomById('homeroomStudentLogBasePoints').value = '0';
+            homeroomById('homeroomStudentLogSeverity').value = 'neutral';
             homeroomSchedulePersist();
             renderHomeroom();
-            showToast(`✅ Đã ghi nhận ${homeroomEntryMeta(type).label} cho ${student.name || 'học sinh'}`, 'success');
+            homeroomUpdateRulePreview();
+            const seriousMessage = entry.seriousFlag ? ' · 🚨 đã gắn cờ vi phạm nghiêm trọng' : '';
+            showToast(`✅ Đã ghi nhận ${homeroomEntryMeta(type).label}: ${homeroomFormatPoints(points)}${seriousMessage}`, entry.seriousFlag ? 'info' : 'success');
         }
 
         function homeroomAddClassEntry(event) {
@@ -829,6 +1055,12 @@
                     'Học kỳ': `HK${entry.semester}`,
                     'Học sinh': studentMap.get(entry.studentId) || '',
                     'Loại ghi nhận': homeroomEntryMeta(entry.type).label,
+                    'Quy tắc điểm': homeroomRuleById(entry.ruleId)?.label || '',
+                    'Điểm gốc': entry.basePoints,
+                    'Hệ số tái phạm': entry.repeatMultiplier,
+                    'Điểm áp dụng': entry.points,
+                    'Mức độ': homeroomSeverityMeta(entry.severity).label,
+                    'Cờ nghiêm trọng': entry.seriousFlag ? 'Có' : '',
                     'Nội dung': entry.content,
                     'Theo dõi / biện pháp': entry.followUp,
                     'Trạng thái': ['absence_unexcused','violation','support'].includes(entry.type) ? (entry.resolved ? 'Đã xử lý' : 'Chưa xử lý') : '',
@@ -847,6 +1079,11 @@
                     'Tổng vắng': metrics.absenceTotal,
                     'Đi muộn': metrics.late,
                     'Vi phạm': metrics.violation,
+                    'Điểm tuần': metrics.weekScore,
+                    'Cộng/trừ trong tuần': metrics.weekPoints,
+                    'Mức điểm tuần': metrics.scoreBand.label,
+                    'Vi phạm nghiêm trọng': metrics.seriousCount,
+                    'Mức cao nhất': homeroomSeverityMeta(metrics.maxSeverity).label,
                     'Ghi nhận chưa xử lý': metrics.unresolved,
                     'Lần gần nhất': homeroomFormatDate(metrics.lastEntryDate),
                     'Trạng thái theo ngưỡng': status.label,
@@ -865,6 +1102,9 @@
                     ['Vi phạm', summary.violations],
                     ['Học sinh chạm/vượt ngưỡng', summary.thresholdStudents],
                     ['Học sinh cần theo dõi', summary.attentionStudents],
+                    ['Học sinh có vi phạm nghiêm trọng', summary.criticalStudents],
+                    ['Học sinh điểm tuần dưới 90', summary.lowWeekScoreStudents],
+                    ['Tuần tính điểm', homeroomWeekLabel(homeroomWeekAnchorDate || homeroomTodayISO())],
                     ['Ngưỡng tổng vắng', thresholds.totalAbsence],
                     ['Ngưỡng vắng không phép', thresholds.unexcusedAbsence],
                     ['Ngưỡng đi muộn', thresholds.late],
@@ -877,6 +1117,7 @@
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(individualRows), 'Theo dõi học sinh');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monitoringRows), 'Tần suất cần chú ý');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classRows), 'Nhật ký lớp');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(HOMEROOM_CONDUCT_RULES.map(rule => ({'Nhóm':rule.group,'Nội dung':rule.label,'Điểm':rule.points,'Mức độ':homeroomSeverityMeta(rule.severity).label}))), 'Quy tắc cộng trừ');
                 XLSX.writeFile(wb, `so-chu-nhiem-${homeroomSafeFilePart(book.className)}-${homeroomSafeFilePart(state.selectedAcademicYear)}.xlsx`);
                 showToast('✅ Đã xuất Sổ chủ nhiệm ra Excel', 'success');
             } catch (error) {
@@ -913,6 +1154,10 @@
             homeroomById('homeroomSearchInput')?.addEventListener('input', event => { homeroomRosterSearch = event.target.value || ''; homeroomApplyRosterFilters(); });
             homeroomById('homeroomFilterSelect')?.addEventListener('change', event => { homeroomRosterFilter = event.target.value || 'all'; homeroomApplyRosterFilters(); });
             homeroomById('homeroomMonitoringViewSelect')?.addEventListener('change', event => { homeroomMonitoringView = event.target.value === 'all' ? 'all' : 'flagged'; homeroomRenderMonitoring(homeroomActiveBook()); });
+            homeroomById('homeroomWeekAnchorDate')?.addEventListener('change', event => { homeroomWeekAnchorDate = normalizeHomeroomDate(event.target.value) || homeroomTodayISO(); renderHomeroom(); homeroomUpdateRulePreview(); });
+            homeroomById('homeroomConductRuleSelect')?.addEventListener('change', () => homeroomUpdateRulePreview({ forceRuleDefaults:true }));
+            homeroomById('homeroomStudentLogBasePoints')?.addEventListener('input', () => homeroomUpdateRulePreview());
+            homeroomById('homeroomStudentLogDate')?.addEventListener('change', () => homeroomUpdateRulePreview());
             homeroomById('homeroomThresholds')?.addEventListener('change', event => {
                 const input = event.target.closest('[data-homeroom-threshold]');
                 if (input) homeroomUpdateMonitoringThreshold(input);
@@ -963,7 +1208,7 @@
                 const deleteButton = event.target.closest('[data-homeroom-delete-student]');
                 if (deleteButton) homeroomDeleteStudent(deleteButton.dataset.homeroomDeleteStudent);
             });
-            homeroomById('homeroomStudentSelect')?.addEventListener('change', event => homeroomSelectStudent(event.target.value));
+            homeroomById('homeroomStudentSelect')?.addEventListener('change', event => { homeroomSelectStudent(event.target.value); homeroomUpdateRulePreview(); });
             homeroomById('homeroomStudentLogList')?.addEventListener('click', event => {
                 const toggle = event.target.closest('[data-homeroom-toggle-resolved]');
                 if (toggle) homeroomToggleResolved(toggle.dataset.homeroomToggleResolved);
@@ -976,7 +1221,10 @@
             });
 
             const date = homeroomTodayISO();
+            homeroomWeekAnchorDate = date;
+            homeroomRenderRuleCatalog();
             if (homeroomById('homeroomStudentLogDate')) homeroomById('homeroomStudentLogDate').value = date;
+            if (homeroomById('homeroomWeekAnchorDate')) homeroomById('homeroomWeekAnchorDate').value = date;
             if (homeroomById('homeroomClassLogDate')) homeroomById('homeroomClassLogDate').value = date;
             renderHomeroom();
         }

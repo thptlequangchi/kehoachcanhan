@@ -1,4 +1,4 @@
-# TESTING — v52.2.0
+# TESTING — v52.3.0
 
 ## Kiểm thử tự động
 Chạy:

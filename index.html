@@ -36,6 +36,7 @@
     <link rel="stylesheet" href="assets/css/gradebook-v51.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v51.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v52-2.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-v52-3.css" />
     <link rel="stylesheet" href="assets/css/release-v52.css" />
     <link rel="stylesheet" href="assets/css/timetable-v52-1.css" />
     <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
@@ -1028,6 +1029,8 @@
                     <div class="homeroom-kpi"><span>⏰</span><div><strong id="homeroomLateCount">0</strong><small>Đi muộn</small></div></div>
                     <div class="homeroom-kpi"><span>⚠️</span><div><strong id="homeroomViolationCount">0</strong><small>Vi phạm</small></div></div>
                     <div class="homeroom-kpi"><span>📌</span><div><strong id="homeroomAttentionCount">0</strong><small>HS cần theo dõi</small></div></div>
+                    <div class="homeroom-kpi homeroom-kpi-critical"><span>🚨</span><div><strong id="homeroomCriticalCount">0</strong><small>Vi phạm nghiêm trọng</small></div></div>
+                    <div class="homeroom-kpi"><span>📉</span><div><strong id="homeroomLowWeekScoreCount">0</strong><small>Điểm tuần &lt; 90</small></div></div>
                 </div>
 
                 <section class="homeroom-monitoring" id="homeroomMonitoringSection" aria-label="Theo dõi học sinh có tần suất vắng, đi muộn hoặc vi phạm cao">
@@ -1036,7 +1039,10 @@
                             <h3>🚦 Theo dõi chuyên cần &amp; nề nếp</h3>
                             <small>Thống kê theo <strong>số lượt ghi nhận</strong> trong học kỳ đang xem. Ngưỡng chỉ dùng để nhắc giáo viên theo dõi, không tự xếp loại hay xử lý học sinh.</small>
                         </div>
-                        <label class="homeroom-monitoring-view"><span>Hiển thị</span><select id="homeroomMonitoringViewSelect"><option value="flagged">Chỉ HS chạm/vượt ngưỡng</option><option value="all">Tất cả học sinh</option></select></label>
+                        <div class="homeroom-monitoring-controls">
+                            <label class="homeroom-monitoring-view"><span>Tuần tính điểm</span><input id="homeroomWeekAnchorDate" type="date" /></label>
+                            <label class="homeroom-monitoring-view"><span>Hiển thị</span><select id="homeroomMonitoringViewSelect"><option value="flagged">Chỉ HS cần chú ý</option><option value="all">Tất cả học sinh</option></select></label>
+                        </div>
                     </div>
                     <div class="homeroom-thresholds" id="homeroomThresholds">
                         <span class="homeroom-threshold-label">Ngưỡng nhắc theo dõi:</span>
@@ -1048,6 +1054,12 @@
                     <div class="homeroom-monitoring-summary" id="homeroomMonitoringSummary">Chưa mở sổ chủ nhiệm.</div>
                     <div class="homeroom-monitoring-table-wrap" id="homeroomMonitoringTable"><div class="homeroom-mini-empty">Mở sổ để xem thống kê theo dõi.</div></div>
                 </section>
+
+                <details class="homeroom-rules-panel" id="homeroomRulesPanel">
+                    <summary>⚖️ Bảng điểm cộng – trừ mặc định <small>nhấn để xem toàn bộ quy tắc</small></summary>
+                    <div class="homeroom-rules-note">Điểm tuần bắt đầu từ <strong>100</strong>. Lỗi tái phạm cùng loại trong một tuần: lần 2 áp dụng <strong>×1,5</strong>, từ lần 3 áp dụng <strong>×2</strong>. Vi phạm mức <strong>Nghiêm trọng</strong> luôn giữ cờ cảnh báo, không bị xóa bởi điểm cộng.</div>
+                    <div class="homeroom-rules-table-wrap" id="homeroomRulesTable"></div>
+                </details>
 
                 <div class="homeroom-actions">
                     <button class="btn btn-success btn-sm" id="homeroomAddStudentBtn" type="button">＋ Học sinh</button>
@@ -1085,10 +1097,14 @@
                         <form class="homeroom-inline-form" id="homeroomStudentLogForm">
                             <label><span>Học sinh</span><select id="homeroomStudentSelect"><option value="">— Chọn học sinh —</option></select></label>
                             <label><span>Ngày</span><input id="homeroomStudentLogDate" type="date" /></label>
-                            <label><span>Loại ghi nhận</span><select id="homeroomStudentLogType">
+                            <label><span>Nhóm ghi nhận</span><select id="homeroomStudentLogType">
                                 <option value="absence_excused">Vắng có phép</option><option value="absence_unexcused">Vắng không phép</option><option value="late">Đi muộn</option><option value="violation">Vi phạm</option><option value="commendation">Khen thưởng</option><option value="parent_contact">Trao đổi phụ huynh</option><option value="support">Hỗ trợ học sinh</option><option value="note">Ghi chú</option>
                             </select></label>
-                            <label class="full"><span>Nội dung</span><textarea id="homeroomStudentLogContent" rows="2" placeholder="Ví dụ: Nghỉ tiết 1–2 do ốm; phụ huynh đã báo…"></textarea></label>
+                            <label class="full"><span>Nội dung cộng / trừ điểm</span><select id="homeroomConductRuleSelect"><option value="">— Ghi nhận tự do / không tính điểm —</option></select></label>
+                            <label><span>Điểm gốc</span><input id="homeroomStudentLogBasePoints" type="number" min="-50" max="20" step="0.5" value="0" /></label>
+                            <label><span>Mức độ</span><select id="homeroomStudentLogSeverity"><option value="neutral">Không xếp mức</option><option value="positive">Tích cực</option><option value="light">Nhẹ</option><option value="medium">Trung bình</option><option value="heavy">Nặng</option><option value="critical">Nghiêm trọng</option></select></label>
+                            <label><span>Tái phạm trong tuần</span><input id="homeroomRepeatPreview" type="text" value="Không" readonly /></label>
+                            <label class="full"><span>Nội dung</span><textarea id="homeroomStudentLogContent" rows="2" placeholder="Ví dụ: Đi muộn 12 phút; sử dụng điện thoại trong giờ; có việc tốt…"></textarea></label>
                             <label class="full"><span>Theo dõi / biện pháp</span><input id="homeroomStudentLogFollowUp" type="text" placeholder="Ví dụ: Trao đổi phụ huynh, nhắc bổ sung bài…" /></label>
                             <div class="homeroom-form-actions"><button class="btn btn-primary btn-sm" type="submit">＋ Thêm ghi nhận</button></div>
                         </form>

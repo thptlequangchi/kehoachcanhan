@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '52.2.0';
+        const APP_VERSION = '52.3.0';
         const DATA_SCHEMA_VERSION = 4;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -79,6 +79,7 @@
         const GRADEBOOK_SEMESTERS = ['1', '2'];
         const HOMEROOM_SEMESTERS = ['1', '2'];
         const HOMEROOM_GENDERS = ['', 'Nam', 'Nữ', 'Khác'];
+        const HOMEROOM_SEVERITIES = ['neutral', 'positive', 'light', 'medium', 'heavy', 'critical'];
         const HOMEROOM_MONITORING_DEFAULTS = Object.freeze({
             totalAbsence: 3,
             unexcusedAbsence: 2,
@@ -1078,14 +1079,32 @@
             const rawType = cleanText(value.type);
             const type = HOMEROOM_ENTRY_TYPES.includes(rawType) ? rawType : 'note';
             const semester = HOMEROOM_SEMESTERS.includes(String(value.semester)) ? String(value.semester) : '1';
+            const severityRaw = cleanText(value.severity);
+            const severity = HOMEROOM_SEVERITIES.includes(severityRaw) ? severityRaw : 'neutral';
+            const clampPoints = raw => {
+                const parsed = Number(raw);
+                if (!Number.isFinite(parsed)) return 0;
+                return Math.min(20, Math.max(-50, Math.round(parsed * 2) / 2));
+            };
+            const basePoints = clampPoints(value.basePoints ?? value.points ?? 0);
+            const points = clampPoints(value.points ?? basePoints);
+            const repeatCountRaw = Number.parseInt(value.repeatCount, 10);
+            const repeatMultiplierRaw = Number(value.repeatMultiplier);
             return {
                 id: cleanText(value.id) || `cn-log-${Date.now()}-${fallbackIndex}-${Math.random().toString(36).slice(2, 8)}`,
                 studentId: cleanText(value.studentId),
                 date: normalizeHomeroomDate(value.date),
                 semester,
                 type,
+                ruleId: cleanText(value.ruleId),
                 content: cleanText(value.content || value.title),
                 followUp: cleanText(value.followUp),
+                basePoints,
+                points,
+                severity,
+                repeatCount: Number.isFinite(repeatCountRaw) ? Math.max(0, repeatCountRaw) : 0,
+                repeatMultiplier: Number.isFinite(repeatMultiplierRaw) ? Math.min(2, Math.max(1, repeatMultiplierRaw)) : 1,
+                seriousFlag: Boolean(value.seriousFlag) || severity === 'critical',
                 resolved: Boolean(value.resolved),
                 createdAt: cleanText(value.createdAt),
             };
@@ -1128,7 +1147,7 @@
             const activeBook = books[selectedBookId] || null;
             const selectedStudentId = cleanText(source.selectedStudentId);
             return {
-                version: 1,
+                version: 2,
                 books,
                 selectedBookId: activeBook ? selectedBookId : '',
                 selectedClassName: cleanText(source.selectedClassName),
