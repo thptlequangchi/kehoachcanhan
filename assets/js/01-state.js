@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.1.0';
+        const APP_VERSION = '53.2.0';
         const DATA_SCHEMA_VERSION = 4;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -1125,7 +1125,7 @@
             const clampPoints = raw => {
                 const parsed = Number(raw);
                 if (!Number.isFinite(parsed)) return 0;
-                return Math.min(20, Math.max(-50, Math.round(parsed * 2) / 2));
+                return Math.min(100, Math.max(-100, Math.round(parsed * 2) / 2));
             };
             const basePoints = clampPoints(value.basePoints ?? value.points ?? 0);
             const points = clampPoints(value.points ?? basePoints);
@@ -1146,6 +1146,11 @@
                 repeatCount: Number.isFinite(repeatCountRaw) ? Math.max(0, repeatCountRaw) : 0,
                 repeatMultiplier: Number.isFinite(repeatMultiplierRaw) ? Math.min(2, Math.max(1, repeatMultiplierRaw)) : 1,
                 seriousFlag: Boolean(value.seriousFlag) || severity === 'critical',
+                schoolRuleNo: Number.isFinite(Number(value.schoolRuleNo)) ? Number(value.schoolRuleNo) : null,
+                schoolScope: ['student','class'].includes(cleanText(value.schoolScope)) ? cleanText(value.schoolScope) : '',
+                disciplineEffect: ['lower1','weak'].includes(cleanText(value.disciplineEffect)) ? cleanText(value.disciplineEffect) : '',
+                regulationSource: cleanText(value.regulationSource),
+                regulationNote: cleanText(value.regulationNote),
                 resolved: Boolean(value.resolved),
                 resolvedAt: Boolean(value.resolved) ? cleanText(value.resolvedAt) : '',
                 createdAt: cleanText(value.createdAt),
@@ -1204,7 +1209,7 @@
             const activeBook = books[selectedBookId] || null;
             const selectedStudentId = cleanText(source.selectedStudentId);
             return {
-                version: 4,
+                version: 5,
                 books,
                 selectedBookId: activeBook ? selectedBookId : '',
                 selectedClassName: cleanText(source.selectedClassName),

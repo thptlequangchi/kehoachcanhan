@@ -1,6 +1,6 @@
 {
   "application": "Sổ Tay Giáo Viên Pro",
-  "release": "53.1.0",
+  "release": "53.2.0",
   "channel": "stable",
   "releasedAt": "2026-09-12",
   "dataSchemaVersion": 4,
@@ -22,11 +22,15 @@
     },
     "offlineSyncOutbox": true,
     "safeBootGuard": true,
-    "homeroomOrganization": true
+    "homeroomOrganization": true,
+    "homeroomConductRegulation2026": true,
+    "homeroomConductAssessment": true,
+    "homeroomClassConductTracking": true
   },
   "compatibility": {
     "preservesV52Data": true,
     "requiresDestructiveMigration": false,
-    "preservesV53Data": true
+    "preservesV53Data": true,
+    "preservesV531Data": true
   }
 }

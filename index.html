@@ -40,6 +40,7 @@
     <link rel="stylesheet" href="assets/css/homeroom-v52-3.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v52-4.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v53-1.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-v53-2.css" />
     <link rel="stylesheet" href="assets/css/release-v52.css" />
     <link rel="stylesheet" href="assets/css/timetable-v52-1.css" />
     <link rel="stylesheet" href="assets/css/release-v52-5.css" />
@@ -1016,15 +1017,15 @@
             <div class="card homeroom-shell" id="homeroomCard">
                 <div class="card-header homeroom-header">
                     <div>
-                        <h2>🏫 Sổ chủ nhiệm <small>hồ sơ · cơ cấu lớp · chuyên cần · nề nếp · phụ huynh</small></h2>
-                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, tổ học sinh, ban cán sự, chuyên cần, nề nếp, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
+                        <h2>🏫 Sổ chủ nhiệm <small>hồ sơ · cơ cấu lớp · quy chế nề nếp · phụ huynh</small></h2>
+                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, tổ học sinh, ban cán sự, chuyên cần, quy chế nề nếp 2026–2027, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
                     </div>
                     <div class="homeroom-private-badge" title="Sổ chủ nhiệm được lưu trong vùng dữ liệu cá nhân của giáo viên, không đưa vào Kế hoạch trường dùng chung.">🔐 Cá nhân</div>
                 </div>
 
                 <div class="homeroom-guide">
                     <span>💡</span>
-                    <div><strong>Một hồ sơ lớp dùng xuyên suốt năm học.</strong> Có thể lấy nhanh danh sách học sinh từ Sổ điểm, bổ sung thông tin phụ huynh, ghi vắng có phép/không phép, đi muộn, vi phạm, khen thưởng, hỗ trợ, trao đổi PHHS và nhật ký sinh hoạt lớp. Mỗi ghi nhận được tách theo học kỳ.</div>
+                    <div><strong>Một hồ sơ lớp dùng xuyên suốt năm học.</strong> Có thể lấy nhanh danh sách học sinh từ Sổ điểm, xếp tổ, quản lý ban cán sự và ghi nhận vi phạm/khen thưởng theo <strong>Dự thảo Quy chế thực hiện nền nếp năm học 2026–2027 ngày 08/09/2026</strong>. Mỗi ghi nhận được tách theo học kỳ và vẫn giữ được dữ liệu cũ.</div>
                 </div>
 
                 <div class="homeroom-toolbar">
@@ -1077,9 +1078,19 @@
                     <div class="homeroom-monitoring-table-wrap" id="homeroomMonitoringTable"><div class="homeroom-mini-empty">Mở sổ để xem thống kê theo dõi.</div></div>
                 </section>
 
+                <section class="homeroom-regulation-panel" id="homeroomRegulationPanel" aria-label="Đánh giá nề nếp theo quy chế năm học 2026-2027">
+                    <div class="homeroom-regulation-head">
+                        <div><h3>⚖️ Nề nếp 2026–2027 &amp; gợi ý xếp loại</h3><small>Tổng hợp số lỗi trong học kỳ, các trường hợp hạ 1 bậc và trường hợp xếp yếu theo dự thảo.</small></div>
+                        <span class="homeroom-draft-badge">DỰ THẢO · 08/09/2026</span>
+                    </div>
+                    <div class="homeroom-conduct-summary" id="homeroomConductSummary">Chưa mở sổ chủ nhiệm.</div>
+                    <div class="homeroom-conduct-table-host" id="homeroomConductTable"><div class="homeroom-mini-empty">Mở sổ để xem gợi ý xếp loại.</div></div>
+                    <div class="homeroom-regulation-warning">ℹ️ Hệ thống chỉ <strong>gợi ý</strong> từ các ghi nhận đã nhập. Kết quả chính thức cần GVCN rà soát hồ sơ và quy định được nhà trường ban hành chính thức.</div>
+                </section>
+
                 <details class="homeroom-rules-panel" id="homeroomRulesPanel">
-                    <summary>⚖️ Bảng điểm cộng – trừ mặc định <small>nhấn để xem toàn bộ quy tắc</small></summary>
-                    <div class="homeroom-rules-note">Điểm tuần bắt đầu từ <strong>100</strong>. Lỗi tái phạm cùng loại trong một tuần: lần 2 áp dụng <strong>×1,5</strong>, từ lần 3 áp dụng <strong>×2</strong>. Vi phạm mức <strong>Nghiêm trọng</strong> luôn được lưu trong hồ sơ; <strong>chỉ vi phạm chưa xử lý mới giữ cảnh báo đỏ</strong>, còn sự việc đã xử lý chuyển sang lịch sử và không bị điểm cộng xóa khỏi hồ sơ.</div>
+                    <summary>📘 Quy chế nề nếp 2026–2027 <small>48 lỗi vi phạm + các mức khen thưởng</small></summary>
+                    <div class="homeroom-rules-note">Điểm trừ/thưởng được nhập theo đúng mức trong <strong>bản dự thảo</strong> và <strong>không tự nhân hệ số tái phạm</strong>. Về xếp loại: lấy Tốt làm chuẩn; 2–4 lỗi gợi ý Khá, 5–6 lỗi gợi ý Trung bình, trên 6 lỗi gợi ý Yếu; các lỗi có quy định “hạ 1 bậc” hoặc “hạnh kiểm yếu” được xử lý riêng.</div>
                     <div class="homeroom-rules-table-wrap" id="homeroomRulesTable"></div>
                 </details>
 
@@ -1148,10 +1159,11 @@
                             <label><span>Nhóm ghi nhận</span><select id="homeroomStudentLogType">
                                 <option value="absence_excused">Vắng có phép</option><option value="absence_unexcused">Vắng không phép</option><option value="late">Đi muộn</option><option value="violation">Vi phạm</option><option value="commendation">Khen thưởng</option><option value="parent_contact">Trao đổi phụ huynh</option><option value="support">Hỗ trợ học sinh</option><option value="note">Ghi chú</option>
                             </select></label>
-                            <label class="full"><span>Nội dung cộng / trừ điểm</span><select id="homeroomConductRuleSelect"><option value="">— Ghi nhận tự do / không tính điểm —</option></select></label>
-                            <label><span>Điểm gốc</span><input id="homeroomStudentLogBasePoints" type="number" min="-50" max="20" step="0.5" value="0" /></label>
+                            <label class="full"><span>Nội dung theo quy chế nề nếp</span><select id="homeroomConductRuleSelect"><option value="">— Ghi nhận tự do / không tính điểm —</option></select><small class="homeroom-field-help">Chọn lỗi/khen thưởng để tự điền điểm và mức xử lý theo dự thảo 2026–2027.</small></label>
+                            <label><span>Điểm quy chế</span><input id="homeroomStudentLogBasePoints" type="number" min="-100" max="100" step="0.5" value="0" /></label>
                             <label><span>Mức độ</span><select id="homeroomStudentLogSeverity"><option value="neutral">Không xếp mức</option><option value="positive">Tích cực</option><option value="light">Nhẹ</option><option value="medium">Trung bình</option><option value="heavy">Nặng</option><option value="critical">Nghiêm trọng</option></select></label>
-                            <label><span>Tái phạm trong tuần</span><input id="homeroomRepeatPreview" type="text" value="Không" readonly /></label>
+                            <label><span>Mức áp dụng</span><input id="homeroomRepeatPreview" type="text" value="—" readonly /></label>
+                            <label class="full"><span>Hình thức xử lý / lưu ý</span><input id="homeroomRuleEffectPreview" type="text" value="—" readonly /></label>
                             <label class="full"><span>Nội dung</span><textarea id="homeroomStudentLogContent" rows="2" placeholder="Ví dụ: Đi muộn 12 phút; sử dụng điện thoại trong giờ; có việc tốt…"></textarea></label>
                             <label class="full"><span>Theo dõi / biện pháp</span><input id="homeroomStudentLogFollowUp" type="text" placeholder="Ví dụ: Trao đổi phụ huynh, nhắc bổ sung bài…" /></label>
                             <div class="homeroom-form-actions"><button class="btn btn-primary btn-sm" type="submit">＋ Thêm ghi nhận</button></div>
@@ -1160,7 +1172,18 @@
                     </section>
 
                     <section class="homeroom-panel">
-                        <div class="homeroom-panel-head"><h3>🗓️ Nhật ký lớp chủ nhiệm</h3><span class="text-muted">sinh hoạt · họp PHHS · hoạt động</span></div>
+                        <div class="homeroom-panel-head"><h3>🏆 Nề nếp &amp; nhật ký lớp</h3><span class="text-muted">thi đua tập thể · sinh hoạt · họp PHHS</span></div>
+                        <div class="homeroom-class-conduct-box">
+                            <div class="homeroom-subsection-title"><strong>⚖️ Ghi nhận thi đua tập thể theo quy chế</strong><span id="homeroomClassConductSummary">Chưa mở sổ chủ nhiệm.</span></div>
+                            <form class="homeroom-inline-form homeroom-class-conduct-form" id="homeroomClassConductForm">
+                                <label class="full"><span>Nội dung</span><select id="homeroomClassConductRuleSelect"><option value="">— Chọn lỗi/khen thưởng tập thể —</option></select></label>
+                                <label><span>Ngày</span><input id="homeroomClassConductDate" type="date" /></label>
+                                <label><span>Điểm thi đua</span><input id="homeroomClassConductPoints" type="number" min="-100" max="100" step="0.5" value="0" /></label>
+                                <label class="full"><span>Ghi chú</span><textarea id="homeroomClassConductContent" rows="2" placeholder="Ví dụ: Lớp trực nhật chậm; lớp có tiết mục văn nghệ…"></textarea><small id="homeroomClassConductRuleNote" class="homeroom-field-help">Chọn một lỗi/khen thưởng tập thể trong quy chế.</small></label>
+                                <div class="homeroom-form-actions"><button class="btn btn-primary btn-sm" id="homeroomAddClassConductBtn" type="submit">＋ Ghi thi đua lớp</button></div>
+                            </form>
+                        </div>
+                        <div class="homeroom-journal-divider">Nhật ký công tác chủ nhiệm</div>
                         <form class="homeroom-inline-form" id="homeroomClassLogForm">
                             <label><span>Ngày</span><input id="homeroomClassLogDate" type="date" /></label>
                             <label><span>Loại</span><select id="homeroomClassLogType"><option value="class_meeting">Sinh hoạt lớp</option><option value="parent_meeting">Họp phụ huynh</option><option value="class_activity">Hoạt động lớp</option><option value="note">Ghi chú chung</option></select></label>

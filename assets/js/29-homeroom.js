@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.1
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.2
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -46,7 +46,7 @@
             critical: { label: 'Nghiêm trọng', short: 'Nghiêm trọng', icon: '🔴' },
         };
 
-        const HOMEROOM_CONDUCT_RULES = [
+        const HOMEROOM_LEGACY_CONDUCT_RULES = [
             { group:'Chuyên cần', id:'attendance_full_week', label:'Đi học đầy đủ, đúng giờ cả tuần', type:'commendation', points:2, severity:'positive' },
             { group:'Chuyên cần', id:'late_under_5', label:'Đi muộn dưới 5 phút', type:'late', points:-1, severity:'light' },
             { group:'Chuyên cần', id:'late_5_15', label:'Đi muộn từ 5–15 phút', type:'late', points:-2, severity:'light' },
@@ -105,6 +105,89 @@
             { group:'Ý thức tự quản', id:'cover_serious', label:'Che giấu / bao che vi phạm nghiêm trọng', type:'violation', points:-5, severity:'medium' },
         ];
 
+        // Quy chế nền nếp THPT Lê Quảng Chí 2026–2027 (bản DỰ THẢO ngày 08/09/2026).
+        // schoolPoints là điểm thi đua theo văn bản; scope xác định ghi cho học sinh hay tập thể lớp.
+        const HOMEROOM_SCHOOL_RULES_2026 = Object.freeze([
+            { no:1, id:'nn26_01', group:'Sinh hoạt 15 phút', label:'Lớp không sinh hoạt 15 phút', type:'violation', points:-20, severity:'medium', scope:'class' },
+            { no:2, id:'nn26_02', group:'Sinh hoạt 15 phút', label:'Sinh hoạt 15 phút sai chủ đề, đối phó hoặc vào sinh hoạt muộn', type:'violation', points:-10, severity:'medium', scope:'class' },
+            { no:3, id:'nn26_03', group:'Sinh hoạt 15 phút', label:'Trống vào sinh hoạt 15 phút nhưng học sinh không vào lớp', type:'violation', points:-5, severity:'light', scope:'student' },
+            { no:4, id:'nn26_04', group:'Sinh hoạt 15 phút', label:'Học sinh bỏ sinh hoạt 15 phút', type:'violation', points:-10, severity:'medium', scope:'student' },
+            { no:5, id:'nn26_05', group:'Sĩ số – chuyên cần', label:'Vắng học không có giấy phép', type:'absence_unexcused', points:-10, severity:'medium', scope:'student' },
+            { no:6, id:'nn26_06', group:'Sĩ số – chuyên cần', label:'Vắng học có giấy phép', type:'absence_excused', points:-2, severity:'light', scope:'student', adjustable:true, note:'Noel của HS Công giáo: 0 điểm; nghỉ lễ có giấy của Ban hành giáo: -0,5; vắng dài ngày chỉ trừ 3 ngày đầu.' },
+            { no:7, id:'nn26_07', group:'Sĩ số – chuyên cần', label:'Bỏ giờ (tiết học, chào cờ, thể dục giữa giờ hoặc hoạt động tập thể)', type:'violation', points:-15, severity:'heavy', scope:'student' },
+            { no:8, id:'nn26_08', group:'Sĩ số – chuyên cần', label:'Chậm học', type:'late', points:-5, severity:'light', scope:'student' },
+            { no:9, id:'nn26_09', group:'Sĩ số – chuyên cần', label:'Chậm tiết / vào lớp sau trống / ra về sớm', type:'late', points:-5, severity:'light', scope:'student' },
+            { no:10, id:'nn26_10', group:'Sĩ số – chuyên cần', label:'Cán sự lớp không ghi sĩ số hoặc báo cáo không trung thực', type:'violation', points:-10, severity:'medium', scope:'class' },
+            { no:11, id:'nn26_11', group:'Vệ sinh trực nhật', label:'Vệ sinh trực nhật chậm', type:'violation', points:-10, severity:'medium', scope:'class' },
+            { no:12, id:'nn26_12', group:'Vệ sinh trực nhật', label:'Không vệ sinh hết các khu vực quy định', type:'violation', points:-20, severity:'medium', scope:'class' },
+            { no:13, id:'nn26_13', group:'Vệ sinh trực nhật', label:'Thiếu lọ hoa, khăn bàn, chậu rửa hoặc thước kẻ', type:'violation', points:-5, severity:'light', scope:'class', note:'Tính -5 điểm/loại/lần.' },
+            { no:14, id:'nn26_14', group:'Trang phục', label:'Vi phạm đồng phục (dép lê, quần bò, áo sai quy định, quần màu, không sơ vin…)', type:'violation', points:-10, severity:'medium', scope:'student' },
+            { no:15, id:'nn26_15', group:'Trang phục', label:'Không đeo/phù hiệu sai quy định hoặc đeo khẩu trang trong lớp học', type:'violation', points:-5, severity:'light', scope:'student' },
+            { no:16, id:'nn26_16', group:'Trang phục', label:'Nhuộm tóc, tóc phản cảm, HS nam để tóc không phù hợp hoặc đeo khuyên tai', type:'violation', points:-20, severity:'heavy', scope:'student', discipline:'lower1' },
+            { no:17, id:'nn26_17', group:'Phương tiện – nhà xe', label:'Xe xếp lộn xộn, không thẳng hàng', type:'violation', points:-20, severity:'medium', scope:'class' },
+            { no:18, id:'nn26_18', group:'Phương tiện – nhà xe', label:'Không vệ sinh khu vực để xe của lớp', type:'violation', points:-30, severity:'heavy', scope:'class' },
+            { no:19, id:'nn26_19', group:'Phương tiện – nhà xe', label:'Sắp xếp xe chậm', type:'violation', points:-5, severity:'light', scope:'class' },
+            { no:20, id:'nn26_20', group:'Phương tiện – nhà xe', label:'Bỏ xe sai vị trí quy định của lớp', type:'violation', points:-10, severity:'medium', scope:'student' },
+            { no:21, id:'nn26_21', group:'Phương tiện – nhà xe', label:'Bỏ xe ngoài trường bị phát hiện', type:'violation', points:-30, severity:'heavy', scope:'student', discipline:'lower1' },
+            { no:22, id:'nn26_22', group:'Nội dung khác', label:'Lớp trực tuần không hoàn thành nhiệm vụ', type:'violation', points:-20, severity:'medium', scope:'class' },
+            { no:23, id:'nn26_23', group:'Nội dung khác', label:'Thiếu cờ trong các hoạt động tập thể', type:'violation', points:-10, severity:'medium', scope:'class', note:'Tính -10 điểm/lá.' },
+            { no:24, id:'nn26_24', group:'Nội dung khác', label:'Xếp hàng chậm, lộn xộn trong chào cờ, thể dục giữa giờ hoặc hoạt động tập thể', type:'violation', points:-30, severity:'heavy', scope:'class' },
+            { no:25, id:'nn26_25', group:'Nội dung khác', label:'Ra khỏi khuôn viên nhà trường khi chưa được phép', type:'violation', points:-10, severity:'medium', scope:'student' },
+            { no:26, id:'nn26_26', group:'Nội dung khác', label:'Lớp có cờ đỏ không hoàn thành nhiệm vụ', type:'violation', points:-20, severity:'medium', scope:'class' },
+            { no:27, id:'nn26_27', group:'Nội dung khác', label:'Học sinh đi đường nội trú', type:'violation', points:-10, severity:'medium', scope:'student' },
+            { no:28, id:'nn26_28', group:'Nội dung khác', label:'Trèo hàng rào để vào/ra khỏi trường', type:'violation', points:-20, severity:'heavy', scope:'student', discipline:'lower1' },
+            { no:29, id:'nn26_29', group:'Nội dung khác', label:'Hút thuốc trong trường học', type:'violation', points:-30, severity:'heavy', scope:'student', discipline:'lower1' },
+            { no:30, id:'nn26_30', group:'Nội dung khác', label:'Tham gia gây gổ, đánh nhau', type:'violation', points:-50, severity:'critical', scope:'student', discipline:'weak' },
+            { no:31, id:'nn26_31', group:'Nội dung khác', label:'Tham gia đánh bài', type:'violation', points:-30, severity:'heavy', scope:'student', discipline:'lower1' },
+            { no:32, id:'nn26_32', group:'Nội dung khác', label:'Sử dụng điện thoại thông minh trong trường học trái quy định', type:'violation', points:-20, severity:'heavy', scope:'student', discipline:'lower1', special:'phone', note:'Bị bắt lần thứ 2 trong học kỳ: xếp hạnh kiểm yếu theo dự thảo.' },
+            { no:33, id:'nn26_33', group:'Nội dung khác', label:'Lớp không tắt quạt, không đóng cửa sổ khi kết thúc buổi học', type:'violation', points:-20, severity:'medium', scope:'class' },
+            { no:34, id:'nn26_34', group:'Nội dung khác', label:'Vô lễ hoặc xúc phạm thân thể, nhân phẩm của giáo viên, nhân viên hoặc người khác', type:'violation', points:-50, severity:'critical', scope:'student', discipline:'weak' },
+            { no:35, id:'nn26_35', group:'Nội dung khác', label:'Mang đồ ăn vào lớp', type:'violation', points:-20, severity:'medium', scope:'student' },
+            { no:36, id:'nn26_36', group:'Nội dung khác', label:'Phá hoại tài sản nhà trường', type:'violation', points:-30, severity:'critical', scope:'student', discipline:'weak', note:'Mục III.10 của dự thảo xếp hành vi làm hư hỏng tài sản nhà trường vào nhóm hạnh kiểm yếu.' },
+            { no:37, id:'nn26_37', group:'Nội dung khác', label:'Vi phạm an toàn giao thông', type:'violation', points:-40, severity:'critical', scope:'student', discipline:'weak' },
+            { no:38, id:'nn26_38', group:'Nội dung khác', label:'Cờ đỏ của lớp báo cáo không kịp thời kết quả chấm thi đua', type:'violation', points:-20, severity:'medium', scope:'class' },
+            { no:39, id:'nn26_39', group:'Nội dung khác', label:'Ứng xử thiếu văn hóa với cờ đỏ', type:'violation', points:-20, severity:'heavy', scope:'student', discipline:'lower1' },
+            { no:40, id:'nn26_40', group:'Nội dung khác', label:'Lớp không lên khẩu hiệu chào mừng ở bảng lớp', type:'violation', points:-10, severity:'medium', scope:'class', note:'Tính -10 điểm/ngày.' },
+            { no:41, id:'nn26_41', group:'Nội dung khác', label:'Ăn quà vặt trong trường', type:'violation', points:-10, severity:'medium', scope:'student' },
+            { no:42, id:'nn26_42', group:'Nội dung khác', label:'Xả rác trong khu vực trường', type:'violation', points:-10, severity:'medium', scope:'student' },
+            { no:43, id:'nn26_43', group:'Nội dung khác', label:'Lớp không hoàn thành các khoản đóng góp đúng thời gian quy định', type:'violation', points:-20, severity:'medium', scope:'class', note:'Tính -20 điểm/tuần.' },
+            { no:44, id:'nn26_44', group:'Nội dung khác', label:'Mang hung khí, chất gây cháy nổ hoặc chất cấm đến trường', type:'violation', points:-50, severity:'critical', scope:'student', discipline:'weak' },
+            { no:45, id:'nn26_45', group:'Nội dung khác', label:'Lớp không báo cáo khi giáo viên có tiết nhưng sau 10 phút chưa lên lớp', type:'violation', points:-20, severity:'medium', scope:'class' },
+            { no:46, id:'nn26_46', group:'Nội dung khác', label:'Tổ chức sinh nhật/liên hoan tại trường khi chưa được lãnh đạo đồng ý', type:'violation', points:-30, severity:'heavy', scope:'class' },
+            { no:47, id:'nn26_47', group:'Nội dung khác', label:'Vắng hoạt động tập thể', type:'absence_unexcused', points:-5, severity:'light', scope:'student' },
+            { no:48, id:'nn26_48', group:'Nội dung khác', label:'Không tham gia cuộc thi/cuộc phát động của Đoàn và đơn vị phối hợp', type:'violation', points:-2, severity:'light', scope:'student', note:'Dự thảo nêu -2 điểm/em hoặc -50 điểm/lần ở mức tập thể.' },
+            { no:48, id:'nn26_48_class', group:'Nội dung khác', label:'Lớp không tham gia cuộc thi/cuộc phát động (mức tập thể)', type:'violation', points:-50, severity:'heavy', scope:'class' },
+        ]);
+
+        const HOMEROOM_SCHOOL_REWARD_RULES_2026 = Object.freeze([
+            { id:'nn26_reward_performance', group:'Khen thưởng theo quy chế', label:'Tham gia tiết mục/hoạt động khuyến khích của trường', type:'commendation', points:50, severity:'positive', scope:'class', note:'+50 điểm/tiết mục vào thi đua tháng.' },
+            { id:'nn26_reward_bulletin_student', group:'Khen thưởng theo quy chế', label:'Thành viên đội trang trí bảng tin', type:'commendation', points:10, severity:'positive', scope:'student', note:'+10 điểm/người/tháng.' },
+            { id:'nn26_reward_bulletin_idea', group:'Khen thưởng theo quy chế', label:'Lớp có ý tưởng bảng tin tốt được phê duyệt và thực hiện', type:'commendation', points:50, severity:'positive', scope:'class' },
+            { id:'nn26_reward_volunteer', group:'Khen thưởng theo quy chế', label:'Tham gia hoạt động tình nguyện/nhân đạo', type:'commendation', points:3, severity:'positive', scope:'student', adjustable:true, note:'Quy chế cho phép +3 đến +5 điểm/HS mỗi hoạt động.' },
+            { id:'nn26_reward_national', group:'Khen thưởng theo quy chế', label:'Có giải cuộc thi cấp quốc gia', type:'commendation', points:70, severity:'positive', scope:'student' },
+            { id:'nn26_reward_province', group:'Khen thưởng theo quy chế', label:'Có giải cuộc thi cấp tỉnh', type:'commendation', points:50, severity:'positive', scope:'student' },
+            { id:'nn26_reward_town', group:'Khen thưởng theo quy chế', label:'Có giải cuộc thi cấp thị xã', type:'commendation', points:30, severity:'positive', scope:'student' },
+            { id:'nn26_reward_rule77', group:'Khen thưởng theo quy chế', label:'Thực hiện tốt quy định 77 tại địa phương', type:'commendation', points:2, severity:'positive', scope:'student', adjustable:true, note:'Có tham gia +2; tham gia tích cực +5 điểm/HS.' },
+        ]);
+
+        const HOMEROOM_SCHOOL_EXTRA_WEAK_RULES = Object.freeze([
+            { id:'nn26_extra_cheating', label:'Gian lận trong kiểm tra, thi cử', type:'violation', points:0, severity:'critical', scope:'student', discipline:'weak', group:'Vi phạm xếp hạnh kiểm yếu' },
+            { id:'nn26_extra_serious_repeat', label:'Sai phạm nghiêm trọng hoặc lặp lại nhiều lần, đã giáo dục nhưng chưa sửa chữa', type:'violation', points:0, severity:'critical', scope:'student', discipline:'weak', group:'Vi phạm xếp hạnh kiểm yếu' },
+            { id:'nn26_extra_disunity', label:'Gây gổ, gây mất đoàn kết trong hoặc ngoài nhà trường', type:'violation', points:0, severity:'critical', scope:'student', discipline:'weak', group:'Vi phạm xếp hạnh kiểm yếu' },
+            { id:'nn26_extra_phone_refuse', label:'Không nộp điện thoại khi bị thu theo quy định', type:'violation', points:0, severity:'critical', scope:'student', discipline:'weak', group:'Vi phạm xếp hạnh kiểm yếu' },
+        ]);
+
+        const HOMEROOM_CONDUCT_RULES = Object.freeze([
+            ...HOMEROOM_SCHOOL_RULES_2026.filter(rule => rule.scope === 'student'),
+            ...HOMEROOM_SCHOOL_REWARD_RULES_2026.filter(rule => rule.scope === 'student'),
+            ...HOMEROOM_SCHOOL_EXTRA_WEAK_RULES,
+        ]);
+        const HOMEROOM_CLASS_CONDUCT_RULES = Object.freeze([
+            ...HOMEROOM_SCHOOL_RULES_2026.filter(rule => rule.scope === 'class'),
+            ...HOMEROOM_SCHOOL_REWARD_RULES_2026.filter(rule => rule.scope === 'class'),
+        ]);
+        const HOMEROOM_ALL_SCHOOL_RULES = Object.freeze([...HOMEROOM_SCHOOL_RULES_2026, ...HOMEROOM_SCHOOL_REWARD_RULES_2026, ...HOMEROOM_SCHOOL_EXTRA_WEAK_RULES]);
+
         function homeroomById(id) {
             return document.getElementById(id);
         }
@@ -143,7 +226,7 @@
         }
 
         function homeroomRuleById(ruleId) {
-            return HOMEROOM_CONDUCT_RULES.find(rule => rule.id === cleanText(ruleId)) || null;
+            return HOMEROOM_ALL_SCHOOL_RULES.find(rule => rule.id === cleanText(ruleId)) || HOMEROOM_LEGACY_CONDUCT_RULES.find(rule => rule.id === cleanText(ruleId)) || null;
         }
 
         function homeroomSeverityMeta(severity) {
@@ -153,7 +236,7 @@
         function homeroomClampPoints(value) {
             const parsed = Number(value);
             if (!Number.isFinite(parsed)) return 0;
-            return Math.min(20, Math.max(-50, Math.round(parsed * 2) / 2));
+            return Math.min(100, Math.max(-100, Math.round(parsed * 2) / 2));
         }
 
         function homeroomFormatPoints(value) {
@@ -196,7 +279,67 @@
         function homeroomRepeatInfo(book, studentId, ruleId, dateValue) {
             if (!book || !studentId || !ruleId) return { repeatCount:0, multiplier:1 };
             const count = (book.entries || []).filter(entry => entry.studentId === studentId && entry.ruleId === ruleId && homeroomEntryInWeek(entry, dateValue)).length;
+            const rule = homeroomRuleById(ruleId);
+            // Quy chế 2026–2027 quy định mức trừ cố định theo lần; không tự nhân hệ số tái phạm.
+            if (rule && HOMEROOM_ALL_SCHOOL_RULES.some(item => item.id === rule.id)) return { repeatCount:count, multiplier:1 };
             return { repeatCount:count, multiplier: count === 0 ? 1 : (count === 1 ? 1.5 : 2) };
+        }
+
+        const HOMEROOM_CONDUCT_LEVELS = ['Tốt','Khá','Trung bình','Yếu'];
+
+        function homeroomIsSchoolRule(rule) {
+            return Boolean(rule && HOMEROOM_ALL_SCHOOL_RULES.some(item => item.id === rule.id));
+        }
+
+        function homeroomSchoolRuleEffectLabel(rule) {
+            if (!rule) return '';
+            if (rule.discipline === 'weak') return 'Hạnh kiểm yếu';
+            if (rule.discipline === 'lower1') return 'Hạ 1 bậc hạnh kiểm';
+            return '';
+        }
+
+        function homeroomConductDowngrade(level, steps = 0) {
+            const index = Math.max(0, HOMEROOM_CONDUCT_LEVELS.indexOf(level));
+            return HOMEROOM_CONDUCT_LEVELS[Math.min(HOMEROOM_CONDUCT_LEVELS.length - 1, index + Math.max(0, Number(steps) || 0))] || 'Tốt';
+        }
+
+        function homeroomConductAssessment(book, studentId, semester = homeroomGetSelectedSemester()) {
+            const entries = (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester));
+            const regulationEntries = entries.map(entry => ({ entry, rule:homeroomRuleById(entry.ruleId) }))
+                .filter(item => item.rule?.scope === 'student' && homeroomIsSchoolRule(item.rule));
+            const violationItems = regulationEntries.filter(item => item.rule.type !== 'commendation' && (item.rule.points < 0 || item.rule.discipline));
+            const violationCount = violationItems.length;
+            const phoneCount = violationItems.filter(item => item.rule.special === 'phone').length;
+            const lowerOneCount = violationItems.filter(item => item.rule.discipline === 'lower1').length;
+            const directWeak = violationItems.filter(item => item.rule.discipline === 'weak');
+            const baseline = violationCount <= 1 ? 'Tốt' : (violationCount <= 4 ? 'Khá' : (violationCount <= 6 ? 'Trung bình' : 'Yếu'));
+            const reasons = [];
+            if (violationCount > 6) reasons.push(`Có ${violationCount} lỗi (>6 lỗi/học kỳ)`);
+            directWeak.forEach(item => reasons.push(item.rule.label));
+            if (phoneCount >= 2) reasons.push(`Sử dụng điện thoại ${phoneCount} lần trong học kỳ (từ lần 2)`);
+            const suggested = reasons.length ? 'Yếu' : homeroomConductDowngrade(baseline, lowerOneCount);
+            const totalRegulationPoints = Math.round(regulationEntries.reduce((sum, item) => sum + homeroomClampPoints(item.entry.points), 0) * 2) / 2;
+            const rewardPoints = Math.round(regulationEntries.filter(item => item.rule.type === 'commendation').reduce((sum,item)=>sum+Math.max(0,homeroomClampPoints(item.entry.points)),0)*2)/2;
+            const deductionPoints = Math.round(regulationEntries.filter(item => item.rule.type !== 'commendation').reduce((sum,item)=>sum+Math.min(0,homeroomClampPoints(item.entry.points)),0)*2)/2;
+            return { baseline, suggested, violationCount, phoneCount, lowerOneCount, directWeakCount:directWeak.length, reasons:[...new Set(reasons)], totalRegulationPoints, rewardPoints, deductionPoints, regulationEntryCount:regulationEntries.length };
+        }
+
+        function homeroomClassConductMetrics(book, semester = homeroomGetSelectedSemester()) {
+            // Điểm tại bảng quy chế là điểm thi đua lớp; vì vậy cả lỗi cá nhân dạng “x/HS”
+            // và lỗi tập thể đều được cộng vào ảnh hưởng thi đua của lớp.
+            const items = (book?.entries || []).filter(entry => String(entry.semester) === String(semester))
+                .map(entry => ({entry, rule:homeroomRuleById(entry.ruleId)}))
+                .filter(item => homeroomIsSchoolRule(item.rule));
+            const deductions = items.filter(item => item.entry.points < 0).reduce((sum,item)=>sum+homeroomClampPoints(item.entry.points),0);
+            const rewards = items.filter(item => item.entry.points > 0).reduce((sum,item)=>sum+homeroomClampPoints(item.entry.points),0);
+            return {
+                entries:items.length,
+                studentEntries:items.filter(item => item.entry.studentId).length,
+                classEntries:items.filter(item => !item.entry.studentId).length,
+                deductions:Math.round(deductions*2)/2,
+                rewards:Math.round(rewards*2)/2,
+                net:Math.round((deductions+rewards)*2)/2,
+            };
         }
 
         function homeroomWeekScoreFor(book, studentId, semester, anchorValue) {
@@ -353,6 +496,7 @@
             const heavyEntries = entries.filter(entry => entry.severity === 'heavy');
             const maxSeverity = seriousEntries.length ? 'critical' : (heavyEntries.length ? 'heavy' : (violation ? 'medium' : 'neutral'));
             const trend = homeroomStudentTrend(book, studentId, semester);
+            const conduct = homeroomConductAssessment(book, studentId, semester);
             return {
                 absenceExcused,
                 absenceUnexcused,
@@ -373,6 +517,7 @@
                 heavyCount: heavyEntries.length,
                 maxSeverity,
                 trend,
+                conduct,
             };
         }
 
@@ -403,12 +548,14 @@
                 alerts.push(`📉 ${metrics.trend.label}`);
                 groups.add('trend');
             }
+            if (metrics.conduct?.suggested === 'Yếu') { alerts.unshift('⚖️ Gợi ý hạnh kiểm Yếu theo dự thảo'); groups.add('conduct'); }
+            else if (metrics.conduct?.suggested === 'Trung bình') { alerts.push('⚖️ Gợi ý hạnh kiểm Trung bình'); groups.add('conduct'); }
             if (metrics.activeSeriousCount > 0) alerts.unshift(`🚨 ${metrics.activeSeriousCount} vi phạm nghiêm trọng chưa xử lý`);
             const groupCount = groups.size;
-            const level = metrics.activeSeriousCount > 0 ? 'critical'
+            const level = (metrics.activeSeriousCount > 0 || metrics.conduct?.suggested === 'Yếu') ? 'critical'
                 : (metrics.weekScore < 80 || groupCount >= 2 ? 'priority' : (groupCount === 1 ? 'watch' : 'normal'));
             const label = metrics.activeSeriousCount > 0 ? 'Nghiêm trọng đang xử lý'
-                : (metrics.weekScore < 80 ? 'Cần can thiệp' : (groupCount >= 2 ? 'Ưu tiên theo dõi' : (groupCount === 1 ? 'Cần theo dõi' : 'Bình thường')));
+                : (metrics.conduct?.suggested === 'Yếu' ? 'Cần rà soát xếp loại' : (metrics.weekScore < 80 ? 'Cần can thiệp' : (groupCount >= 2 ? 'Ưu tiên theo dõi' : (groupCount === 1 ? 'Cần theo dõi' : 'Bình thường'))));
             return {
                 flagged: alerts.length > 0,
                 groupCount,
@@ -591,7 +738,7 @@
             const customStudent = homeroomById('homeroomCustomOfficerStudent');
             const customList = homeroomById('homeroomCustomOfficerList');
             const groupGrid = homeroomById('homeroomGroupGrid');
-            const controls = ['homeroomCreateFourGroupsBtn','homeroomAddGroupBtn','homeroomAutoAssignGroupsBtn','homeroomAddCustomOfficerBtn','homeroomCustomOfficerLabel','homeroomCustomOfficerStudent'];
+            const controls = ['homeroomCreateFourGroupsBtn','homeroomAddGroupBtn','homeroomAutoAssignGroupsBtn','homeroomAddCustomOfficerBtn','homeroomAddClassConductBtn','homeroomCustomOfficerLabel','homeroomCustomOfficerStudent'];
             controls.forEach(id => { const el=homeroomById(id); if (el) el.disabled=!book; });
             if (!summary || !officerGrid || !customList || !groupGrid) return;
             if (!book) {
@@ -908,19 +1055,60 @@
             showToast('✅ Đã cập nhật ngưỡng theo dõi', 'success');
         }
 
+        function homeroomRuleOptionLabel(rule) {
+            const tt = Number.isFinite(Number(rule.no)) ? `TT ${rule.no} · ` : '';
+            const effect = homeroomSchoolRuleEffectLabel(rule);
+            return `${tt}${rule.label} · ${homeroomFormatPoints(rule.points)}${effect ? ` · ${effect}` : ''}`;
+        }
+
+        function homeroomBuildRuleOptions(rules, includeEmpty = true) {
+            const groups = [...new Set(rules.map(rule => rule.group))];
+            const empty = includeEmpty ? '<option value="">— Ghi nhận tự do / không tính điểm —</option>' : '';
+            return empty + groups.map(group => {
+                const options = rules.filter(rule => rule.group === group).map(rule => `<option value="${homeroomEscapeHtml(rule.id)}">${homeroomEscapeHtml(homeroomRuleOptionLabel(rule))}</option>`).join('');
+                return `<optgroup label="${homeroomEscapeHtml(group)}">${options}</optgroup>`;
+            }).join('');
+        }
+
         function homeroomRenderRuleCatalog() {
             const select = homeroomById('homeroomConductRuleSelect');
+            const classSelect = homeroomById('homeroomClassConductRuleSelect');
             const table = homeroomById('homeroomRulesTable');
-            const groups = [...new Set(HOMEROOM_CONDUCT_RULES.map(rule => rule.group))];
-            if (select) {
-                select.innerHTML = '<option value="">— Ghi nhận tự do / không tính điểm —</option>' + groups.map(group => {
-                    const options = HOMEROOM_CONDUCT_RULES.filter(rule => rule.group === group).map(rule => `<option value="${homeroomEscapeHtml(rule.id)}">${homeroomEscapeHtml(rule.label)} · ${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</option>`).join('');
-                    return `<optgroup label="${homeroomEscapeHtml(group)}">${options}</optgroup>`;
-                }).join('');
-            }
+            if (select) select.innerHTML = homeroomBuildRuleOptions(HOMEROOM_CONDUCT_RULES);
+            if (classSelect) classSelect.innerHTML = homeroomBuildRuleOptions(HOMEROOM_CLASS_CONDUCT_RULES);
             if (table) {
-                table.innerHTML = `<table class="homeroom-rules-table"><thead><tr><th>Nhóm</th><th>Nội dung</th><th>Điểm</th><th>Mức độ</th></tr></thead><tbody>${HOMEROOM_CONDUCT_RULES.map(rule => `<tr class="${rule.severity === 'critical' ? 'is-critical-rule' : ''}"><td>${homeroomEscapeHtml(rule.group)}</td><td>${homeroomEscapeHtml(rule.label)}</td><td><strong class="${rule.points < 0 ? 'points-negative' : (rule.points > 0 ? 'points-positive' : '')}">${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</strong></td><td><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(rule.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(rule.severity).label)}</span></td></tr>`).join('')}</tbody></table>`;
+                const violationRows = HOMEROOM_SCHOOL_RULES_2026.map(rule => `<tr class="${rule.severity === 'critical' ? 'is-critical-rule' : ''}"><td>${homeroomEscapeHtml(rule.no)}</td><td>${rule.scope === 'student' ? 'Học sinh' : 'Lớp'}</td><td>${homeroomEscapeHtml(rule.group)}</td><td><strong>${homeroomEscapeHtml(rule.label)}</strong>${rule.note ? `<small class="homeroom-rule-note">${homeroomEscapeHtml(rule.note)}</small>` : ''}</td><td><strong class="points-negative">${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</strong></td><td>${homeroomSchoolRuleEffectLabel(rule) ? `<span class="homeroom-discipline-badge">${homeroomEscapeHtml(homeroomSchoolRuleEffectLabel(rule))}</span>` : '—'}</td></tr>`).join('');
+                const rewardRows = HOMEROOM_SCHOOL_REWARD_RULES_2026.map(rule => `<tr class="is-reward-rule"><td>+</td><td>${rule.scope === 'student' ? 'Học sinh' : 'Lớp'}</td><td>Khen thưởng</td><td><strong>${homeroomEscapeHtml(rule.label)}</strong>${rule.note ? `<small class="homeroom-rule-note">${homeroomEscapeHtml(rule.note)}</small>` : ''}</td><td><strong class="points-positive">${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</strong></td><td>Khuyến khích</td></tr>`).join('');
+                table.innerHTML = `<table class="homeroom-rules-table homeroom-regulation-table"><thead><tr><th>TT</th><th>Áp dụng</th><th>Nhóm</th><th>Nội dung</th><th>Điểm</th><th>Xử lý</th></tr></thead><tbody>${violationRows}${rewardRows}</tbody></table>`;
             }
+        }
+
+        function homeroomConductLevelClass(level) {
+            if (level === 'Tốt') return 'good';
+            if (level === 'Khá') return 'fair';
+            if (level === 'Trung bình') return 'average';
+            return 'weak';
+        }
+
+        function homeroomRenderConductAssessment(book) {
+            const summary = homeroomById('homeroomConductSummary');
+            const table = homeroomById('homeroomConductTable');
+            const classSummary = homeroomById('homeroomClassConductSummary');
+            if (!book) {
+                if (summary) summary.innerHTML = 'Chưa mở sổ chủ nhiệm.';
+                if (table) table.innerHTML = '<div class="homeroom-mini-empty">Mở sổ để xem gợi ý xếp loại theo quy chế.</div>';
+                if (classSummary) classSummary.innerHTML = 'Chưa mở sổ chủ nhiệm.';
+                return;
+            }
+            const semester = homeroomGetSelectedSemester();
+            const rows = (book.students || []).map(student => ({ student, assessment:homeroomConductAssessment(book, student.id, semester) }));
+            const counts = Object.fromEntries(HOMEROOM_CONDUCT_LEVELS.map(level => [level, rows.filter(row => row.assessment.suggested === level).length]));
+            if (summary) summary.innerHTML = `<div class="homeroom-conduct-kpis"><span><b>${book.students.length}</b> HS</span><span class="level-good"><b>${counts['Tốt']}</b> Tốt</span><span class="level-fair"><b>${counts['Khá']}</b> Khá</span><span class="level-average"><b>${counts['Trung bình']}</b> Trung bình</span><span class="level-weak"><b>${counts['Yếu']}</b> Yếu</span></div><small>Gợi ý tự động theo số lỗi và hình thức xử lý trong <strong>dự thảo</strong>; GVCN kiểm tra hồ sơ thực tế trước khi kết luận.</small>`;
+            if (table) {
+                table.innerHTML = rows.length ? `<div class="homeroom-conduct-table-wrap"><table class="homeroom-conduct-table"><thead><tr><th>Học sinh</th><th>Lỗi HK</th><th>Điểm quy chế</th><th>Hạ bậc</th><th>Điện thoại</th><th>Gợi ý</th><th>Lý do bắt buộc</th></tr></thead><tbody>${rows.map(({student,assessment}) => `<tr class="conduct-${homeroomConductLevelClass(assessment.suggested)}"><td><button type="button" class="homeroom-monitor-link" data-homeroom-conduct-student="${homeroomEscapeHtml(student.id)}"><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></button></td><td>${assessment.violationCount}</td><td>${homeroomEscapeHtml(homeroomFormatPoints(assessment.totalRegulationPoints))}</td><td>${assessment.lowerOneCount}</td><td>${assessment.phoneCount}</td><td><span class="homeroom-conduct-level level-${homeroomConductLevelClass(assessment.suggested)}">${homeroomEscapeHtml(assessment.suggested)}</span></td><td>${assessment.reasons.length ? homeroomEscapeHtml(assessment.reasons.join(' · ')) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="homeroom-mini-empty">Chưa có học sinh.</div>';
+            }
+            const classMetrics = homeroomClassConductMetrics(book, semester);
+            if (classSummary) classSummary.innerHTML = `<span>HK${semester}</span><span>${classMetrics.entries} ghi nhận tập thể</span><span class="points-negative">Trừ ${homeroomFormatPoints(classMetrics.deductions)}</span><span class="points-positive">Thưởng ${homeroomFormatPoints(classMetrics.rewards)}</span><strong>Ròng ${homeroomFormatPoints(classMetrics.net)}</strong>`;
         }
 
         function homeroomUpdateRulePreview({ forceRuleDefaults = false } = {}) {
@@ -932,6 +1120,7 @@
             const typeSelect = homeroomById('homeroomStudentLogType');
             const contentInput = homeroomById('homeroomStudentLogContent');
             const preview = homeroomById('homeroomRepeatPreview');
+            const effectPreview = homeroomById('homeroomRuleEffectPreview');
             const rule = homeroomRuleById(ruleSelect?.value);
             if (rule && forceRuleDefaults) {
                 if (baseInput) baseInput.value = String(rule.points);
@@ -944,9 +1133,27 @@
             const basePoints = homeroomClampPoints(baseInput?.value);
             const multiplier = basePoints < 0 && rule ? info.multiplier : 1;
             const applied = homeroomClampPoints(basePoints * multiplier);
-            if (preview) preview.value = rule && basePoints < 0
-                ? (info.repeatCount === 0 ? `Lần đầu · ${homeroomFormatPoints(applied)}` : `Đã ${info.repeatCount} lần · ×${String(multiplier).replace('.',',')} → ${homeroomFormatPoints(applied)}`)
-                : `Không · ${homeroomFormatPoints(applied)}`;
+            if (preview) {
+                if (rule && homeroomIsSchoolRule(rule)) preview.value = info.repeatCount ? `Đã ghi ${info.repeatCount} lần · mức cố định ${homeroomFormatPoints(applied)}` : `Mức quy chế ${homeroomFormatPoints(applied)}`;
+                else preview.value = rule && basePoints < 0 ? (info.repeatCount === 0 ? `Lần đầu · ${homeroomFormatPoints(applied)}` : `Đã ${info.repeatCount} lần · ×${String(multiplier).replace('.',',')} → ${homeroomFormatPoints(applied)}`) : `Không · ${homeroomFormatPoints(applied)}`;
+            }
+            if (effectPreview) {
+                const effect = homeroomSchoolRuleEffectLabel(rule);
+                effectPreview.value = rule ? (effect || rule.note || 'Không có hình thức hạ/xếp loại riêng') : '—';
+                effectPreview.title = rule?.note || effect || '';
+            }
+        }
+
+        function homeroomUpdateClassRulePreview({ forceRuleDefaults = false } = {}) {
+            const rule = homeroomRuleById(homeroomById('homeroomClassConductRuleSelect')?.value);
+            const points = homeroomById('homeroomClassConductPoints');
+            const content = homeroomById('homeroomClassConductContent');
+            const note = homeroomById('homeroomClassConductRuleNote');
+            if (rule && forceRuleDefaults) {
+                if (points) points.value = String(rule.points);
+                if (content && !cleanText(content.value)) content.value = rule.label;
+            }
+            if (note) note.textContent = rule ? (rule.note || `Điểm quy chế: ${homeroomFormatPoints(rule.points)}`) : 'Chọn một lỗi/khen thưởng tập thể trong quy chế.';
         }
 
         function homeroomEntryMeta(type) {
@@ -982,7 +1189,7 @@
                     <div class="homeroom-log-icon">${meta.icon}</div>
                     <div class="homeroom-log-main">
                         <div class="homeroom-log-head"><strong>${homeroomEscapeHtml(meta.label)}</strong><span>${homeroomEscapeHtml(homeroomFormatDate(entry.date) || 'Chưa ngày')}</span></div>
-                        <div class="homeroom-log-badges"><span class="homeroom-point-badge ${entry.points < 0 ? 'negative' : (entry.points > 0 ? 'positive' : 'neutral')}">${homeroomEscapeHtml(homeroomFormatPoints(entry.points))}</span><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(entry.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(entry.severity).label)}</span>${entry.repeatMultiplier > 1 ? `<span class="homeroom-repeat-badge">Tái phạm ×${homeroomEscapeHtml(String(entry.repeatMultiplier).replace('.',','))}</span>` : ''}${entry.seriousFlag ? (entry.resolved ? '<span class="homeroom-serious-badge resolved">✓ Lịch sử nghiêm trọng</span>' : '<span class="homeroom-serious-badge">🚨 Nghiêm trọng đang xử lý</span>') : ''}</div>
+                        <div class="homeroom-log-badges"><span class="homeroom-point-badge ${entry.points < 0 ? 'negative' : (entry.points > 0 ? 'positive' : 'neutral')}">${homeroomEscapeHtml(homeroomFormatPoints(entry.points))}</span><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(entry.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(entry.severity).label)}</span>${homeroomRuleById(entry.ruleId)?.no ? `<span class="homeroom-regulation-badge">TT ${homeroomEscapeHtml(homeroomRuleById(entry.ruleId).no)}</span>` : ''}${homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)) ? `<span class="homeroom-discipline-badge">${homeroomEscapeHtml(homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)))}</span>` : ''}${entry.repeatMultiplier > 1 ? `<span class="homeroom-repeat-badge">Tái phạm ×${homeroomEscapeHtml(String(entry.repeatMultiplier).replace('.',','))}</span>` : ''}${entry.seriousFlag ? (entry.resolved ? '<span class="homeroom-serious-badge resolved">✓ Lịch sử nghiêm trọng</span>' : '<span class="homeroom-serious-badge">🚨 Nghiêm trọng đang xử lý</span>') : ''}</div>
                         ${entry.content ? `<p>${homeroomEscapeHtml(entry.content)}</p>` : ''}
                         ${entry.followUp ? `<small>↳ Theo dõi: ${homeroomEscapeHtml(entry.followUp)}</small>` : ''}
                         ${entry.resolved && entry.resolvedAt ? `<small>✓ Xử lý lúc: ${homeroomEscapeHtml(new Date(entry.resolvedAt).toLocaleString('vi-VN'))}</small>` : ''}
@@ -1009,7 +1216,7 @@
                 const meta = homeroomEntryMeta(entry.type);
                 return `<article class="homeroom-class-log">
                     <span class="homeroom-class-log-date">${homeroomEscapeHtml(homeroomFormatDate(entry.date) || '—')}</span>
-                    <div><strong>${meta.icon} ${homeroomEscapeHtml(meta.label)}</strong><p>${homeroomEscapeHtml(entry.content || 'Không có nội dung')}</p></div>
+                    <div><strong>${meta.icon} ${homeroomEscapeHtml(meta.label)}</strong>${homeroomRuleById(entry.ruleId)?.scope === 'class' ? `<div class="homeroom-log-badges"><span class="homeroom-regulation-badge">${homeroomRuleById(entry.ruleId)?.no ? `TT ${homeroomEscapeHtml(homeroomRuleById(entry.ruleId).no)}` : 'Khen thưởng'}</span><span class="homeroom-point-badge ${entry.points < 0 ? 'negative' : (entry.points > 0 ? 'positive' : 'neutral')}">${homeroomEscapeHtml(homeroomFormatPoints(entry.points))}</span></div>` : ''}<p>${homeroomEscapeHtml(entry.content || 'Không có nội dung')}</p></div>
                     <button type="button" class="homeroom-remove-log" data-homeroom-delete-entry="${homeroomEscapeHtml(entry.id)}">Xóa</button>
                 </article>`;
             }).join('') : '<div class="homeroom-mini-empty">Chưa có nhật ký lớp trong học kỳ đang chọn.</div>';
@@ -1044,6 +1251,7 @@
             homeroomRenderBookStrip();
             homeroomRenderStats(book);
             homeroomRenderMonitoring(book);
+            homeroomRenderConductAssessment(book);
             homeroomRenderOrganization(book);
             homeroomRenderRoster(book);
             homeroomApplyRosterFilters();
@@ -1274,7 +1482,12 @@
                 severity,
                 repeatCount: repeat.repeatCount,
                 repeatMultiplier: repeat.multiplier,
-                seriousFlag: severity === 'critical',
+                seriousFlag: severity === 'critical' || rule?.discipline === 'weak',
+                schoolRuleNo: rule?.no ?? null,
+                schoolScope: rule?.scope || '',
+                disciplineEffect: rule?.discipline || '',
+                regulationSource: homeroomIsSchoolRule(rule) ? 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026' : '',
+                regulationNote: rule?.note || '',
                 resolved: false,
                 resolvedAt: '',
                 createdAt: new Date().toISOString(),
@@ -1317,6 +1530,50 @@
             homeroomSchedulePersist();
             renderHomeroom();
             showToast('✅ Đã thêm nhật ký lớp', 'success');
+        }
+
+        function homeroomAddClassConductEntry(event) {
+            event.preventDefault();
+            const book = homeroomActiveBook();
+            if (!book) return;
+            const rule = homeroomRuleById(homeroomById('homeroomClassConductRuleSelect')?.value);
+            if (!rule || rule.scope !== 'class') {
+                showToast('⚠️ Hãy chọn một nội dung nề nếp/thi đua tập thể', 'info');
+                return;
+            }
+            const date = normalizeHomeroomDate(homeroomById('homeroomClassConductDate')?.value) || homeroomTodayISO();
+            const points = homeroomClampPoints(homeroomById('homeroomClassConductPoints')?.value ?? rule.points);
+            const content = cleanText(homeroomById('homeroomClassConductContent')?.value) || rule.label;
+            const entry = normalizeHomeroomEntry({
+                id: homeroomCreateId('cn-log'),
+                studentId: '',
+                date,
+                semester: homeroomGetSelectedSemester(),
+                type: rule.type === 'commendation' ? 'class_activity' : 'note',
+                ruleId: rule.id,
+                content,
+                basePoints: points,
+                points,
+                severity: rule.severity || 'neutral',
+                schoolRuleNo: rule.no ?? null,
+                schoolScope: 'class',
+                disciplineEffect: rule.discipline || '',
+                regulationSource: 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026',
+                regulationNote: rule.note || '',
+                createdAt: new Date().toISOString(),
+            }, book.entries.length);
+            book.entries.push(entry);
+            book.updatedAt = new Date().toISOString();
+            const select = homeroomById('homeroomClassConductRuleSelect');
+            const contentEl = homeroomById('homeroomClassConductContent');
+            const pointsEl = homeroomById('homeroomClassConductPoints');
+            if (select) select.value = '';
+            if (contentEl) contentEl.value = '';
+            if (pointsEl) pointsEl.value = '0';
+            homeroomSchedulePersist();
+            renderHomeroom();
+            homeroomUpdateClassRulePreview();
+            showToast(`✅ Đã ghi thi đua lớp: ${homeroomFormatPoints(points)}`, 'success');
         }
 
         function homeroomToggleResolved(entryId) {
@@ -1389,6 +1646,10 @@
                     'Học sinh': studentMap.get(entry.studentId) || '',
                     'Loại ghi nhận': homeroomEntryMeta(entry.type).label,
                     'Quy tắc điểm': homeroomRuleById(entry.ruleId)?.label || '',
+                    'TT quy chế': homeroomRuleById(entry.ruleId)?.no ?? '',
+                    'Phạm vi': homeroomRuleById(entry.ruleId)?.scope === 'student' ? 'Học sinh' : '',
+                    'Hình thức xử lý': homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)),
+                    'Nguồn quy chế': entry.regulationSource || '',
                     'Điểm gốc': entry.basePoints,
                     'Hệ số tái phạm': entry.repeatMultiplier,
                     'Điểm áp dụng': entry.points,
@@ -1403,6 +1664,9 @@
                     'Ngày': homeroomFormatDate(entry.date),
                     'Học kỳ': `HK${entry.semester}`,
                     'Loại': homeroomEntryMeta(entry.type).label,
+                    'TT quy chế': homeroomRuleById(entry.ruleId)?.no ?? '',
+                    'Quy tắc': homeroomRuleById(entry.ruleId)?.label || '',
+                    'Điểm thi đua': entry.points || 0,
                     'Nội dung': entry.content,
                 }));
                 const thresholds = homeroomGetMonitoringThresholds(book);
@@ -1425,9 +1689,30 @@
                     'Chuỗi điểm 4 tuần': (metrics.trend?.scores || []).join(' → '),
                     'Ghi nhận chưa xử lý': metrics.unresolved,
                     'Lần gần nhất': homeroomFormatDate(metrics.lastEntryDate),
+                    'Số lỗi theo quy chế': metrics.conduct?.violationCount || 0,
+                    'Gợi ý hạnh kiểm': metrics.conduct?.suggested || 'Tốt',
+                    'Lý do xếp yếu': (metrics.conduct?.reasons || []).join(' | '),
                     'Trạng thái theo ngưỡng': status.label,
                     'Ngưỡng đã chạm': status.alerts.join(' | '),
                 }));
+                const conductRows = (book.students || []).map((student, index) => {
+                    const assessment = homeroomConductAssessment(book, student.id, semester);
+                    return {
+                        'STT': index + 1,
+                        'Học sinh': student.name,
+                        'Tổ': homeroomFindGroup(book, student.groupId)?.name || '',
+                        'Số lỗi HK': assessment.violationCount,
+                        'Điểm trừ': assessment.deductionPoints,
+                        'Điểm thưởng': assessment.rewardPoints,
+                        'Điểm quy chế ròng': assessment.totalRegulationPoints,
+                        'Số lần hạ 1 bậc': assessment.lowerOneCount,
+                        'Số lần điện thoại': assessment.phoneCount,
+                        'Mức theo số lỗi': assessment.baseline,
+                        'Gợi ý xếp loại': assessment.suggested,
+                        'Lý do bắt buộc': assessment.reasons.join(' | '),
+                    };
+                });
+                const classConductMetrics = homeroomClassConductMetrics(book, semester);
                 const organizationRows = [];
                 HOMEROOM_CLASS_ROLE_META.forEach(role => {
                     const student = homeroomFindStudent(book, book.classOfficers?.[role.id]);
@@ -1478,6 +1763,10 @@
                     ['Ngưỡng vắng không phép', thresholds.unexcusedAbsence],
                     ['Ngưỡng đi muộn', thresholds.late],
                     ['Ngưỡng vi phạm', thresholds.violation],
+                    ['Ghi nhận thi đua tập thể', classConductMetrics.entries],
+                    ['Điểm trừ thi đua lớp', classConductMetrics.deductions],
+                    ['Điểm thưởng thi đua lớp', classConductMetrics.rewards],
+                    ['Điểm thi đua ròng từ ghi nhận', classConductMetrics.net],
                     ['Trao đổi phụ huynh', summary.parentContacts],
                     ['Khen thưởng', summary.commendations],
                 ];
@@ -1487,8 +1776,18 @@
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(groupStatisticRows), 'Thống kê theo tổ');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(individualRows), 'Theo dõi học sinh');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monitoringRows), 'Tần suất cần chú ý');
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classRows), 'Nhật ký lớp');
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(HOMEROOM_CONDUCT_RULES.map(rule => ({'Nhóm':rule.group,'Nội dung':rule.label,'Điểm':rule.points,'Mức độ':homeroomSeverityMeta(rule.severity).label}))), 'Quy tắc cộng trừ');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(conductRows), 'Gợi ý hạnh kiểm');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classRows), 'Nhật ký & thi đua lớp');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(HOMEROOM_ALL_SCHOOL_RULES.map(rule => ({
+                    'TT': rule.no ?? '',
+                    'Phạm vi': rule.scope === 'student' ? 'Học sinh' : 'Lớp',
+                    'Nhóm': rule.group,
+                    'Nội dung': rule.label,
+                    'Điểm': rule.points,
+                    'Mức độ': homeroomSeverityMeta(rule.severity).label,
+                    'Xử lý': homeroomSchoolRuleEffectLabel(rule),
+                    'Ghi chú': rule.note || '',
+                }))), 'Quy chế nề nếp 26-27');
                 XLSX.writeFile(wb, `so-chu-nhiem-${homeroomSafeFilePart(book.className)}-${homeroomSafeFilePart(state.selectedAcademicYear)}.xlsx`);
                 showToast('✅ Đã xuất Sổ chủ nhiệm ra Excel', 'success');
             } catch (error) {
@@ -1542,6 +1841,14 @@
             });
             homeroomById('homeroomWeekAnchorDate')?.addEventListener('change', event => { homeroomWeekAnchorDate = normalizeHomeroomDate(event.target.value) || homeroomTodayISO(); renderHomeroom(); homeroomUpdateRulePreview(); });
             homeroomById('homeroomConductRuleSelect')?.addEventListener('change', () => homeroomUpdateRulePreview({ forceRuleDefaults:true }));
+            homeroomById('homeroomClassConductRuleSelect')?.addEventListener('change', () => homeroomUpdateClassRulePreview({ forceRuleDefaults:true }));
+            homeroomById('homeroomClassConductForm')?.addEventListener('submit', homeroomAddClassConductEntry);
+            homeroomById('homeroomConductTable')?.addEventListener('click', event => {
+                const button = event.target.closest('[data-homeroom-conduct-student]');
+                if (!button) return;
+                homeroomSelectStudent(button.dataset.homeroomConductStudent);
+                homeroomById('homeroomStudentLogPanel')?.scrollIntoView({ behavior:'smooth', block:'center' });
+            });
             homeroomById('homeroomStudentLogBasePoints')?.addEventListener('input', () => homeroomUpdateRulePreview());
             homeroomById('homeroomStudentLogDate')?.addEventListener('change', () => homeroomUpdateRulePreview());
             homeroomById('homeroomThresholds')?.addEventListener('change', event => {
@@ -1612,5 +1919,7 @@
             if (homeroomById('homeroomStudentLogDate')) homeroomById('homeroomStudentLogDate').value = date;
             if (homeroomById('homeroomWeekAnchorDate')) homeroomById('homeroomWeekAnchorDate').value = date;
             if (homeroomById('homeroomClassLogDate')) homeroomById('homeroomClassLogDate').value = date;
+            if (homeroomById('homeroomClassConductDate')) homeroomById('homeroomClassConductDate').value = date;
+            homeroomUpdateClassRulePreview();
             renderHomeroom();
         }

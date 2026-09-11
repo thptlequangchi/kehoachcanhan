@@ -1,16 +1,16 @@
-# AUDIT REPORT — v53.1.0 STABLE
+# AUDIT REPORT — v53.2.0 STABLE
 
-**PASS** toàn bộ kiểm tra đóng gói.
+**PASS** toàn bộ kiểm tra đóng gói sau nâng cấp Sổ chủ nhiệm theo dự thảo quy chế nề nếp 2026–2027.
 
 ## `python tests/run-static-audit.py`
 
 ```text
-PASS: HTML IDs 559/559 unique
-PASS: HTML resources 58 present
+PASS: HTML IDs 582/582 unique
+PASS: HTML resources 60 present
 PASS: DOM refs 202 resolved
-PASS: named functions 933/933 unique
-PASS: APP_SHELL 64 resources present
-PASS: APP_VERSION 53.1.0
+PASS: named functions 961/961 unique
+PASS: APP_SHELL 66 resources present
+PASS: APP_VERSION 53.2.0
 PASS: Professional UI + timetable v52.1 + plan revision styles load in safe order
 PASS: timetable periods 1–5 protected from zebra/hover overrides and PPCT tooltip wired
 PASS: personal gradebook loaded, private workspace persisted, TX columns capped at 5
@@ -23,7 +23,9 @@ PASS: v52.6 optional feature modules load on demand/idle
 PASS: v52.7 browser smoke suite + launcher wired
 PASS: v52.8 automatic 12h safety snapshots + restore controls wired
 PASS: v52.9 offline sync outbox + automatic reconnect flush wired
-PASS: v53.1 STABLE safe-boot guard + release manifest wired
+PASS: v53.0 STABLE safe-boot guard + release manifest wired
+PASS: v53.1 homeroom groups + class officers + multi-role organization wired
+PASS: v53.2 regulation catalog + conduct assessment + class conduct tracking wired
 PASS: centralized data-change listeners 1
 PASS: centralized minute heartbeat 1
 PASS: PPCT uses unified suggestion engine
@@ -52,6 +54,12 @@ gradebook semester average PASS
 gradebook incomplete average PASS
 gradebook workspace persistence shape PASS
 homeroom workspace persistence shape PASS
+homeroom organization v53.1 PASS
+homeroom regulation catalog v53.2 PASS
+homeroom conduct lower one grade v53.2 PASS
+homeroom phone second time weak v53.2 PASS
+homeroom direct weak violation v53.2 PASS
+homeroom class conduct metrics v53.2 PASS
 homeroom monitoring thresholds defaults PASS
 homeroom frequent behavior monitoring PASS
 homeroom serious resolved history PASS
@@ -86,6 +94,9 @@ course key contains session PASS
 
 ## Phát hành ổn định
 
+- APP_VERSION / Service Worker / release-manifest đều là `53.2.0`.
+- Dữ liệu v53.1 về tổ, ban cán sự và chức vụ tùy biến được giữ nguyên.
+- Danh mục quy chế 2026–2027 có 48 lỗi chính và nhóm khen thưởng.
 - Browser Smoke Suite được đóng gói để chạy sau triển khai.
-- Không có migration phá vỡ dữ liệu v52.x.
-- APP_VERSION / Service Worker / release-manifest đều là 53.1.0.
+- Không có migration phá vỡ dữ liệu v53.1/v53.0/v52.x.
+- Phần mềm ghi rõ quy chế nguồn hiện là **dự thảo**; kết quả hạnh kiểm/rèn luyện là **gợi ý**, không phải kết luận tự động.

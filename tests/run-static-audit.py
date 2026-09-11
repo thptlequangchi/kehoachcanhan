@@ -88,7 +88,7 @@ if 'monitoringThresholds: normalizeHomeroomMonitoringThresholds(value.monitoring
 if 'function homeroomStudentMetrics' not in js or 'function homeroomStudentMonitoringStatus' not in js: die('Homeroom frequent-behavior monitoring helpers missing')
 if 'homeroomMonitoringTable' not in ids: die('Homeroom monitoring table missing from HTML')
 if 'homeroomConductRuleSelect' not in ids or 'homeroomWeekAnchorDate' not in ids: die('Homeroom v52.3 conduct/weekly score controls missing')
-if 'const HOMEROOM_CONDUCT_RULES = [' not in js or "id:'fight'" not in js or 'points:-25' not in js: die('Homeroom v52.3 conduct rules missing or fight penalty not protected')
+if 'const HOMEROOM_CONDUCT_RULES = Object.freeze([' not in js or "id:'nn26_30'" not in js or 'points:-50' not in js: die('Homeroom conduct rules missing or school fight penalty not protected')
 if 'function homeroomStudentTrend' not in js or 'activeSeriousCount' not in js or 'resolvedSeriousCount' not in js: die('Homeroom v52.4 priority/trend helpers missing')
 if 'homeroomImprovingCount' not in ids or 'homeroomDecliningCount' not in ids: die('Homeroom v52.4 trend KPI controls missing')
 if "seriousFlag: Boolean(value.seriousFlag) || severity === 'critical'" not in state: die('Critical conduct flag is not persisted independently from points')
@@ -174,6 +174,19 @@ for required in {'homeroomOrganizationSection','homeroomOfficerGrid','homeroomGr
 if 'function homeroomRenderOrganization' not in js or 'function homeroomAutoAssignGroups' not in js or 'function homeroomStudentRoleLabels' not in js:
     die('v53.1 organization helpers missing')
 print('PASS: v53.1 homeroom groups + class officers + multi-role organization wired')
+
+if 'assets/css/homeroom-v53-2.css' not in p.refs: die('v53.2 regulation stylesheet missing')
+for required in {'homeroomRegulationPanel','homeroomConductSummary','homeroomConductTable','homeroomClassConductForm','homeroomClassConductRuleSelect','homeroomRuleEffectPreview'}:
+    if required not in ids: die(f'v53.2 regulation control missing: {required}')
+if 'const HOMEROOM_SCHOOL_RULES_2026 = Object.freeze([' not in js or "id:'nn26_48'" not in js:
+    die('v53.2 48-rule school conduct catalog missing')
+if 'function homeroomConductAssessment' not in js or 'function homeroomClassConductMetrics' not in js or 'function homeroomAddClassConductEntry' not in js:
+    die('v53.2 conduct assessment/class tracking helpers missing')
+if "discipline:'weak'" not in js or "special:'phone'" not in js:
+    die('v53.2 disciplinary overrides missing')
+if release_manifest.get('features',{}).get('homeroomConductRegulation2026') is not True:
+    die('v53.2 release manifest regulation feature missing')
+print('PASS: v53.2 regulation catalog + conduct assessment + class conduct tracking wired')
 print(f'PASS: centralized data-change listeners {listener_count}')
 print(f'PASS: centralized minute heartbeat {minute_timer_count}')
 print('PASS: PPCT uses unified suggestion engine')
