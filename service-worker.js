@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v53.3.1 STABLE — Service Worker */
-const APP_VERSION = '53.3.1';
+/* Sổ Tay Giáo Viên v53.3.2 STABLE — Service Worker */
+const APP_VERSION = '53.3.2';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -63,9 +63,15 @@ const APP_SHELL = [
     './assets/js/16-command-center.js',
     './assets/js/17-year-dashboard.js',
     './assets/js/18-automation-center.js',
+    './assets/js/19-report-center.js',
     './assets/js/20-pwa.js',
+    './assets/js/21-health-check.js',
+    './assets/js/22-links-center.js',
     './assets/js/23-global-command.js',
+    './assets/js/24-storage-center.js',
+    './assets/js/25-profile-package.js',
     './assets/js/26-reminder-calendar.js',
+    './assets/js/27-regression-tests.js',
     './assets/js/28-gradebook.js',
     './assets/js/29-homeroom.js',
     './assets/js/36-homeroom-competition-v53-3.js',

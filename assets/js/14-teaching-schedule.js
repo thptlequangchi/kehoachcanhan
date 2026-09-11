@@ -41,7 +41,7 @@
         function applyAcademicYear(value, notify = true) {
             const academicYear = normalizeAcademicYear(value);
             if (!academicYear) {
-                showToast('⚠️ Năm học phải có dạng 2025-2026 và hai năm liên tiếp', 'error');
+                showToast('⚠️ Năm học phải có dạng 2026-2027 và hai năm liên tiếp', 'error');
                 return false;
             }
             try {
@@ -60,7 +60,7 @@
             if (!select) return;
             const previousYear = state.selectedAcademicYear;
             if (select.value === '__custom__') {
-                const entered = prompt('Nhập năm học (ví dụ 2025-2026):', state.teacherProfile.academicYear);
+                const entered = prompt('Nhập năm học (ví dụ 2026-2027):', state.teacherProfile.academicYear);
                 if (entered === null || !applyAcademicYear(entered)) {
                     populateAcademicYearSelect(previousYear);
                 }
@@ -1013,7 +1013,7 @@
             if (!teacherName) errors.push('Vui lòng nhập tên giáo viên.');
             if (!subject) errors.push('Vui lòng nhập môn giảng dạy.');
             const normalizedYear = normalizeAcademicYear(academicYear);
-            if (!normalizedYear) errors.push('Năm học phải có dạng 2025-2026 và hai năm liên tiếp.');
+            if (!normalizedYear) errors.push('Năm học phải có dạng 2026-2027 và hai năm liên tiếp.');
             if (errors.length) {
                 setFormFeedback(teacherProfileError, errors.join(' '));
                 return;

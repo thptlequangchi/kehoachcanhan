@@ -1201,7 +1201,7 @@
                     <div class="homeroom-section-title"><h3>👥 Hồ sơ học sinh</h3><small>Chỉnh trực tiếp trong bảng; dữ liệu tự lưu.</small></div>
                     <div class="homeroom-filterbar">
                         <label><span>Tìm học sinh</span><input id="homeroomSearchInput" type="search" placeholder="Nhập họ tên…" autocomplete="off" /></label>
-                        <label><span>Lọc nhanh</span><select id="homeroomFilterSelect"><option value="all">Tất cả</option><option value="attention">Cần theo dõi</option><option value="frequent">Chạm/vượt ngưỡng</option><option value="absence">Có vắng</option><option value="unexcused">Vắng không phép</option><option value="late">Có đi muộn</option><option value="violation">Có vi phạm</option><option value="seriousCurrent">Nghiêm trọng đang xử lý</option><option value="seriousHistory">Có lịch sử nghiêm trọng</option><option value="improving">Xu hướng tích cực</option><option value="declining">Xu hướng giảm</option><option value="resolved">Đã xử lý</option></select></label>
+                        <label><span>Lọc nhanh</span><select id="homeroomFilterSelect"><option value="all">Tất cả</option><option value="attention">Cần theo dõi</option><option value="frequent">Chạm/vượt ngưỡng</option><option value="absence">Có vắng</option><option value="unexcused">Vắng không phép</option><option value="late">Có đi muộn</option><option value="violation">Có lỗi nề nếp</option><option value="seriousCurrent">Nghiêm trọng đang xử lý</option><option value="seriousHistory">Có lịch sử nghiêm trọng</option><option value="improving">Xu hướng tích cực</option><option value="declining">Xu hướng giảm</option><option value="resolved">Đã xử lý</option></select></label>
                         <button class="btn btn-outline btn-sm" id="homeroomPrivacyBtn" type="button" title="Ẩn/hiện SĐT và địa chỉ khi mở sổ trước lớp">👁️ Hiện thông tin riêng</button>
                         <span class="homeroom-filter-count" id="homeroomFilterCount">0 học sinh</span>
                     </div>
@@ -1218,6 +1218,7 @@
                                 <option value="absence_excused">Vắng có phép</option><option value="absence_unexcused">Vắng không phép</option><option value="late">Đi muộn</option><option value="violation">Vi phạm</option><option value="commendation">Khen thưởng</option><option value="parent_contact">Trao đổi phụ huynh</option><option value="support">Hỗ trợ học sinh</option><option value="note">Ghi chú</option>
                             </select></label>
                             <label class="full"><span>Nội dung theo quy chế nề nếp</span><select id="homeroomConductRuleSelect"><option value="">— Ghi nhận tự do / không tính điểm —</option></select><small class="homeroom-field-help">Chọn lỗi/khen thưởng để tự điền điểm và mức xử lý theo dự thảo 2026–2027.</small></label>
+                            <label id="homeroomAbsenceExceptionField" hidden><span>Lý do / ngoại lệ vắng có phép</span><select id="homeroomAbsenceException"><option value="normal">Thông thường (−2)</option><option value="noel">Noel – HS Công giáo (0)</option><option value="religious_holiday">Lễ tôn giáo có giấy xác nhận (−0,5)</option><option value="long_term">Vắng học lâu dài (chỉ trừ 3 ngày đầu)</option></select><small id="homeroomAbsenceExceptionHelp" class="homeroom-field-help"></small></label>
                             <label><span>Điểm quy chế</span><input id="homeroomStudentLogBasePoints" type="number" min="-100" max="100" step="0.5" value="0" /></label>
                             <label><span>Mức độ</span><select id="homeroomStudentLogSeverity"><option value="neutral">Không xếp mức</option><option value="positive">Tích cực</option><option value="light">Nhẹ</option><option value="medium">Trung bình</option><option value="heavy">Nặng</option><option value="critical">Nghiêm trọng</option></select></label>
                             <label><span>Mức áp dụng</span><input id="homeroomRepeatPreview" type="text" value="—" readonly /></label>
@@ -1236,7 +1237,8 @@
                             <form class="homeroom-inline-form homeroom-class-conduct-form" id="homeroomClassConductForm">
                                 <label class="full"><span>Nội dung</span><select id="homeroomClassConductRuleSelect"><option value="">— Chọn lỗi/khen thưởng tập thể —</option></select></label>
                                 <label><span>Ngày</span><input id="homeroomClassConductDate" type="date" /></label>
-                                <label><span>Điểm thi đua</span><input id="homeroomClassConductPoints" type="number" min="-100" max="100" step="0.5" value="0" /></label>
+                                <label id="homeroomClassConductQuantityField" hidden><span id="homeroomClassConductQuantityLabel">Số lượng</span><input id="homeroomClassConductQuantity" type="number" min="1" max="999" step="1" value="1" /></label>
+                                <label><span>Tổng điểm thi đua</span><input id="homeroomClassConductPoints" type="number" min="-10000" max="10000" step="0.5" value="0" readonly /></label>
                                 <label class="full"><span>Ghi chú</span><textarea id="homeroomClassConductContent" rows="2" placeholder="Ví dụ: Lớp trực nhật chậm; lớp có tiết mục văn nghệ…"></textarea><small id="homeroomClassConductRuleNote" class="homeroom-field-help">Chọn một lỗi/khen thưởng tập thể trong quy chế.</small></label>
                                 <div class="homeroom-form-actions"><button class="btn btn-primary btn-sm" id="homeroomAddClassConductBtn" type="submit">＋ Ghi thi đua lớp</button></div>
                             </form>
@@ -1860,7 +1862,7 @@
                         </div>
                         <div class="app-form-field">
                             <label for="teacherProfileYear">Năm học</label>
-                            <input id="teacherProfileYear" type="text" inputmode="numeric" placeholder="2025-2026" required />
+                            <input id="teacherProfileYear" type="text" inputmode="numeric" placeholder="2026-2027" required />
                         </div>
                     </div>
                 </div>

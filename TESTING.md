@@ -1,4 +1,4 @@
-# TESTING — v53.3.1 STABLE
+# TESTING — v53.3.2 STABLE
 
 ## Lệnh kiểm tra
 ```bash
@@ -9,7 +9,7 @@ node tests/run-homeroom-autosync-fixtures.js
 ```
 
 ## Invariant v53.3
-- APP_VERSION state = Service Worker = release manifest = `53.3.1`.
+- APP_VERSION state = Service Worker = release manifest = `53.3.2`.
 - Toàn bộ HTML ID duy nhất; tài nguyên HTML và APP_SHELL tồn tại.
 - Tất cả JavaScript qua `node --check`.
 - Dữ liệu v53.2 được normalize sang cấu trúc có `book.competition` mà không phá dữ liệu cũ.
@@ -32,3 +32,9 @@ node tests/run-homeroom-autosync-fixtures.js
 - Học sinh có lỗi phải xuất hiện trong Bảng ưu tiên GVCN ngay cả khi chưa chạm các ngưỡng tần suất cũ.
 - Lỗi quy chế âm phải có trạng thái Chưa xử lý/Đã xử lý.
 - Điện thoại lần 2 phải kích hoạt gợi ý Yếu theo dự thảo đã nhập vào hệ thống.
+
+## Quality Patch v53.3.2
+- Fixture ngoại lệ vắng có phép: -2 / 0 / -0,5 / chỉ 3 ngày đầu.
+- Fixture lỗi theo số lượng: đơn giá × số lượng, không bị cap ±100.
+- Kiểm tra filter “Có lỗi nề nếp” dùng conduct.violationCount.
+- Kiểm tra APP_SHELL chứa đầy đủ module lazy quan trọng.

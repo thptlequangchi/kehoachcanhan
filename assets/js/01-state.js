@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.3.1';
+        const APP_VERSION = '53.3.2';
         const DATA_SCHEMA_VERSION = 4;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -113,7 +113,7 @@
             schoolName: 'Trường THPT Lê Quảng Chí',
             teacherName: 'Võ Viết Chương',
             subject: 'Toán',
-            academicYear: '2025-2026',
+            academicYear: '2026-2027',
         };
         localStorage.removeItem('gemini_model');
 
@@ -1189,7 +1189,7 @@
             const clampPoints = raw => {
                 const parsed = Number(raw);
                 if (!Number.isFinite(parsed)) return 0;
-                return Math.min(100, Math.max(-100, Math.round(parsed * 2) / 2));
+                return Math.min(10000, Math.max(-10000, Math.round(parsed * 2) / 2));
             };
             const basePoints = clampPoints(value.basePoints ?? value.points ?? 0);
             const points = clampPoints(value.points ?? basePoints);
@@ -1215,6 +1215,11 @@
                 disciplineEffect: ['lower1','weak'].includes(cleanText(value.disciplineEffect)) ? cleanText(value.disciplineEffect) : '',
                 regulationSource: cleanText(value.regulationSource),
                 regulationNote: cleanText(value.regulationNote),
+                quantity: Number.isFinite(Number(value.quantity)) ? Math.min(999, Math.max(1, Math.round(Number(value.quantity)))) : 1,
+                quantityUnit: cleanText(value.quantityUnit),
+                unitPoints: clampPoints(value.unitPoints ?? value.basePoints ?? value.points ?? 0),
+                absenceException: ['normal','noel','religious_holiday','long_term'].includes(cleanText(value.absenceException)) ? cleanText(value.absenceException) : '',
+                absenceExceptionLabel: cleanText(value.absenceExceptionLabel),
                 resolved: Boolean(value.resolved),
                 resolvedAt: Boolean(value.resolved) ? cleanText(value.resolvedAt) : '',
                 createdAt: cleanText(value.createdAt),
