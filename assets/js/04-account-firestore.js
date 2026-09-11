@@ -988,6 +988,32 @@ service cloud.firestore {
             updateSharedSyncProtectionPanel();
         }
 
+        // v52.9 — hàng đợi đồng bộ bền vững khi mất mạng.
+        const ACCOUNT_SYNC_OUTBOX_STORAGE = 'teacher_notebook_sync_outbox_v1';
+        function readAccountSyncOutbox() {
+            const value = readStoredJSON(ACCOUNT_SYNC_OUTBOX_STORAGE, null);
+            return value && typeof value === 'object' && value.academicYear ? value : null;
+        }
+        function markAccountSyncOutbox(reason = 'local-change') {
+            const academicYear = normalizeAcademicYear(state.account.syncYear || state.selectedAcademicYear);
+            if (!academicYear) return null;
+            const existing = readAccountSyncOutbox();
+            const payload = {
+                academicYear,
+                dirtyAt: existing?.academicYear === academicYear ? existing.dirtyAt || new Date().toISOString() : new Date().toISOString(),
+                lastQueuedAt: new Date().toISOString(),
+                reason,
+                appVersion: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '',
+            };
+            writeStoredJSON(ACCOUNT_SYNC_OUTBOX_STORAGE, payload);
+            return payload;
+        }
+        function clearAccountSyncOutbox(academicYear = state.account.syncYear) {
+            const pending = readAccountSyncOutbox();
+            if (!pending || !academicYear || pending.academicYear === academicYear) localStorage.removeItem(ACCOUNT_SYNC_OUTBOX_STORAGE);
+        }
+        function accountNetworkOnline() { return typeof navigator === 'undefined' || navigator.onLine !== false; }
+
         function setCloudSyncStatus(status, message) {
             state.account.cloudStatus = status;
             state.account.cloudStatusMessage = message;
@@ -1367,6 +1393,11 @@ service cloud.firestore {
         async function syncActiveYearToCloud() {
             if (!accountCloudSyncEnabled()) return;
             const academicYear = state.account.syncYear;
+            if (!accountNetworkOnline()) {
+                markAccountSyncOutbox('offline');
+                setCloudSyncStatus('syncing', 'Mất mạng · thay đổi đã được giữ trên máy');
+                return;
+            }
             if (!academicYear || academicYear !== state.selectedAcademicYear
                 || !state.account.sharedYearLoaded || !state.account.personalYearLoaded) return;
             const { firestoreModule } = state.account.modules;
@@ -1411,20 +1442,28 @@ service cloud.firestore {
 
             if (state.account.syncYear !== academicYear) return;
             if (failure) {
+                markAccountSyncOutbox('sync-error');
                 setCloudSyncStatus('error', translateAccountError(failure));
                 return;
             }
             if (state.account.sharedConflict) {
+                markAccountSyncOutbox('conflict');
                 setCloudSyncStatus('conflict', 'Có thay đổi cần xử lý');
                 return;
             }
+            clearAccountSyncOutbox(academicYear);
             setCloudSyncStatus('synced', wrote ? 'Đã lưu lên đám mây' : 'Dữ liệu đã đồng bộ');
         }
 
         function queueCloudWorkspaceSync() {
             if (!accountCloudSyncEnabled() || state.account.syncApplyingRemote) return;
             if (!state.account.sharedYearLoaded || !state.account.personalYearLoaded) return;
+            markAccountSyncOutbox('local-change');
             if (state.account.syncTimer) clearTimeout(state.account.syncTimer);
+            if (!accountNetworkOnline()) {
+                setCloudSyncStatus('syncing', 'Mất mạng · sẽ tự đồng bộ khi có mạng');
+                return;
+            }
             setCloudSyncStatus('syncing', 'Đang chờ lưu thay đổi');
             state.account.syncTimer = setTimeout(() => {
                 state.account.syncTimer = null;
@@ -1678,6 +1717,26 @@ service cloud.firestore {
                 updateAccountPresentation();
             }
         }
+
+        function handleAccountNetworkOnline() {
+            const pending = readAccountSyncOutbox();
+            if (!pending || !accountCloudSyncEnabled()) return;
+            setCloudSyncStatus('syncing', 'Có mạng trở lại · đang đồng bộ thay đổi chờ');
+            setTimeout(() => {
+                if (pending.academicYear === state.account.syncYear && state.account.sharedYearLoaded && state.account.personalYearLoaded) {
+                    flushCloudWorkspaceSync()?.catch?.(error => window.teacherNotebookRecordError?.('cloud-reconnect', error));
+                } else {
+                    activateCloudDataSync()?.catch?.(error => window.teacherNotebookRecordError?.('cloud-reconnect-activate', error));
+                }
+            }, 500);
+        }
+        function handleAccountNetworkOffline() {
+            if (!accountCloudSyncEnabled()) return;
+            if (state.account.syncTimer || readAccountSyncOutbox()) markAccountSyncOutbox('offline');
+            setCloudSyncStatus('syncing', 'Mất mạng · dữ liệu vẫn lưu trên máy');
+        }
+        window.addEventListener('online', handleAccountNetworkOnline);
+        window.addEventListener('offline', handleAccountNetworkOffline);
 
         async function initializeAccountSystem() {
             if (state.account.initialized) return;

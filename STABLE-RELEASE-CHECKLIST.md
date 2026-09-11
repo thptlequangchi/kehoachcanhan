@@ -1,4 +1,4 @@
-# Stable Release Checklist — v53.0
+# Stable Release Checklist — v53.1
 
 - [x] APP_VERSION đồng bộ state / Service Worker / release manifest.
 - [x] JavaScript `node --check`.

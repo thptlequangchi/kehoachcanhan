@@ -1,4 +1,4 @@
-# AUDIT REPORT — v53.0.0 STABLE
+# AUDIT REPORT — v53.1.0 STABLE
 
 **PASS** toàn bộ kiểm tra đóng gói.
 
@@ -10,7 +10,7 @@ PASS: HTML resources 58 present
 PASS: DOM refs 202 resolved
 PASS: named functions 933/933 unique
 PASS: APP_SHELL 64 resources present
-PASS: APP_VERSION 53.0.0
+PASS: APP_VERSION 53.1.0
 PASS: Professional UI + timetable v52.1 + plan revision styles load in safe order
 PASS: timetable periods 1–5 protected from zebra/hover overrides and PPCT tooltip wired
 PASS: personal gradebook loaded, private workspace persisted, TX columns capped at 5
@@ -23,7 +23,7 @@ PASS: v52.6 optional feature modules load on demand/idle
 PASS: v52.7 browser smoke suite + launcher wired
 PASS: v52.8 automatic 12h safety snapshots + restore controls wired
 PASS: v52.9 offline sync outbox + automatic reconnect flush wired
-PASS: v53.0 STABLE safe-boot guard + release manifest wired
+PASS: v53.1 STABLE safe-boot guard + release manifest wired
 PASS: centralized data-change listeners 1
 PASS: centralized minute heartbeat 1
 PASS: PPCT uses unified suggestion engine
@@ -88,4 +88,4 @@ course key contains session PASS
 
 - Browser Smoke Suite được đóng gói để chạy sau triển khai.
 - Không có migration phá vỡ dữ liệu v52.x.
-- APP_VERSION / Service Worker / release-manifest đều là 53.0.0.
+- APP_VERSION / Service Worker / release-manifest đều là 53.1.0.

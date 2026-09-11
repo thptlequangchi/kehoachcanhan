@@ -1,5 +1,5 @@
 // ================================================================
-//  RELEASE SHELL — v52.3
+//  RELEASE SHELL — v53.1 STABLE
 //  Chế độ tập trung chỉ thay đổi cách hiển thị, không thay đổi dữ liệu.
 // ================================================================
 (() => {
@@ -10,7 +10,7 @@
         const button = document.getElementById('focusModeToggle');
         if (button) {
             button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-            button.title = enabled ? 'Hiện lại Dashboard năm học, Tự động hóa và Trợ lý tuần' : 'Ẩn các dashboard nâng cao để tập trung vào công việc chính';
+            button.title = enabled ? 'Hiện lại Dashboard năm học và Tự động hóa' : 'Ẩn Dashboard năm học và Tự động hóa, vẫn giữ Bảng điều hành Hôm nay';
             const label = button.querySelector('span');
             if (label) label.textContent = enabled ? 'Đầy đủ' : 'Tập trung';
         }
@@ -28,7 +28,7 @@
         try { enabled = localStorage.getItem(STORAGE_KEY) === '1'; } catch (_) { enabled = false; }
         releaseV52ApplyFocusMode(enabled);
         document.getElementById('focusModeToggle')?.addEventListener('click', releaseV52ToggleFocusMode);
-        document.documentElement.dataset.teacherNotebookRelease = '52.3';
+        document.documentElement.dataset.teacherNotebookRelease = '53.0';
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', releaseV52Init, { once:true });

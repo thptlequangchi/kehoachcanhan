@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '52.3.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '53.1.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -122,6 +122,27 @@
             const summary=homeroomSummarizeBook(book,'1');
             const workspace=normalizeYearWorkspace({homeroom:{books:{cn1:book},selectedBookId:'cn1',selectedStudentId:'s1'}});
             return summary.students===2 && summary.absenceUnexcused===1 && summary.attentionStudents===1 && workspace.homeroom.selectedBookId==='cn1' ? 'Sổ chủ nhiệm giữ hồ sơ lớp, ghi nhận HK và danh sách cần theo dõi.' : {status:'fail',message:'Normalize hoặc thống kê Sổ chủ nhiệm không đúng fixture.'};
+        }));
+        tests.push(runSync('homeroom-organization','Cơ cấu tổ và ban cán sự lớp','Nghiệp vụ',() => {
+            const book=normalizeHomeroomBook({id:'cn-org',className:'12A2',students:[{id:'s1',name:'Nguyễn A',groupId:'g1'},{id:'s2',name:'Trần B',groupId:'g1'},{id:'s3',name:'Lê C'}],groups:[{id:'g1',name:'Tổ 1',leaderId:'s1',deputyId:'s2'}],classOfficers:{classPresident:'s1',secretary:'s1',treasurer:'s3'},customOfficers:[{id:'c1',label:'Trưởng ban truyền thông',studentId:'s2'}]});
+            const roles=homeroomStudentRoleLabels(book,'s1').map(item=>item.label);
+            return book.groups.length===1 && book.students[0].groupId==='g1' && book.groups[0].leaderId==='s1' && book.classOfficers.classPresident==='s1' && book.classOfficers.secretary==='s1' && roles.includes('Lớp trưởng') && roles.includes('Bí thư') && roles.some(label=>label.startsWith('Tổ trưởng')) ? 'Giữ đúng tổ, tổ trưởng và cho phép một học sinh kiêm nhiều chức vụ.' : {status:'fail',message:'Cơ cấu tổ/ban cán sự không đạt fixture.'};
+        }));
+        tests.push(runSync('homeroom-critical-resolution','Vi phạm nghiêm trọng đã xử lý không giữ cảnh báo đỏ','Nghiệp vụ',() => {
+            const previousAnchor=homeroomWeekAnchorDate;
+            homeroomWeekAnchorDate='2026-09-07';
+            const book=normalizeHomeroomBook({id:'cn-critical',className:'12A2',students:[{id:'s1',name:'A'}],entries:[{id:'e1',studentId:'s1',semester:'1',type:'violation',date:'2026-09-01',severity:'critical',seriousFlag:true,points:-25,resolved:true,resolvedAt:'2026-09-02T08:00:00.000Z'}]});
+            const m=homeroomStudentMetrics(book,'s1','1'),st=homeroomStudentMonitoringStatus(m,book.monitoringThresholds);
+            homeroomWeekAnchorDate=previousAnchor;
+            return m.seriousHistoryCount===1 && m.activeSeriousCount===0 && m.resolvedSeriousCount===1 && st.level!=='critical' ? 'Lỗi nghiêm trọng đã xử lý nằm trong lịch sử nhưng không duy trì trạng thái đỏ.' : {status:'fail',message:'Cảnh báo nghiêm trọng chưa tách trạng thái đang xử lý/đã xử lý.'};
+        }));
+        tests.push(runSync('homeroom-four-week-trend','Xu hướng điểm rèn luyện 4 tuần','Nghiệp vụ',() => {
+            const previousAnchor=homeroomWeekAnchorDate;
+            homeroomWeekAnchorDate='2026-09-28';
+            const book=normalizeHomeroomBook({id:'cn-trend',className:'12A2',students:[{id:'s1',name:'A'}],entries:[{studentId:'s1',semester:'1',type:'violation',date:'2026-09-07',points:-20},{studentId:'s1',semester:'1',type:'violation',date:'2026-09-14',points:-15},{studentId:'s1',semester:'1',type:'violation',date:'2026-09-21',points:-10},{studentId:'s1',semester:'1',type:'violation',date:'2026-09-28',points:-5}]});
+            const trend=homeroomStudentTrend(book,'s1','1');
+            homeroomWeekAnchorDate=previousAnchor;
+            return trend.direction==='improving' && trend.scores.join(',')==='80,85,90,95' ? 'Nhận đúng chuỗi điểm 80→85→90→95 là xu hướng tích cực.' : {status:'fail',message:'Phân tích xu hướng 4 tuần không đúng fixture.'};
         }));
         tests.push(runSync('schedule-normalizer','Chuẩn hóa tiết báo giảng','Nghiệp vụ',() => {
             const item=normalizeScheduleItem({day:'Thứ 3',session:'Sáng',period:'2',class:'12A1',subject:'Toán',topic:'Đạo hàm'},5,0);

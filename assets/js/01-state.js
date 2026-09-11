@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '52.3.0';
+        const APP_VERSION = '53.1.0';
         const DATA_SCHEMA_VERSION = 4;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -79,6 +79,10 @@
         const GRADEBOOK_SEMESTERS = ['1', '2'];
         const HOMEROOM_SEMESTERS = ['1', '2'];
         const HOMEROOM_GENDERS = ['', 'Nam', 'Nữ', 'Khác'];
+        const HOMEROOM_CLASS_OFFICER_ROLES = Object.freeze([
+            'classPresident', 'viceAcademic', 'viceLabor', 'viceArts',
+            'secretary', 'deputySecretary', 'treasurer', 'redFlag', 'viceSports'
+        ]);
         const HOMEROOM_SEVERITIES = ['neutral', 'positive', 'light', 'medium', 'heavy', 'critical'];
         const HOMEROOM_MONITORING_DEFAULTS = Object.freeze({
             totalAbsence: 3,
@@ -1071,6 +1075,43 @@
                 studentPhone: cleanText(value.studentPhone || value.phone),
                 address: cleanText(value.address),
                 note: cleanText(value.note),
+                groupId: cleanText(value.groupId || value.teamId),
+            };
+        }
+
+        function normalizeHomeroomGroup(value, fallbackIndex = 0, studentIds = new Set()) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const id = cleanText(value.id) || `cn-to-${Date.now()}-${fallbackIndex}-${Math.random().toString(36).slice(2, 8)}`;
+            const name = cleanText(value.name) || `Tổ ${fallbackIndex + 1}`;
+            const leaderIdRaw = cleanText(value.leaderId);
+            const deputyIdRaw = cleanText(value.deputyId);
+            return {
+                id,
+                name,
+                leaderId: studentIds.has(leaderIdRaw) ? leaderIdRaw : '',
+                deputyId: studentIds.has(deputyIdRaw) ? deputyIdRaw : '',
+            };
+        }
+
+        function normalizeHomeroomClassOfficers(value, studentIds = new Set()) {
+            const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            const result = {};
+            HOMEROOM_CLASS_OFFICER_ROLES.forEach(roleId => {
+                const studentId = cleanText(source[roleId]);
+                result[roleId] = studentIds.has(studentId) ? studentId : '';
+            });
+            return result;
+        }
+
+        function normalizeHomeroomCustomOfficer(value, fallbackIndex = 0, studentIds = new Set()) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const label = cleanText(value.label);
+            if (!label) return null;
+            const studentId = cleanText(value.studentId);
+            return {
+                id: cleanText(value.id) || `cn-cv-${Date.now()}-${fallbackIndex}-${Math.random().toString(36).slice(2, 8)}`,
+                label,
+                studentId: studentIds.has(studentId) ? studentId : '',
             };
         }
 
@@ -1106,6 +1147,7 @@
                 repeatMultiplier: Number.isFinite(repeatMultiplierRaw) ? Math.min(2, Math.max(1, repeatMultiplierRaw)) : 1,
                 seriousFlag: Boolean(value.seriousFlag) || severity === 'critical',
                 resolved: Boolean(value.resolved),
+                resolvedAt: Boolean(value.resolved) ? cleanText(value.resolvedAt) : '',
                 createdAt: cleanText(value.createdAt),
             };
         }
@@ -1118,11 +1160,23 @@
                 ? value.students.map((student, index) => normalizeHomeroomStudent(student, index)).filter(Boolean)
                 : [];
             const studentIds = new Set(students.map(student => student.id));
+            const groups = Array.isArray(value.groups)
+                ? value.groups.map((group, index) => normalizeHomeroomGroup(group, index, studentIds)).filter(Boolean)
+                : [];
+            const groupIds = new Set(groups.map(group => group.id));
+            students.forEach(student => { student.groupId = groupIds.has(student.groupId) ? student.groupId : ''; });
+            groups.forEach(group => {
+                if (group.leaderId && students.find(student => student.id === group.leaderId)?.groupId !== group.id) group.leaderId = '';
+                if (group.deputyId && students.find(student => student.id === group.deputyId)?.groupId !== group.id) group.deputyId = '';
+            });
             const entries = Array.isArray(value.entries)
                 ? value.entries.map((entry, index) => normalizeHomeroomEntry(entry, index)).filter(Boolean).map(entry => ({
                     ...entry,
                     studentId: entry.studentId && studentIds.has(entry.studentId) ? entry.studentId : '',
                 }))
+                : [];
+            const customOfficers = Array.isArray(value.customOfficers)
+                ? value.customOfficers.map((item, index) => normalizeHomeroomCustomOfficer(item, index, studentIds)).filter(Boolean)
                 : [];
             return {
                 id: cleanText(value.id) || cleanText(fallbackId) || `cn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -1130,6 +1184,9 @@
                 homeroomTeacher: cleanText(value.homeroomTeacher),
                 students,
                 entries,
+                groups,
+                classOfficers: normalizeHomeroomClassOfficers(value.classOfficers, studentIds),
+                customOfficers,
                 monitoringThresholds: normalizeHomeroomMonitoringThresholds(value.monitoringThresholds),
                 updatedAt: cleanText(value.updatedAt),
             };
@@ -1147,7 +1204,7 @@
             const activeBook = books[selectedBookId] || null;
             const selectedStudentId = cleanText(source.selectedStudentId);
             return {
-                version: 2,
+                version: 4,
                 books,
                 selectedBookId: activeBook ? selectedBookId : '',
                 selectedClassName: cleanText(source.selectedClassName),

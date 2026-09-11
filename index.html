@@ -39,6 +39,7 @@
     <link rel="stylesheet" href="assets/css/homeroom-v52-2.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v52-3.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v52-4.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-v53-1.css" />
     <link rel="stylesheet" href="assets/css/release-v52.css" />
     <link rel="stylesheet" href="assets/css/timetable-v52-1.css" />
     <link rel="stylesheet" href="assets/css/release-v52-5.css" />
@@ -1015,8 +1016,8 @@
             <div class="card homeroom-shell" id="homeroomCard">
                 <div class="card-header homeroom-header">
                     <div>
-                        <h2>🏫 Sổ chủ nhiệm <small>hồ sơ · chuyên cần · nề nếp · phụ huynh</small></h2>
-                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, chuyên cần, nề nếp, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
+                        <h2>🏫 Sổ chủ nhiệm <small>hồ sơ · cơ cấu lớp · chuyên cần · nề nếp · phụ huynh</small></h2>
+                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, tổ học sinh, ban cán sự, chuyên cần, nề nếp, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
                     </div>
                     <div class="homeroom-private-badge" title="Sổ chủ nhiệm được lưu trong vùng dữ liệu cá nhân của giáo viên, không đưa vào Kế hoạch trường dùng chung.">🔐 Cá nhân</div>
                 </div>
@@ -1091,6 +1092,32 @@
                     <button class="btn btn-success btn-sm" id="homeroomExportExcelBtn" type="button">📊 Xuất Excel</button>
                     <button class="btn btn-outline btn-sm" id="homeroomClearBookBtn" type="button" style="color:#b91c1c;border-color:#fca5a5;">🗑️ Xóa sổ</button>
                 </div>
+
+                <section class="homeroom-organization" id="homeroomOrganizationSection" aria-label="Cơ cấu lớp và ban cán sự">
+                    <div class="homeroom-organization-head">
+                        <div>
+                            <h3>🧭 Cơ cấu lớp &amp; ban cán sự</h3>
+                            <small>Xếp học sinh theo tổ, chọn tổ trưởng/tổ phó và phân công cán bộ lớp. Một học sinh có thể giữ nhiều chức vụ.</small>
+                        </div>
+                        <div class="homeroom-organization-actions">
+                            <button class="btn btn-outline btn-sm" id="homeroomCreateFourGroupsBtn" type="button">🧩 Tạo nhanh 4 tổ</button>
+                            <button class="btn btn-outline btn-sm" id="homeroomAddGroupBtn" type="button">＋ Thêm tổ</button>
+                            <button class="btn btn-primary btn-sm" id="homeroomAutoAssignGroupsBtn" type="button">⚡ Chia đều HS chưa xếp</button>
+                        </div>
+                    </div>
+                    <div class="homeroom-org-summary" id="homeroomOrganizationSummary">Chưa mở sổ chủ nhiệm.</div>
+                    <div class="homeroom-officer-panel">
+                        <div class="homeroom-subsection-title"><strong>🎓 Ban cán sự lớp</strong><span>Mỗi chức vụ chọn một học sinh; cùng một học sinh có thể đảm nhiệm nhiều chức vụ.</span></div>
+                        <div class="homeroom-officer-grid" id="homeroomOfficerGrid"></div>
+                        <div class="homeroom-custom-officer-compose">
+                            <input id="homeroomCustomOfficerLabel" type="text" placeholder="Chức vụ khác, ví dụ: Trưởng ban truyền thông" />
+                            <select id="homeroomCustomOfficerStudent"><option value="">— Chọn học sinh —</option></select>
+                            <button class="btn btn-outline btn-sm" id="homeroomAddCustomOfficerBtn" type="button">＋ Thêm chức vụ</button>
+                        </div>
+                        <div class="homeroom-custom-officer-list" id="homeroomCustomOfficerList"></div>
+                    </div>
+                    <div class="homeroom-group-grid" id="homeroomGroupGrid"><div class="homeroom-mini-empty">Chưa có tổ. Nhấn “Tạo nhanh 4 tổ” hoặc “Thêm tổ”.</div></div>
+                </section>
 
                 <section class="homeroom-paste-panel" id="homeroomPastePanel" hidden aria-label="Dán danh sách học sinh chủ nhiệm">
                     <div class="homeroom-paste-head">

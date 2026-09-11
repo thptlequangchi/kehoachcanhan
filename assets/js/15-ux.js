@@ -106,6 +106,22 @@
             if (weekStatus && !weekStatus.hasTimetable) issues.push('chưa có TKB tuần');
             if (weekStatus?.stale) { issues.push('lịch báo giảng cần tạo lại'); level = 'danger'; }
             if (overdue) { issues.push(`${overdue} việc quá hạn`); if (level !== 'danger') level = 'warning'; }
+            try {
+                const homeroomBook = typeof homeroomActiveBook === 'function' ? homeroomActiveBook() : null;
+                if (homeroomBook && typeof homeroomSummarizeBook === 'function') {
+                    const homeroomSemester = typeof homeroomGetSelectedSemester === 'function' ? homeroomGetSelectedSemester() : '1';
+                    const homeroomSummary = homeroomSummarizeBook(homeroomBook, homeroomSemester);
+                    if (homeroomSummary.criticalStudents > 0) {
+                        issues.push(`${homeroomSummary.criticalStudents} HS có vi phạm nghiêm trọng chưa xử lý`);
+                        level = 'danger';
+                    } else if (homeroomSummary.decliningStudents > 0) {
+                        issues.push(`${homeroomSummary.decliningStudents} HS có xu hướng rèn luyện giảm`);
+                        if (level !== 'danger') level = 'warning';
+                    }
+                }
+            } catch (error) {
+                console.warn('Không thể đưa cảnh báo Sổ chủ nhiệm lên Tổng quan:', error);
+            }
             if (issues.length && level === 'ok') level = 'warning';
             alert.className = 'overview-alert' + (level === 'warning' ? ' warning' : level === 'danger' ? ' danger' : '');
             alertIcon.textContent = issues.length ? (level === 'danger' ? '!' : '⚠') : '✓';
