@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.2
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -1259,6 +1259,7 @@
             homeroomRenderStudentLog(book);
             homeroomRenderClassJournal(book);
             homeroomRenderControls(book);
+            if (typeof homeroomRenderCompetitionBoard === 'function') homeroomRenderCompetitionBoard(book);
         }
 
         function homeroomOpenOrCreateBook() {
@@ -1788,6 +1789,12 @@
                     'Xử lý': homeroomSchoolRuleEffectLabel(rule),
                     'Ghi chú': rule.note || '',
                 }))), 'Quy chế nề nếp 26-27');
+                if (typeof homeroomCompetitionExportRows === 'function') {
+                    const competitionExport = homeroomCompetitionExportRows(book);
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(competitionExport.weekRows), 'Thi đua tuần');
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(competitionExport.monthRows), 'Thi đua tháng');
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(competitionExport.summaryRows), 'Thi đua HK & năm');
+                }
                 XLSX.writeFile(wb, `so-chu-nhiem-${homeroomSafeFilePart(book.className)}-${homeroomSafeFilePart(state.selectedAcademicYear)}.xlsx`);
                 showToast('✅ Đã xuất Sổ chủ nhiệm ra Excel', 'success');
             } catch (error) {
@@ -1921,5 +1928,6 @@
             if (homeroomById('homeroomClassLogDate')) homeroomById('homeroomClassLogDate').value = date;
             if (homeroomById('homeroomClassConductDate')) homeroomById('homeroomClassConductDate').value = date;
             homeroomUpdateClassRulePreview();
+            if (typeof initHomeroomCompetitionV533 === 'function') initHomeroomCompetitionV533();
             renderHomeroom();
         }

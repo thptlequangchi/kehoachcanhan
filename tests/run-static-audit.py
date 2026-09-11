@@ -187,6 +187,18 @@ if "discipline:'weak'" not in js or "special:'phone'" not in js:
 if release_manifest.get('features',{}).get('homeroomConductRegulation2026') is not True:
     die('v53.2 release manifest regulation feature missing')
 print('PASS: v53.2 regulation catalog + conduct assessment + class conduct tracking wired')
+if 'assets/css/homeroom-v53-3.css' not in p.refs: die('v53.3 competition stylesheet missing')
+if 'assets/js/36-homeroom-competition-v53-3.js' not in p.scripts: die('v53.3 competition module missing')
+if p.scripts.index('assets/js/36-homeroom-competition-v53-3.js') >= p.scripts.index('assets/js/15-init.js'): die('v53.3 competition module must load before init')
+for required in {'homeroomCompetitionSection','homeroomCompetitionWeekForm','homeroomCompetitionMonthForm','homeroomCompetitionMonthTable','homeroomCompetitionSummary'}:
+    if required not in ids: die(f'v53.3 competition control missing: {required}')
+if 'function homeroomCompetitionWeekMetrics' not in js or 'function homeroomCompetitionMonthMetrics' not in js or 'function homeroomCompetitionYearMetrics' not in js:
+    die('v53.3 competition calculation helpers missing')
+if 'competition: normalizeHomeroomCompetition(value.competition)' not in state:
+    die('v53.3 competition data is not persisted in homeroom book')
+if release_manifest.get('features',{}).get('homeroomCompetitionBoard') is not True:
+    die('v53.3 release manifest competition feature missing')
+print('PASS: v53.3 weekly/monthly/year competition board + persistence wired')
 print(f'PASS: centralized data-change listeners {listener_count}')
 print(f'PASS: centralized minute heartbeat {minute_timer_count}')
 print('PASS: PPCT uses unified suggestion engine')

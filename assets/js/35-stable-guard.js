@@ -1,10 +1,10 @@
 /* ============================================================================
-   SỔ TAY GIÁO VIÊN v53.2 STABLE — SAFE BOOT GUARD
+   SỔ TAY GIÁO VIÊN v53.3 STABLE — SAFE BOOT GUARD
    Nếu cùng một tab khởi động lỗi lặp lại, phiên kế tiếp giảm tải module phụ tự động.
    Không thay đổi dữ liệu nghiệp vụ và không gửi telemetry ra ngoài.
    ============================================================================ */
 (() => {
-    const STABLE_VERSION = '53.2.0';
+    const STABLE_VERSION = '53.3.0';
     const BOOT_KEY = 'teacher_stable_boot_guard_v1';
     const SAFE_QUERY = new URLSearchParams(location.search).get('safe') === '1';
     const startedAt = Date.now();

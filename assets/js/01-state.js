@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.2.0';
+        const APP_VERSION = '53.3.0';
         const DATA_SCHEMA_VERSION = 4;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -1115,6 +1115,70 @@
             };
         }
 
+        function normalizeHomeroomCompetitionWeek(value, weekNumber = 0) {
+            const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            const numberOrNull = raw => {
+                if (raw === '' || raw === null || raw === undefined) return null;
+                const parsed = Number(raw);
+                return Number.isFinite(parsed) ? Math.round(parsed * 2) / 2 : null;
+            };
+            const week = Number.parseInt(source.week ?? weekNumber, 10);
+            return {
+                week: Number.isFinite(week) && week >= 1 && week <= 37 ? week : Math.max(1, Math.min(37, Number.parseInt(weekNumber, 10) || 1)),
+                redFlagBase: numberOrNull(source.redFlagBase),
+                applyAutoConduct: source.applyAutoConduct !== false,
+                supervisorAdjustment: numberOrNull(source.supervisorAdjustment),
+                sdbScore: numberOrNull(source.sdbScore),
+                note: cleanText(source.note),
+                updatedAt: cleanText(source.updatedAt),
+            };
+        }
+
+        function normalizeHomeroomCompetitionMonth(value, monthKey = '') {
+            const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            const numberOrNull = raw => {
+                if (raw === '' || raw === null || raw === undefined) return null;
+                const parsed = Number(raw);
+                return Number.isFinite(parsed) ? Math.round(parsed * 2) / 2 : null;
+            };
+            const key = /^\d{4}-\d{2}$/.test(cleanText(source.monthKey || monthKey)) ? cleanText(source.monthKey || monthKey) : '';
+            return {
+                monthKey: key,
+                applyAutoMonthly: source.applyAutoMonthly !== false,
+                manualBonusPenalty: numberOrNull(source.manualBonusPenalty),
+                flowerMid: numberOrNull(source.flowerMid),
+                flowerEnd: numberOrNull(source.flowerEnd),
+                flowerScore: numberOrNull(source.flowerScore),
+                facilityAdjustment: numberOrNull(source.facilityAdjustment),
+                laborAdjustment: numberOrNull(source.laborAdjustment),
+                note: cleanText(source.note),
+                updatedAt: cleanText(source.updatedAt),
+            };
+        }
+
+        function normalizeHomeroomCompetition(value) {
+            const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            const rawWeeks = source.weeks && typeof source.weeks === 'object' && !Array.isArray(source.weeks) ? source.weeks : {};
+            const rawMonths = source.months && typeof source.months === 'object' && !Array.isArray(source.months) ? source.months : {};
+            const weeks = {};
+            Object.entries(rawWeeks).forEach(([key, item]) => {
+                const week = Number.parseInt(key, 10);
+                if (!(week >= 1 && week <= 37)) return;
+                weeks[String(week)] = normalizeHomeroomCompetitionWeek(item, week);
+            });
+            const months = {};
+            Object.entries(rawMonths).forEach(([key, item]) => {
+                if (!/^\d{4}-\d{2}$/.test(key)) return;
+                const normalized = normalizeHomeroomCompetitionMonth(item, key);
+                if (normalized.monthKey) months[key] = normalized;
+            });
+            return {
+                version: 1,
+                weeks,
+                months,
+            };
+        }
+
         function normalizeHomeroomEntry(value, fallbackIndex = 0) {
             if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
             const rawType = cleanText(value.type);
@@ -1193,6 +1257,7 @@
                 classOfficers: normalizeHomeroomClassOfficers(value.classOfficers, studentIds),
                 customOfficers,
                 monitoringThresholds: normalizeHomeroomMonitoringThresholds(value.monitoringThresholds),
+                competition: normalizeHomeroomCompetition(value.competition),
                 updatedAt: cleanText(value.updatedAt),
             };
         }
@@ -1209,7 +1274,7 @@
             const activeBook = books[selectedBookId] || null;
             const selectedStudentId = cleanText(source.selectedStudentId);
             return {
-                version: 5,
+                version: 6,
                 books,
                 selectedBookId: activeBook ? selectedBookId : '',
                 selectedClassName: cleanText(source.selectedClassName),

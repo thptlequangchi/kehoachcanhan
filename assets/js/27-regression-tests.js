@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '53.2.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '53.3.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];

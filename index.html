@@ -41,6 +41,7 @@
     <link rel="stylesheet" href="assets/css/homeroom-v52-4.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v53-1.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v53-2.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-v53-3.css" />
     <link rel="stylesheet" href="assets/css/release-v52.css" />
     <link rel="stylesheet" href="assets/css/timetable-v52-1.css" />
     <link rel="stylesheet" href="assets/css/release-v52-5.css" />
@@ -1017,8 +1018,8 @@
             <div class="card homeroom-shell" id="homeroomCard">
                 <div class="card-header homeroom-header">
                     <div>
-                        <h2>🏫 Sổ chủ nhiệm <small>hồ sơ · cơ cấu lớp · quy chế nề nếp · phụ huynh</small></h2>
-                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, tổ học sinh, ban cán sự, chuyên cần, quy chế nề nếp 2026–2027, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
+                        <h2>🏫 Sổ chủ nhiệm <small>hồ sơ · cơ cấu lớp · nề nếp · thi đua · phụ huynh</small></h2>
+                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, tổ học sinh, ban cán sự, chuyên cần, quy chế nề nếp 2026–2027, bảng thi đua tuần–tháng–năm, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
                     </div>
                     <div class="homeroom-private-badge" title="Sổ chủ nhiệm được lưu trong vùng dữ liệu cá nhân của giáo viên, không đưa vào Kế hoạch trường dùng chung.">🔐 Cá nhân</div>
                 </div>
@@ -1093,6 +1094,63 @@
                     <div class="homeroom-rules-note">Điểm trừ/thưởng được nhập theo đúng mức trong <strong>bản dự thảo</strong> và <strong>không tự nhân hệ số tái phạm</strong>. Về xếp loại: lấy Tốt làm chuẩn; 2–4 lỗi gợi ý Khá, 5–6 lỗi gợi ý Trung bình, trên 6 lỗi gợi ý Yếu; các lỗi có quy định “hạ 1 bậc” hoặc “hạnh kiểm yếu” được xử lý riêng.</div>
                     <div class="homeroom-rules-table-wrap" id="homeroomRulesTable"></div>
                 </details>
+
+                <section class="homeroom-competition" id="homeroomCompetitionSection" aria-label="Bảng thi đua tuần tháng học kỳ và năm học">
+                    <div class="homeroom-competition-head">
+                        <div>
+                            <h3>🏆 Bảng thi đua lớp · tuần → tháng → năm học</h3>
+                            <small>Tự lấy điểm trừ/thưởng đã ghi trong Sổ chủ nhiệm, kết hợp điểm cờ đỏ, tổ giám thị, Sổ đầu bài, chăm sóc bồn hoa và các điều chỉnh CSVC/lao động.</small>
+                        </div>
+                        <span class="homeroom-competition-formula-badge">v53.3 · TỰ ĐỘNG TỔNG HỢP</span>
+                    </div>
+                    <div class="homeroom-competition-note"><strong>Nguyên tắc:</strong> Tuần = Điểm cờ đỏ + điểm trừ/tác động của tổ giám thị + Điểm SĐB. Tháng = TB các tuần + thưởng/phạt tháng + chăm sóc bồn hoa. Tuần nằm giữa 2 tháng được tính vào tháng sau. Điểm năm = TB các tháng + điểm trừ CSVC + lao động. Phần <strong>Học kỳ</strong> chỉ là TB tuần tham khảo vì dự thảo chưa nêu công thức thi đua học kỳ riêng.</div>
+
+                    <div class="homeroom-competition-summary" id="homeroomCompetitionSummary">
+                        <div class="homeroom-mini-empty">Mở Sổ chủ nhiệm để xem tổng hợp thi đua.</div>
+                    </div>
+
+                    <div class="homeroom-competition-grid">
+                        <article class="homeroom-competition-card">
+                            <div class="homeroom-competition-card-head"><strong>📅 Điểm thi đua tuần</strong><button class="btn btn-outline btn-sm" id="homeroomCompetitionCurrentWeekBtn" type="button">Tuần hiện tại</button></div>
+                            <form class="homeroom-competition-form" id="homeroomCompetitionWeekForm">
+                                <label class="full"><span>Tuần</span><select id="homeroomCompetitionWeekSelect"></select></label>
+                                <div class="homeroom-competition-range full" id="homeroomCompetitionWeekRange">Chưa xác định khoảng ngày.</div>
+                                <label><span>Điểm cờ đỏ gốc</span><input id="homeroomCompetitionRedFlagBase" type="number" step="0.5" placeholder="Ví dụ: 100" /><small class="homeroom-competition-field-help">Nhập điểm nền/điểm cờ đỏ trước các ghi nhận tự động.</small></label>
+                                <label><span>Điểm tổ giám thị</span><input id="homeroomCompetitionSupervisor" type="number" step="0.5" placeholder="0 hoặc số âm" /><small class="homeroom-competition-field-help">Nhập đúng phần cộng/trừ do tổ giám thị cung cấp.</small></label>
+                                <label><span>Điểm Sổ đầu bài (SĐB)</span><input id="homeroomCompetitionSdb" type="number" step="0.5" placeholder="Điểm SĐB tuần" /></label>
+                                <label class="homeroom-competition-check"><input id="homeroomCompetitionApplyAutoConduct" type="checkbox" checked /><span>Cộng tự động điểm nề nếp từ nhật ký Sổ chủ nhiệm vào điểm cờ đỏ</span></label>
+                                <div class="homeroom-competition-week-kpis full">
+                                    <div id="homeroomCompetitionWeekAuto"><strong>0</strong><small>Điểm tự động</small></div>
+                                    <div id="homeroomCompetitionWeekRedFlagFinal"><strong>0</strong><small>Điểm cờ đỏ dùng tính</small></div>
+                                    <div id="homeroomCompetitionWeekTotal"><strong>0</strong><small>Điểm thi đua tuần</small></div>
+                                </div>
+                                <label class="full"><span>Ghi chú tuần</span><textarea id="homeroomCompetitionWeekNote" placeholder="Ví dụ: Đã đối chiếu cờ đỏ/SĐB cuối tuần..."></textarea></label>
+                                <div class="homeroom-competition-actions"><button class="btn btn-primary btn-sm" type="submit">💾 Lưu tuần</button><button class="btn btn-outline btn-sm" id="homeroomCompetitionDeleteWeekBtn" type="button">Xóa dữ liệu nhập tay tuần</button></div>
+                            </form>
+                        </article>
+
+                        <article class="homeroom-competition-card">
+                            <div class="homeroom-competition-card-head"><strong>🗓️ Điểm thi đua tháng</strong><small>Tự gom các tuần theo tháng sau</small></div>
+                            <form class="homeroom-competition-form" id="homeroomCompetitionMonthForm">
+                                <label class="full"><span>Tháng</span><select id="homeroomCompetitionMonthSelect"></select></label>
+                                <label class="homeroom-competition-check"><input id="homeroomCompetitionApplyAutoMonthly" type="checkbox" checked /><span>Cộng tự động thưởng/phạt có tính chất tháng từ nhật ký Sổ chủ nhiệm</span></label>
+                                <label><span>Thưởng/phạt tháng nhập tay</span><input id="homeroomCompetitionMonthManual" type="number" step="0.5" placeholder="0" /></label>
+                                <label><span>Bồn hoa giữa tháng</span><input id="homeroomCompetitionFlowerMid" type="number" step="0.5" min="0" max="100" placeholder="0–100" /></label>
+                                <label><span>Bồn hoa cuối tháng</span><input id="homeroomCompetitionFlowerEnd" type="number" step="0.5" min="0" max="100" placeholder="0–100" /></label>
+                                <label><span>Điểm bồn hoa dùng tính tháng</span><input id="homeroomCompetitionFlowerScore" type="number" step="0.5" min="0" max="100" placeholder="Để trống = TB các lần chấm" /><small class="homeroom-competition-field-help">Dự thảo nêu chấm 2 lần nhưng không nêu cách gộp; để trống hệ thống dùng trung bình như quy ước kỹ thuật.</small></label>
+                                <div class="homeroom-competition-actions"><button class="btn btn-outline btn-sm" id="homeroomCompetitionFlowerAverageBtn" type="button">Dùng TB bồn hoa</button></div>
+                                <label><span>Điểm trừ CSVC</span><input id="homeroomCompetitionFacility" type="number" step="0.5" max="0" placeholder="0 hoặc số âm" /><small class="homeroom-competition-field-help">Dùng khi tính điểm năm.</small></label>
+                                <label><span>Điểm trừ lao động</span><input id="homeroomCompetitionLabor" type="number" step="0.5" max="0" placeholder="0 hoặc số âm" /><small class="homeroom-competition-field-help">Dùng khi tính điểm năm.</small></label>
+                                <label class="full"><span>Ghi chú tháng</span><textarea id="homeroomCompetitionMonthNote" placeholder="Ví dụ: Đã đối chiếu điểm Đoàn trường ngày..."></textarea></label>
+                                <div class="homeroom-competition-month-preview" id="homeroomCompetitionMonthPreview"></div>
+                                <div class="homeroom-competition-actions"><button class="btn btn-primary btn-sm" type="submit">💾 Lưu tháng</button><button class="btn btn-outline btn-sm" id="homeroomCompetitionDeleteMonthBtn" type="button">Xóa dữ liệu nhập tay tháng</button></div>
+                            </form>
+                        </article>
+                    </div>
+
+                    <div class="homeroom-competition-table-wrap" id="homeroomCompetitionMonthTable"><div class="homeroom-mini-empty">Chưa có dữ liệu tháng.</div></div>
+                    <div class="homeroom-competition-source"><b>Chống cộng trùng:</b> các khen thưởng được quy chế nêu là cộng vào điểm tháng và lỗi “không tham gia cuộc thi/cuộc phát động” được tách sang lớp điểm tháng; các lỗi nề nếp còn lại được tổng hợp ở tuần. Có thể tắt tự động ở từng tuần/tháng nếu nhà trường đã cung cấp điểm cờ đỏ hoặc điểm tổng kết cuối cùng.</div>
+                </section>
 
                 <div class="homeroom-actions">
                     <button class="btn btn-success btn-sm" id="homeroomAddStudentBtn" type="button">＋ Học sinh</button>
@@ -1872,6 +1930,7 @@
     <script src="assets/js/26-reminder-calendar.js"></script>
     <script src="assets/js/28-gradebook.js"></script>
     <script src="assets/js/29-homeroom.js"></script>
+    <script src="assets/js/36-homeroom-competition-v53-3.js"></script>
     <script src="assets/js/20-pwa.js"></script>
     <script src="assets/js/23-global-command.js"></script>
     <script src="assets/js/31-release-shell.js"></script>

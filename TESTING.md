@@ -1,19 +1,26 @@
-# TESTING — v53.2.0 STABLE
+# TESTING — v53.3.0 STABLE
 
-Bộ kiểm thử phát hành gồm:
-1. `python tests/run-static-audit.py` — ID/DOM/resource/Service Worker/version/module wiring/JS syntax.
-2. `node tests/run-state-fixtures.js` — normalization, gradebook, homeroom, cơ cấu lớp, quy chế nề nếp, PPCT, 39 tuần, forecast.
-3. `node tests/run-session-ppct-fixtures.js` — PPCT sáng/chiều độc lập và nối tiết riêng.
-4. `tests/browser-smoke.html` — kiểm thử trực tiếp trên trình duyệt sau triển khai.
+## Lệnh kiểm tra
+```bash
+python tests/run-static-audit.py
+node tests/run-state-fixtures.js
+node tests/run-session-ppct-fixtures.js
+```
 
-Các invariant v53.2:
-- APP_VERSION state = Service Worker = release manifest = `53.2.0`.
-- Danh mục quy chế có 48 lỗi chính và nhóm khen thưởng.
-- Vi phạm thuộc quy chế dùng mức điểm cố định, không tự nhân hệ số tái phạm legacy.
-- Gợi ý xếp loại xử lý được ngưỡng số lỗi, hạ 1 bậc, lần 2 điện thoại và lỗi trực tiếp mức Yếu.
-- Nhật ký nề nếp lớp được lưu trong workspace Sổ chủ nhiệm và tham gia tổng hợp điểm thi đua.
-- Dữ liệu v53.1 về tổ/ban cán sự vẫn normalize và hoạt động bình thường.
-- Lazy modules không chặn luồng khởi động.
-- Safety snapshots: 12 giờ, giữ tối đa 5.
-- Offline sync outbox không xóa trước khi sync hoàn tất.
-- Safe Boot Guard chạy trước các internal script khác.
+## Invariant v53.3
+- APP_VERSION state = Service Worker = release manifest = `53.3.0`.
+- Toàn bộ HTML ID duy nhất; tài nguyên HTML và APP_SHELL tồn tại.
+- Tất cả JavaScript qua `node --check`.
+- Dữ liệu v53.2 được normalize sang cấu trúc có `book.competition` mà không phá dữ liệu cũ.
+- Công thức tuần tách các khoản tháng để hạn chế cộng trùng.
+- Tuần nằm giữa 2 tháng được tính vào tháng sau.
+- Điểm tháng chỉ tính khi có ít nhất một tuần đã lưu và hiển thị rõ số tuần còn thiếu.
+- Điểm học kỳ chỉ là tổng hợp tham khảo.
+- Điểm năm dùng TB tháng + CSVC + lao động.
+
+## Fixture v53.3
+- `homeroom competition persistence v53.3`
+- `homeroom competition weekly formula v53.3`
+- `homeroom competition month rollover v53.3`
+- `homeroom competition monthly formula v53.3`
+- `homeroom competition yearly formula v53.3`
