@@ -1,6 +1,6 @@
 # Stable Release Checklist — v53.3
 
-- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.0.
+- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.1.
 - [x] Giữ nguyên dữ liệu và chức năng v53.2.
 - [x] Module bảng thi đua v53.3 tải trước `15-init.js`.
 - [x] Service Worker cache CSS/JS v53.3.

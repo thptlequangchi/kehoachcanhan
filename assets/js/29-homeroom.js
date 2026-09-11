@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.1 (auto-sync hotfix)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -291,6 +291,22 @@
             return Boolean(rule && HOMEROOM_ALL_SCHOOL_RULES.some(item => item.id === rule.id));
         }
 
+        function homeroomEntryRule(entry) {
+            return homeroomRuleById(entry?.ruleId);
+        }
+
+        function homeroomEntryIsRegulationViolation(entry) {
+            const rule = homeroomEntryRule(entry);
+            return Boolean(entry?.studentId && rule?.scope === 'student' && homeroomIsSchoolRule(rule)
+                && rule.type !== 'commendation' && (homeroomClampPoints(entry?.points) < 0 || rule.discipline));
+        }
+
+        function homeroomEntryNeedsResolution(entry) {
+            if (!entry?.studentId) return false;
+            if (homeroomEntryIsRegulationViolation(entry)) return true;
+            return ['absence_unexcused','violation','support'].includes(entry.type);
+        }
+
         function homeroomSchoolRuleEffectLabel(rule) {
             if (!rule) return '';
             if (rule.discipline === 'weak') return 'Hạnh kiểm yếu';
@@ -307,7 +323,7 @@
             const entries = (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester));
             const regulationEntries = entries.map(entry => ({ entry, rule:homeroomRuleById(entry.ruleId) }))
                 .filter(item => item.rule?.scope === 'student' && homeroomIsSchoolRule(item.rule));
-            const violationItems = regulationEntries.filter(item => item.rule.type !== 'commendation' && (item.rule.points < 0 || item.rule.discipline));
+            const violationItems = regulationEntries.filter(item => item.rule.type !== 'commendation' && (homeroomClampPoints(item.entry.points) < 0 || item.rule.discipline));
             const violationCount = violationItems.length;
             const phoneCount = violationItems.filter(item => item.rule.special === 'phone').length;
             const lowerOneCount = violationItems.filter(item => item.rule.discipline === 'lower1').length;
@@ -321,7 +337,14 @@
             const totalRegulationPoints = Math.round(regulationEntries.reduce((sum, item) => sum + homeroomClampPoints(item.entry.points), 0) * 2) / 2;
             const rewardPoints = Math.round(regulationEntries.filter(item => item.rule.type === 'commendation').reduce((sum,item)=>sum+Math.max(0,homeroomClampPoints(item.entry.points)),0)*2)/2;
             const deductionPoints = Math.round(regulationEntries.filter(item => item.rule.type !== 'commendation').reduce((sum,item)=>sum+Math.min(0,homeroomClampPoints(item.entry.points)),0)*2)/2;
-            return { baseline, suggested, violationCount, phoneCount, lowerOneCount, directWeakCount:directWeak.length, reasons:[...new Set(reasons)], totalRegulationPoints, rewardPoints, deductionPoints, regulationEntryCount:regulationEntries.length };
+            const unresolvedViolationCount = violationItems.filter(item => !item.entry.resolved).length;
+            const lastViolation = [...violationItems].sort((a,b) => String(b.entry.date || '').localeCompare(String(a.entry.date || '')) || String(b.entry.createdAt || '').localeCompare(String(a.entry.createdAt || '')))[0] || null;
+            return {
+                baseline, suggested, violationCount, phoneCount, lowerOneCount, directWeakCount:directWeak.length,
+                reasons:[...new Set(reasons)], totalRegulationPoints, rewardPoints, deductionPoints,
+                regulationEntryCount:regulationEntries.length, unresolvedViolationCount,
+                lastViolationDate:lastViolation?.entry?.date || '', lastViolationLabel:lastViolation?.rule?.label || ''
+            };
         }
 
         function homeroomClassConductMetrics(book, semester = homeroomGetSelectedSemester()) {
@@ -484,7 +507,7 @@
             const absenceUnexcused = count('absence_unexcused');
             const late = count('late');
             const violation = count('violation');
-            const unresolved = entries.filter(entry => ['absence_unexcused', 'violation', 'support'].includes(entry.type) && !entry.resolved).length;
+            const unresolved = entries.filter(entry => homeroomEntryNeedsResolution(entry) && !entry.resolved).length;
             const lastEntry = [...entries].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')))[0] || null;
             const weekEntries = entries.filter(entry => homeroomEntryInWeek(entry, homeroomWeekAnchorDate || homeroomTodayISO()));
             const weekPoints = Math.round(weekEntries.reduce((sum, entry) => sum + homeroomClampPoints(entry.points), 0) * 2) / 2;
@@ -497,12 +520,14 @@
             const maxSeverity = seriousEntries.length ? 'critical' : (heavyEntries.length ? 'heavy' : (violation ? 'medium' : 'neutral'));
             const trend = homeroomStudentTrend(book, studentId, semester);
             const conduct = homeroomConductAssessment(book, studentId, semester);
+            const disciplineFaults = conduct.violationCount;
             return {
                 absenceExcused,
                 absenceUnexcused,
                 absenceTotal: absenceExcused + absenceUnexcused,
                 late,
                 violation,
+                disciplineFaults,
                 unresolved,
                 totalEntries: entries.length,
                 lastEntryDate: lastEntry?.date || '',
@@ -536,9 +561,16 @@
                 alerts.push(`Đi muộn ${metrics.late}/${thresholds.late}`);
                 groups.add('late');
             }
-            if (metrics.violation >= thresholds.violation) {
-                alerts.push(`Vi phạm ${metrics.violation}/${thresholds.violation}`);
+            const regulationFaultCount = metrics.conduct?.violationCount || 0;
+            if (regulationFaultCount >= thresholds.violation) {
+                alerts.push(`Lỗi nề nếp ${regulationFaultCount}/${thresholds.violation}`);
                 groups.add('violation');
+            } else if (regulationFaultCount > 0) {
+                alerts.push(`Lỗi nề nếp HK ${regulationFaultCount}`);
+                groups.add('conductFault');
+            }
+            if ((metrics.conduct?.unresolvedViolationCount || 0) > 0) {
+                alerts.push(`Chưa xử lý ${metrics.conduct.unresolvedViolationCount} lỗi quy chế`);
             }
             if (metrics.weekScore < 95) {
                 alerts.push(`Điểm tuần ${homeroomFormatPoints(metrics.weekScore).replace('+','')}`);
@@ -579,7 +611,7 @@
                 || Number(b.status.flagged) - Number(a.status.flagged)
                 || b.status.groupCount - a.status.groupCount
                 || a.metrics.weekScore - b.metrics.weekScore
-                || (b.metrics.absenceTotal + b.metrics.late + b.metrics.violation) - (a.metrics.absenceTotal + a.metrics.late + a.metrics.violation)
+                || (b.metrics.absenceTotal + b.metrics.late + (b.metrics.conduct?.violationCount || 0)) - (a.metrics.absenceTotal + a.metrics.late + (a.metrics.conduct?.violationCount || 0))
                 || String(a.student.name || '').localeCompare(String(b.student.name || ''), 'vi', { numeric: true, sensitivity: 'base' })
             );
         }
@@ -589,7 +621,7 @@
             const individual = entries.filter(entry => entry.studentId);
             const monitoringRows = homeroomBuildMonitoringRows(book, semester);
             const unresolvedAttentionIds = new Set(individual
-                .filter(entry => ['absence_unexcused', 'violation', 'support'].includes(entry.type) && !entry.resolved)
+                .filter(entry => homeroomEntryNeedsResolution(entry) && !entry.resolved)
                 .map(entry => entry.studentId));
             const attentionStudentIds = new Set([
                 ...unresolvedAttentionIds,
@@ -600,7 +632,7 @@
                 absenceExcused: individual.filter(entry => entry.type === 'absence_excused').length,
                 absenceUnexcused: individual.filter(entry => entry.type === 'absence_unexcused').length,
                 late: individual.filter(entry => entry.type === 'late').length,
-                violations: individual.filter(entry => entry.type === 'violation').length,
+                violations: monitoringRows.reduce((sum, row) => sum + (row.metrics.conduct?.violationCount || 0), 0),
                 commendations: individual.filter(entry => entry.type === 'commendation').length,
                 attentionStudents: attentionStudentIds.size,
                 thresholdStudents: monitoringRows.filter(row => row.status.flagged).length,
@@ -641,7 +673,7 @@
         function homeroomStudentFilterFlags(book, studentId) {
             const semester = homeroomGetSelectedSemester();
             const entries = (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester));
-            const unresolvedAttention = entries.some(entry => ['absence_unexcused','violation','support'].includes(entry.type) && !entry.resolved);
+            const unresolvedAttention = entries.some(entry => homeroomEntryNeedsResolution(entry) && !entry.resolved);
             const metrics = homeroomStudentMetrics(book, studentId, semester);
             const status = homeroomStudentMonitoringStatus(metrics, homeroomGetMonitoringThresholds(book));
             return {
@@ -655,7 +687,7 @@
                 seriousHistory: metrics.seriousHistoryCount > 0,
                 improving: metrics.trend?.direction === 'improving',
                 declining: metrics.trend?.direction === 'declining',
-                resolved: entries.some(entry => ['absence_unexcused','violation','support'].includes(entry.type) && entry.resolved),
+                resolved: entries.some(entry => homeroomEntryNeedsResolution(entry) && entry.resolved),
                 metrics,
                 status,
             };
@@ -720,7 +752,7 @@
             const metrics = members.map(student => homeroomStudentMetrics(book, student.id, semester));
             const totalAbsence = metrics.reduce((sum, item) => sum + item.absenceTotal, 0);
             const late = metrics.reduce((sum, item) => sum + item.late, 0);
-            const violation = metrics.reduce((sum, item) => sum + item.violation, 0);
+            const violation = metrics.reduce((sum, item) => sum + (item.conduct?.violationCount || 0), 0);
             const averageWeekScore = metrics.length ? Math.round((metrics.reduce((sum, item) => sum + item.weekScore, 0) / metrics.length) * 10) / 10 : 100;
             return { members, totalAbsence, late, violation, averageWeekScore };
         }
@@ -932,7 +964,7 @@
                     const compact = [
                         m.absenceTotal ? `<span title="Tổng lượt vắng">V ${m.absenceTotal}</span>` : '',
                         m.late ? `<span title="Lượt đi muộn">M ${m.late}</span>` : '',
-                        m.violation ? `<span title="Lượt vi phạm">VP ${m.violation}</span>` : '',
+                        m.conduct?.violationCount ? `<span title="Tổng lỗi nề nếp theo quy chế trong học kỳ">Lỗi ${m.conduct.violationCount}</span>` : '',
                         `<span title="Điểm rèn luyện tuần ${homeroomEscapeHtml(homeroomWeekLabel(homeroomWeekAnchorDate || homeroomTodayISO()))}">Đ ${homeroomFormatPoints(m.weekScore).replace('+','')}</span>`,
                         m.activeSeriousCount ? `<span class="critical" title="Vi phạm nghiêm trọng chưa xử lý">🚨 ${m.activeSeriousCount}</span>` : (m.resolvedSeriousCount ? `<span class="history" title="Có lịch sử vi phạm nghiêm trọng đã xử lý">✓🚨 ${m.resolvedSeriousCount}</span>` : ''),
                         m.trend?.direction === 'improving' ? '<span class="trend-up" title="Xu hướng 4 tuần tích cực">↗</span>' : (m.trend?.direction === 'declining' ? '<span class="trend-down" title="Xu hướng điểm 4 tuần giảm">↘</span>' : ''),
@@ -996,14 +1028,14 @@
             const semester = homeroomGetSelectedSemester();
             const rows = homeroomBuildMonitoringRows(book, semester);
             const flaggedRows = rows.filter(row => row.status.flagged);
-            const priorityRows = flaggedRows.filter(row => ['priority','critical'].includes(row.status.level));
+            const priorityRows = flaggedRows.filter(row => ['priority','critical'].includes(row.status.level) || (row.metrics.conduct?.violationCount || 0) > 0);
             const criticalRows = rows.filter(row => row.metrics.activeSeriousCount > 0);
             const historyRows = rows.filter(row => row.metrics.seriousHistoryCount > 0 && row.metrics.activeSeriousCount === 0);
             const trendRows = rows.filter(row => ['improving','declining'].includes(row.metrics.trend?.direction));
             const improvingRows = trendRows.filter(row => row.metrics.trend?.direction === 'improving');
             const decliningRows = trendRows.filter(row => row.metrics.trend?.direction === 'declining');
             summaryEl.innerHTML = `Tuần <strong>${homeroomEscapeHtml(homeroomWeekLabel(homeroomWeekAnchorDate || homeroomTodayISO()))}</strong> · <strong>${flaggedRows.length}</strong>/${rows.length} học sinh cần chú ý trong HK${semester}`
-                + (priorityRows.length ? ` · <strong>${priorityRows.length}</strong> em ưu tiên` : '')
+                + (priorityRows.length ? ` · <strong>${priorityRows.length}</strong> em có lỗi/ưu tiên` : '')
                 + (criticalRows.length ? ` · <strong class="homeroom-critical-text">${criticalRows.length}</strong> em có vi phạm nghiêm trọng <strong>chưa xử lý</strong>` : '')
                 + (historyRows.length ? ` · <strong>${historyRows.length}</strong> em có lịch sử nghiêm trọng đã xử lý` : '')
                 + (decliningRows.length ? ` · <strong class="homeroom-trend-down-text">${decliningRows.length}</strong> em có xu hướng giảm` : '')
@@ -1013,12 +1045,12 @@
                     : (homeroomMonitoringView === 'trends' ? trendRows : flaggedRows));
             if (!shownRows.length) {
                 const emptyText = homeroomMonitoringView === 'trends' ? 'Chưa đủ tín hiệu để xác định xu hướng tăng/giảm rõ trong 4 tuần.'
-                    : (homeroomMonitoringView === 'priority' ? 'Không có học sinh ở nhóm ưu tiên/can thiệp.' : 'Chưa có học sinh cần xử lý theo các ngưỡng hiện tại.');
+                    : (homeroomMonitoringView === 'priority' ? 'Không có học sinh phát sinh lỗi hoặc thuộc nhóm ưu tiên/can thiệp.' : 'Chưa có học sinh cần xử lý theo các ngưỡng hiện tại.');
                 tableEl.innerHTML = `<div class="homeroom-monitoring-good">✅ ${homeroomEscapeHtml(emptyText)}</div>`;
                 return;
             }
             tableEl.innerHTML = `<table class="homeroom-monitor-table"><thead><tr>
-                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Vi phạm</th><th>Điểm tuần</th><th>Xu hướng 4 tuần</th><th>Nghiêm trọng</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
+                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Lỗi nề nếp HK</th><th>Điểm quy chế</th><th>Điểm tuần</th><th>Xu hướng 4 tuần</th><th>Nghiêm trọng</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
                 </tr></thead><tbody>${shownRows.map(({ student, metrics, status }) => {
                     const alertTitle = status.alerts.length ? status.alerts.join(' · ') : 'Chưa chạm ngưỡng';
                     const trend = metrics.trend || { direction:'stable', label:'Ổn định', scores:[100,100,100,100], weeks:[] };
@@ -1029,7 +1061,8 @@
                     return `<tr class="monitor-${status.level}">
                         <td><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></td>
                         <td>${metrics.absenceExcused}</td><td>${metrics.absenceUnexcused}</td><td><strong>${metrics.absenceTotal}</strong></td>
-                        <td>${metrics.late}</td><td>${metrics.violation}</td>
+                        <td>${metrics.late}</td><td><strong>${metrics.conduct?.violationCount || 0}</strong><small>${metrics.conduct?.unresolvedViolationCount ? `Chưa xử lý ${metrics.conduct.unresolvedViolationCount}` : 'Đã đồng bộ'}</small></td>
+                        <td><strong class="${(metrics.conduct?.totalRegulationPoints || 0) < 0 ? 'points-negative' : ((metrics.conduct?.totalRegulationPoints || 0) > 0 ? 'points-positive' : '')}">${homeroomEscapeHtml(homeroomFormatPoints(metrics.conduct?.totalRegulationPoints || 0))}</strong><small>HK${semester}</small></td>
                         <td><strong class="homeroom-week-score score-${metrics.scoreBand.level}">${homeroomEscapeHtml(homeroomFormatPoints(metrics.weekScore).replace('+',''))}</strong><small>${homeroomEscapeHtml(metrics.scoreBand.label)} · ${homeroomEscapeHtml(homeroomFormatPoints(metrics.weekPoints))}</small></td>
                         <td><span class="homeroom-trend-badge trend-${homeroomEscapeHtml(trend.direction)}" title="${homeroomEscapeHtml(trendTitle)}">${trend.direction === 'improving' ? '↗' : (trend.direction === 'declining' ? '↘' : '→')} ${homeroomEscapeHtml(trend.label)}</span><small>${homeroomEscapeHtml((trend.scores || []).join(' → '))}</small></td>
                         <td>${seriousHtml}</td>
@@ -1101,11 +1134,16 @@
                 return;
             }
             const semester = homeroomGetSelectedSemester();
-            const rows = (book.students || []).map(student => ({ student, assessment:homeroomConductAssessment(book, student.id, semester) }));
+            const conductRank = { 'Yếu':4, 'Trung bình':3, 'Khá':2, 'Tốt':1 };
+            const rows = (book.students || []).map(student => ({ student, assessment:homeroomConductAssessment(book, student.id, semester) }))
+                .sort((a,b) => (conductRank[b.assessment.suggested] || 0) - (conductRank[a.assessment.suggested] || 0)
+                    || b.assessment.violationCount - a.assessment.violationCount
+                    || a.assessment.deductionPoints - b.assessment.deductionPoints
+                    || String(a.student.name || '').localeCompare(String(b.student.name || ''), 'vi', { numeric:true, sensitivity:'base' }));
             const counts = Object.fromEntries(HOMEROOM_CONDUCT_LEVELS.map(level => [level, rows.filter(row => row.assessment.suggested === level).length]));
             if (summary) summary.innerHTML = `<div class="homeroom-conduct-kpis"><span><b>${book.students.length}</b> HS</span><span class="level-good"><b>${counts['Tốt']}</b> Tốt</span><span class="level-fair"><b>${counts['Khá']}</b> Khá</span><span class="level-average"><b>${counts['Trung bình']}</b> Trung bình</span><span class="level-weak"><b>${counts['Yếu']}</b> Yếu</span></div><small>Gợi ý tự động theo số lỗi và hình thức xử lý trong <strong>dự thảo</strong>; GVCN kiểm tra hồ sơ thực tế trước khi kết luận.</small>`;
             if (table) {
-                table.innerHTML = rows.length ? `<div class="homeroom-conduct-table-wrap"><table class="homeroom-conduct-table"><thead><tr><th>Học sinh</th><th>Lỗi HK</th><th>Điểm quy chế</th><th>Hạ bậc</th><th>Điện thoại</th><th>Gợi ý</th><th>Lý do bắt buộc</th></tr></thead><tbody>${rows.map(({student,assessment}) => `<tr class="conduct-${homeroomConductLevelClass(assessment.suggested)}"><td><button type="button" class="homeroom-monitor-link" data-homeroom-conduct-student="${homeroomEscapeHtml(student.id)}"><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></button></td><td>${assessment.violationCount}</td><td>${homeroomEscapeHtml(homeroomFormatPoints(assessment.totalRegulationPoints))}</td><td>${assessment.lowerOneCount}</td><td>${assessment.phoneCount}</td><td><span class="homeroom-conduct-level level-${homeroomConductLevelClass(assessment.suggested)}">${homeroomEscapeHtml(assessment.suggested)}</span></td><td>${assessment.reasons.length ? homeroomEscapeHtml(assessment.reasons.join(' · ')) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="homeroom-mini-empty">Chưa có học sinh.</div>';
+                table.innerHTML = rows.length ? `<div class="homeroom-conduct-table-wrap"><table class="homeroom-conduct-table"><thead><tr><th>Học sinh</th><th>Lỗi HK</th><th>Chưa xử lý</th><th>Điểm quy chế</th><th>Hạ bậc</th><th>Điện thoại</th><th>Gợi ý</th><th>Lỗi gần nhất</th><th>Lý do bắt buộc</th></tr></thead><tbody>${rows.map(({student,assessment}) => `<tr class="conduct-${homeroomConductLevelClass(assessment.suggested)}"><td><button type="button" class="homeroom-monitor-link" data-homeroom-conduct-student="${homeroomEscapeHtml(student.id)}"><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></button></td><td><strong>${assessment.violationCount}</strong></td><td>${assessment.unresolvedViolationCount ? `<span class="homeroom-serious-state active">${assessment.unresolvedViolationCount}</span>` : '<span class="homeroom-serious-state history">0</span>'}</td><td>${homeroomEscapeHtml(homeroomFormatPoints(assessment.totalRegulationPoints))}</td><td>${assessment.lowerOneCount}</td><td>${assessment.phoneCount}</td><td><span class="homeroom-conduct-level level-${homeroomConductLevelClass(assessment.suggested)}">${homeroomEscapeHtml(assessment.suggested)}</span></td><td>${assessment.lastViolationDate ? `<strong>${homeroomEscapeHtml(homeroomFormatDate(assessment.lastViolationDate))}</strong><small>${homeroomEscapeHtml(assessment.lastViolationLabel)}</small>` : '—'}</td><td>${assessment.reasons.length ? homeroomEscapeHtml(assessment.reasons.join(' · ')) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="homeroom-mini-empty">Chưa có học sinh.</div>';
             }
             const classMetrics = homeroomClassConductMetrics(book, semester);
             if (classSummary) classSummary.innerHTML = `<span>HK${semester}</span><span>${classMetrics.entries} ghi nhận tập thể</span><span class="points-negative">Trừ ${homeroomFormatPoints(classMetrics.deductions)}</span><span class="points-positive">Thưởng ${homeroomFormatPoints(classMetrics.rewards)}</span><strong>Ròng ${homeroomFormatPoints(classMetrics.net)}</strong>`;
@@ -1194,7 +1232,7 @@
                         ${entry.followUp ? `<small>↳ Theo dõi: ${homeroomEscapeHtml(entry.followUp)}</small>` : ''}
                         ${entry.resolved && entry.resolvedAt ? `<small>✓ Xử lý lúc: ${homeroomEscapeHtml(new Date(entry.resolvedAt).toLocaleString('vi-VN'))}</small>` : ''}
                         <div class="homeroom-log-actions">
-                            ${['absence_unexcused','violation','support'].includes(entry.type) ? `<button type="button" class="homeroom-resolve-btn ${entry.resolved ? 'done' : ''}" data-homeroom-toggle-resolved="${homeroomEscapeHtml(entry.id)}">${entry.resolved ? '✓ Đã xử lý' : '○ Chưa xử lý'}</button>` : ''}
+                            ${homeroomEntryNeedsResolution(entry) ? `<button type="button" class="homeroom-resolve-btn ${entry.resolved ? 'done' : ''}" data-homeroom-toggle-resolved="${homeroomEscapeHtml(entry.id)}">${entry.resolved ? '✓ Đã xử lý' : '○ Chưa xử lý'}</button>` : ''}
                             <button type="button" class="homeroom-remove-log" data-homeroom-delete-entry="${homeroomEscapeHtml(entry.id)}">Xóa</button>
                         </div>
                     </div>
@@ -1504,7 +1542,7 @@
             renderHomeroom();
             homeroomUpdateRulePreview();
             const seriousMessage = entry.seriousFlag ? ' · 🚨 đã gắn cờ vi phạm nghiêm trọng' : '';
-            showToast(`✅ Đã ghi nhận ${homeroomEntryMeta(type).label}: ${homeroomFormatPoints(points)}${seriousMessage}`, entry.seriousFlag ? 'info' : 'success');
+            showToast(`✅ Đã ghi nhận ${homeroomEntryMeta(type).label}: ${homeroomFormatPoints(points)}${seriousMessage} · đã cập nhật Nề nếp & Ưu tiên GVCN`, entry.seriousFlag ? 'info' : 'success');
         }
 
         function homeroomAddClassEntry(event) {
@@ -1658,7 +1696,7 @@
                     'Cờ nghiêm trọng': entry.seriousFlag ? 'Có' : '',
                     'Nội dung': entry.content,
                     'Theo dõi / biện pháp': entry.followUp,
-                    'Trạng thái': ['absence_unexcused','violation','support'].includes(entry.type) ? (entry.resolved ? 'Đã xử lý' : 'Chưa xử lý') : '',
+                    'Trạng thái': homeroomEntryNeedsResolution(entry) ? (entry.resolved ? 'Đã xử lý' : 'Chưa xử lý') : '',
                     'Thời điểm xử lý': entry.resolvedAt ? new Date(entry.resolvedAt).toLocaleString('vi-VN') : '',
                 }));
                 const classRows = (book.entries || []).filter(entry => !entry.studentId).map(entry => ({
@@ -1677,7 +1715,8 @@
                     'Vắng không phép': metrics.absenceUnexcused,
                     'Tổng vắng': metrics.absenceTotal,
                     'Đi muộn': metrics.late,
-                    'Vi phạm': metrics.violation,
+                    'Lỗi nề nếp HK': metrics.conduct?.violationCount || 0,
+                    'Điểm quy chế HK': metrics.conduct?.totalRegulationPoints || 0,
                     'Điểm tuần': metrics.weekScore,
                     'Cộng/trừ trong tuần': metrics.weekPoints,
                     'Mức điểm tuần': metrics.scoreBand.label,
@@ -1736,7 +1775,7 @@
                         'Tổ phó': homeroomFindStudent(book, group.deputyId)?.name || '',
                         'Tổng lượt vắng': metrics.totalAbsence,
                         'Đi muộn': metrics.late,
-                        'Vi phạm': metrics.violation,
+                        'Lỗi nề nếp': metrics.violation,
                         'Điểm tuần trung bình': metrics.averageWeekScore,
                     };
                 });
@@ -1750,7 +1789,7 @@
                     ['Vắng có phép', summary.absenceExcused],
                     ['Vắng không phép', summary.absenceUnexcused],
                     ['Đi muộn', summary.late],
-                    ['Vi phạm', summary.violations],
+                    ['Tổng lỗi nề nếp theo quy chế', summary.violations],
                     ['Học sinh chạm/vượt ngưỡng', summary.thresholdStudents],
                     ['Học sinh cần theo dõi', summary.attentionStudents],
                     ['HS có vi phạm nghiêm trọng đang xử lý', summary.criticalStudents],

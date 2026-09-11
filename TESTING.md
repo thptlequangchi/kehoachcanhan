@@ -1,14 +1,15 @@
-# TESTING — v53.3.0 STABLE
+# TESTING — v53.3.1 STABLE
 
 ## Lệnh kiểm tra
 ```bash
 python tests/run-static-audit.py
 node tests/run-state-fixtures.js
 node tests/run-session-ppct-fixtures.js
+node tests/run-homeroom-autosync-fixtures.js
 ```
 
 ## Invariant v53.3
-- APP_VERSION state = Service Worker = release manifest = `53.3.0`.
+- APP_VERSION state = Service Worker = release manifest = `53.3.1`.
 - Toàn bộ HTML ID duy nhất; tài nguyên HTML và APP_SHELL tồn tại.
 - Tất cả JavaScript qua `node --check`.
 - Dữ liệu v53.2 được normalize sang cấu trúc có `book.competition` mà không phá dữ liệu cũ.
@@ -24,3 +25,10 @@ node tests/run-session-ppct-fixtures.js
 - `homeroom competition month rollover v53.3`
 - `homeroom competition monthly formula v53.3`
 - `homeroom competition yearly formula v53.3`
+
+## Auto-sync Sổ chủ nhiệm v53.3.1
+- Một lỗi quy chế mới phải tăng ngay `Lỗi nề nếp` của học sinh trong học kỳ.
+- Điểm quy chế phải thay đổi ngay theo mức của lỗi.
+- Học sinh có lỗi phải xuất hiện trong Bảng ưu tiên GVCN ngay cả khi chưa chạm các ngưỡng tần suất cũ.
+- Lỗi quy chế âm phải có trạng thái Chưa xử lý/Đã xử lý.
+- Điện thoại lần 2 phải kích hoạt gợi ý Yếu theo dự thảo đã nhập vào hệ thống.

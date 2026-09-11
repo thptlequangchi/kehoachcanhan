@@ -1049,7 +1049,7 @@
                     <div class="homeroom-kpi"><span>🟡</span><div><strong id="homeroomExcusedCount">0</strong><small>Vắng có phép</small></div></div>
                     <div class="homeroom-kpi"><span>🔴</span><div><strong id="homeroomUnexcusedCount">0</strong><small>Vắng không phép</small></div></div>
                     <div class="homeroom-kpi"><span>⏰</span><div><strong id="homeroomLateCount">0</strong><small>Đi muộn</small></div></div>
-                    <div class="homeroom-kpi"><span>⚠️</span><div><strong id="homeroomViolationCount">0</strong><small>Vi phạm</small></div></div>
+                    <div class="homeroom-kpi"><span>⚠️</span><div><strong id="homeroomViolationCount">0</strong><small>Lỗi nề nếp</small></div></div>
                     <div class="homeroom-kpi"><span>📌</span><div><strong id="homeroomAttentionCount">0</strong><small>HS cần theo dõi</small></div></div>
                     <div class="homeroom-kpi homeroom-kpi-critical"><span>🚨</span><div><strong id="homeroomCriticalCount">0</strong><small>Nghiêm trọng đang xử lý</small></div></div>
                     <div class="homeroom-kpi"><span>📉</span><div><strong id="homeroomLowWeekScoreCount">0</strong><small>Điểm tuần &lt; 90</small></div></div>
@@ -1061,11 +1061,11 @@
                     <div class="homeroom-monitoring-head">
                         <div>
                             <h3>🎯 Bảng ưu tiên GVCN</h3>
-                            <small>Kết hợp chuyên cần, nề nếp, điểm rèn luyện tuần, vi phạm nghiêm trọng <strong>chưa xử lý</strong> và xu hướng 4 tuần. Lịch sử đã xử lý vẫn được lưu nhưng không duy trì cảnh báo đỏ.</small>
+                            <small>Tự cập nhật ngay sau mỗi ghi nhận; kết hợp chuyên cần, số lỗi nề nếp học kỳ, điểm quy chế, điểm rèn luyện tuần, vi phạm nghiêm trọng <strong>chưa xử lý</strong> và xu hướng 4 tuần.</small>
                         </div>
                         <div class="homeroom-monitoring-controls">
                             <label class="homeroom-monitoring-view"><span>Tuần tính điểm</span><input id="homeroomWeekAnchorDate" type="date" /></label>
-                            <label class="homeroom-monitoring-view"><span>Hiển thị</span><select id="homeroomMonitoringViewSelect"><option value="flagged">Cần xử lý / chú ý</option><option value="priority">Ưu tiên / can thiệp</option><option value="trends">Có xu hướng 4 tuần</option><option value="all">Tất cả học sinh</option></select></label>
+                            <label class="homeroom-monitoring-view"><span>Hiển thị</span><select id="homeroomMonitoringViewSelect"><option value="flagged">Cần xử lý / chú ý</option><option value="priority">Có lỗi / ưu tiên</option><option value="trends">Có xu hướng 4 tuần</option><option value="all">Tất cả học sinh</option></select></label>
                         </div>
                     </div>
                     <div class="homeroom-thresholds" id="homeroomThresholds">
@@ -1073,7 +1073,7 @@
                         <label>Tổng vắng ≥ <input id="homeroomThresholdTotalAbsence" data-homeroom-threshold="totalAbsence" type="number" min="1" max="99" inputmode="numeric" value="3" /></label>
                         <label>Vắng KP ≥ <input id="homeroomThresholdUnexcused" data-homeroom-threshold="unexcusedAbsence" type="number" min="1" max="99" inputmode="numeric" value="2" /></label>
                         <label>Đi muộn ≥ <input id="homeroomThresholdLate" data-homeroom-threshold="late" type="number" min="1" max="99" inputmode="numeric" value="3" /></label>
-                        <label>Vi phạm ≥ <input id="homeroomThresholdViolation" data-homeroom-threshold="violation" type="number" min="1" max="99" inputmode="numeric" value="2" /></label>
+                        <label>Lỗi nề nếp ≥ <input id="homeroomThresholdViolation" data-homeroom-threshold="violation" type="number" min="1" max="99" inputmode="numeric" value="2" /></label>
                     </div>
                     <div class="homeroom-monitoring-summary" id="homeroomMonitoringSummary">Chưa mở sổ chủ nhiệm.</div>
                     <div class="homeroom-monitoring-table-wrap" id="homeroomMonitoringTable"><div class="homeroom-mini-empty">Mở sổ để xem thống kê theo dõi.</div></div>
@@ -1081,7 +1081,7 @@
 
                 <section class="homeroom-regulation-panel" id="homeroomRegulationPanel" aria-label="Đánh giá nề nếp theo quy chế năm học 2026-2027">
                     <div class="homeroom-regulation-head">
-                        <div><h3>⚖️ Nề nếp 2026–2027 &amp; gợi ý xếp loại</h3><small>Tổng hợp số lỗi trong học kỳ, các trường hợp hạ 1 bậc và trường hợp xếp yếu theo dự thảo.</small></div>
+                        <div><h3>⚖️ Nề nếp 2026–2027 &amp; gợi ý xếp loại</h3><small>Tự động đồng bộ ngay sau mỗi ghi nhận: số lỗi học kỳ, điểm quy chế, lỗi chưa xử lý, hạ bậc và gợi ý xếp loại theo dự thảo.</small></div>
                         <span class="homeroom-draft-badge">DỰ THẢO · 08/09/2026</span>
                     </div>
                     <div class="homeroom-conduct-summary" id="homeroomConductSummary">Chưa mở sổ chủ nhiệm.</div>

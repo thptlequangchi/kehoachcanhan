@@ -1,4 +1,4 @@
-# AUDIT REPORT — v53.3.0 STABLE
+# AUDIT REPORT — v53.3.1 STABLE
 
 Ngày kiểm tra: 12/09/2026
 
@@ -6,16 +6,20 @@ Ngày kiểm tra: 12/09/2026
 - PASS: HTML IDs `611/611` duy nhất.
 - PASS: 62 tài nguyên tham chiếu từ HTML tồn tại.
 - PASS: 202 DOM refs được resolve.
-- PASS: 1007 named functions không trùng.
+- PASS: 1010 named functions không trùng.
 - PASS: 68 tài nguyên APP_SHELL tồn tại.
-- PASS: APP_VERSION `53.3.0` đồng bộ state và Service Worker.
+- PASS: APP_VERSION `53.3.1` đồng bộ state và Service Worker.
 - PASS: toàn bộ JavaScript `node --check`.
 - PASS: v53.0 Safe Boot Guard + release manifest.
 - PASS: v53.1 cơ cấu tổ + ban cán sự.
 - PASS: v53.2 danh mục quy chế + gợi ý xếp loại + nhật ký thi đua lớp.
 - PASS: v53.3 bảng thi đua tuần/tháng/năm + persistence.
+- PASS: v53.3.1 auto-sync Sổ chủ nhiệm: nhập lỗi → KPI lỗi nề nếp → Bảng ưu tiên GVCN → Gợi ý xếp loại → trạng thái chưa xử lý.
 
 ## Fixture dữ liệu
+- PASS: auto-sync lỗi đồng phục cập nhật số lỗi HK, điểm quy chế và trạng thái chưa xử lý.
+- PASS: lỗi đi muộn theo quy chế được tính vào tổng lỗi nề nếp.
+- PASS: điện thoại lần 2 tự kích hoạt gợi ý Yếu.
 - PASS: dữ liệu `book.competition` được normalize và lưu đúng.
 - PASS: công thức điểm tuần.
 - PASS: khen thưởng/phạt mức tháng không bị cộng vào lớp điểm tuần tự động.
@@ -34,7 +38,7 @@ Ngày kiểm tra: 12/09/2026
 ## Kiểm soát tương thích
 - Không xóa/chuyển đổi phá hủy dữ liệu v53.2.
 - `book.competition` là trường mới; sổ cũ không có trường này vẫn mở bình thường và được chuẩn hóa thành cấu trúc rỗng.
-- Service Worker cache thêm CSS/JS v53.3 và đổi cache key theo `53.3.0`.
+- Service Worker cache thêm CSS/JS v53.3 và đổi cache key theo `53.3.1`.
 - Xuất Excel giữ toàn bộ sheet cũ và thêm ba sheet thi đua.
 
 ## Lưu ý nghiệp vụ
