@@ -193,6 +193,18 @@
         }
     }
 
+    async function deleteRecognitionEntry(key) {
+        if (!key) return false;
+        try {
+            await deleteRecord(CACHE_STORE, key);
+            localStorage.removeItem(RECOGNITION_CACHE_KEY);
+            return true;
+        } catch (error) {
+            recordError('delete-recognition', error, { key });
+            return false;
+        }
+    }
+
     async function clearRecognitionCache() {
         try { await clearStore(CACHE_STORE); } catch (error) { recordError('clear-recognition', error); }
         localStorage.removeItem(RECOGNITION_CACHE_KEY);
@@ -379,6 +391,7 @@
         saveAllWorkspaces,
         compactLocalWorkspaces,
         saveRecognitionEntry,
+        deleteRecognitionEntry,
         clearRecognitionCache,
         setBackup,
         getBackup,

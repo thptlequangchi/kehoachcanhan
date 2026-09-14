@@ -1,26 +1,31 @@
-# AUDIT REPORT — v53.3.3 STABLE
+# AUDIT REPORT — v53.3.4 STABLE
 
 Ngày rà soát: 14/09/2026
 
 ## Phạm vi nâng cấp
-Bản v53.3.3 kế thừa trực tiếp v53.3.2 STABLE. Thay đổi nghiệp vụ duy nhất ở lõi PPCT là nhận diện các nhánh `HĐTN_SHDC`, `HĐTN_SHL` và cách ghi HĐTN tương đương như **một môn HĐTN**, dùng chung chuỗi Tiết PPCT theo lớp. Các môn khác vẫn giữ cơ chế PPCT độc lập theo buổi.
+Bản v53.3.4 kế thừa trực tiếp v53.3.3 STABLE và tập trung sửa hai lỗi thực tế: **mất mạng thì OCR thời khóa biểu không dựng được ô** và **xóa thời khóa biểu/ảnh nguồn nhưng dữ liệu cũ có thể xuất hiện lại**.
 
-## Tính tương thích dữ liệu
-- APP_VERSION / Stable Guard / Service Worker / release manifest đồng bộ `53.3.3`.
-- DATA_SCHEMA_VERSION = `5`.
-- Migration schema 5 chỉ chạy `renumberStoredSchedulesFrom(1)` để cập nhật lại số PPCT lịch báo giảng cũ theo khóa môn mới; không xóa TKB, PPCT, kế hoạch, sổ điểm hay sổ chủ nhiệm.
-- Nhãn hiển thị `HĐTN_SHDC` và `HĐTN_SHL` vẫn được giữ nguyên.
+## Nguyên nhân đã xác định
+1. OCR dự phòng trước đây chủ yếu giữ transcript văn bản và cố ý không suy đoán giao điểm buổi × thứ × tiết, vì vậy TKB hiển thị trắng dù OCR có thể đã đọc được chữ.
+2. Kết quả TKB trắng có thể bị cache theo hash ảnh; lần tải lại cùng ảnh trả ngay cache trắng.
+3. Xóa TKB chưa xóa cache nhận dạng tương ứng.
+4. Trong lúc local vừa xóa/sửa nhưng chưa ghi xong, snapshot Firestore cũ có thể được áp dụng lại.
+5. Dữ liệu cá nhân trước đây ghi bằng `setDoc(..., {merge:true})`; với cấu trúc map theo tuần, việc bỏ một khóa local có nguy cơ không biểu diễn được thao tác xóa trên cloud.
 
-## Kết quả kiểm thử
-- PASS: Static audit toàn bộ HTML/CSS/JS và `node --check`.
-- PASS: State fixtures.
-- PASS: PPCT sáng/chiều môn Toán vẫn độc lập.
-- PASS: HĐTN_SHDC + HĐTN_SHL dùng cùng khóa môn HĐTN.
-- PASS: HĐTN không tách chuỗi PPCT khi SHDC/SHL nằm khác buổi.
-- PASS: Tuần 1: SHDC = PPCT 1, SHL = PPCT 2.
-- PASS: Tuần 2 tiếp tục PPCT 3, 4.
-- PASS: Homeroom auto-sync fixtures.
-- PASS: v53.3.2 quality-patch fixtures tiếp tục qua đầy đủ.
+## Khắc phục v53.3.4
+- Thêm OCR không gian từ TSV/tọa độ Tesseract để phát hiện hai vùng sáng/chiều, hàng tiết 1–5 và cột Thứ 2–7, rồi gán chữ vào từng ô.
+- Bump Recognition Engine lên 5; cache cũ tự hết hiệu lực.
+- Không cache TKB trắng hoặc kết quả `manual`; cache vô dụng gặp lại sẽ tự loại.
+- Xóa TKB tuần đồng thời quên cache ảnh nguồn ở RAM/IndexedDB/recent recognition.
+- Service Worker làm ấm Tesseract main/worker/core cùng `vie` và `eng` traineddata khi online.
+- Bổ sung dirty/pending hash cho personal cloud sync để snapshot cũ không ghi đè thay đổi local chưa đồng bộ.
+- Personal year workspace được ghi như snapshot đầy đủ thay vì deep-merge, nên tuần đã xóa được xóa thật trên Firestore.
+
+## Tương thích dữ liệu
+- APP_VERSION / Stable Guard / Service Worker / release manifest đồng bộ `53.3.4`.
+- DATA_SCHEMA_VERSION vẫn là `5`; không có migration phá dữ liệu.
+- Toàn bộ thay đổi v53.3.3 về chuỗi PPCT HĐTN được giữ nguyên.
+- Dữ liệu TKB, PPCT, kế hoạch, sổ điểm và sổ chủ nhiệm cũ tiếp tục được normalize như trước.
 
 ## Kết luận
-Bản v53.3.3 đủ điều kiện đóng gói STABLE cho yêu cầu PPCT HĐTN thống nhất.
+Bản v53.3.4 đủ điều kiện STABLE sau khi toàn bộ static audit, fixtures cũ và fixture resilience mới đều PASS. Thiết bị mới cần có ít nhất một lần online để tải sẵn runtime/ngôn ngữ OCR trước khi dùng hoàn toàn ngoại tuyến.

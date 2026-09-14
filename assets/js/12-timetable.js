@@ -1510,6 +1510,10 @@ YÊU CẦU NHẬN DẠNG CHÍNH XÁC:
                 return;
             }
             if (!confirm(`Xóa thời khóa biểu tuần ${week}?`)) return;
+            const removedTimetable = state.timetablesByWeek[week];
+            if (removedTimetable?.cacheHash) {
+                window.teacherNotebookForgetRecognitionEntry?.('timetable', removedTimetable.cacheHash, { dropRecent: true });
+            }
             delete state.timetablesByWeek[week];
             state.timetableData = null;
             persistTimetablesByWeek();

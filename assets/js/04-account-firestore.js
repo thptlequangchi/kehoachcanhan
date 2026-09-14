@@ -935,6 +935,36 @@ service cloud.firestore {
             };
         }
 
+        function normalizePersonalYearPayload(data, academicYear = state.selectedAcademicYear) {
+            const workspace = state.yearWorkspaces[academicYear] || getActiveYearWorkspace() || {};
+            const normalized = normalizeYearWorkspace({
+                ...data,
+                week1Start: workspace.week1Start,
+                planData: workspace.planData,
+            });
+            return {
+                schemaVersion: 5,
+                academicYear,
+                timetablesByWeek: normalized.timetablesByWeek,
+                curriculumText: normalized.curriculumText,
+                curriculumProfiles: normalized.curriculumProfiles,
+                teachingSchedule: normalized.teachingSchedule,
+                scheduleMeta: normalized.scheduleMeta,
+                workItems: normalized.workItems,
+                gradebook: normalized.gradebook,
+                homeroom: normalized.homeroom,
+                selectedTimetableWeek: normalized.selectedTimetableWeek,
+                selectedTeachingWeek: normalized.selectedTeachingWeek,
+            };
+        }
+
+        function markPersonalWorkspaceDirty(academicYear = state.selectedAcademicYear) {
+            if (!accountCloudSyncEnabled() || state.account.syncApplyingRemote || state.account.syncYear !== academicYear) return '';
+            const hash = cloudPayloadHash(buildPersonalYearPayload(academicYear));
+            state.account.personalDirtyHash = hash;
+            return hash;
+        }
+
         function accountCloudSyncEnabled() {
             return Boolean(state.account.accessMode === 'group'
                 && state.account.firebaseReady
@@ -1066,6 +1096,8 @@ service cloud.firestore {
             state.account.personalYearExists = false;
             state.account.lastSharedHash = '';
             state.account.lastPersonalHash = '';
+            state.account.personalDirtyHash = '';
+            state.account.personalPendingWriteHash = '';
             state.account.sharedRevision = 0;
             state.account.sharedBasePayload = null;
             state.account.sharedUpdatedAt = null;
@@ -1158,14 +1190,25 @@ service cloud.firestore {
             }
         }
 
-        async function applyPersonalYearSnapshot(data, academicYear) {
+        async function applyPersonalYearSnapshot(data, academicYear, options = {}) {
             try {
 
                 if (state.account.syncYear !== academicYear || state.selectedAcademicYear !== academicYear) return;
+                const incomingPayload = normalizePersonalYearPayload(data, academicYear);
+                const incomingHash = cloudPayloadHash(incomingPayload);
+                const dirtyHash = state.account.personalDirtyHash;
+                const pendingHash = state.account.personalPendingWriteHash;
+                // Khi vừa xóa/sửa TKB trên máy, snapshot cũ từ Firestore không được phép dựng dữ liệu cũ trở lại.
+                // Chỉ nhận snapshot nếu đó chính là bản đang chờ ghi hoặc không còn thay đổi local chưa đồng bộ.
+                if (!options.force && dirtyHash && incomingHash !== dirtyHash && incomingHash !== pendingHash) {
+                    console.info('Bỏ qua snapshot dữ liệu cá nhân cũ vì máy đang có thay đổi chưa đồng bộ.');
+                    queueCloudWorkspaceSync();
+                    return;
+                }
                 if (!await savePreCloudSyncBackupOnce()) return;
                 const workspace = ensureYearWorkspace(academicYear);
                 const normalized = normalizeYearWorkspace({
-                    ...data,
+                    ...incomingPayload,
                     week1Start: workspace.week1Start,
                     planData: workspace.planData,
                 });
@@ -1185,7 +1228,11 @@ service cloud.firestore {
                 persistLegacyActiveYear();
                 refreshViewsAfterCloudWorkspace(false, true);
                 state.account.syncApplyingRemote = false;
-                state.account.lastPersonalHash = cloudPayloadHash(buildPersonalYearPayload(academicYear));
+                state.account.lastPersonalHash = incomingHash;
+                if (incomingHash === state.account.personalDirtyHash || incomingHash === state.account.personalPendingWriteHash) {
+                    state.account.personalDirtyHash = '';
+                    state.account.personalPendingWriteHash = '';
+                }
                 renderWorkWorkspace();
             } catch (error) {
                 state.account.syncApplyingRemote = false;
@@ -1424,17 +1471,26 @@ service cloud.firestore {
 
             if (personalHash !== state.account.lastPersonalHash) {
                 try {
+                    state.account.personalPendingWriteHash = personalHash;
+                    // yearWorkspaces/{year} là snapshot đầy đủ của dữ liệu cá nhân năm học.
+                    // Ghi đè document thay vì deep-merge để các khóa đã xóa cục bộ (ví dụ TKB tuần)
+                    // cũng thực sự bị xóa trên Firestore, tránh việc snapshot cũ dựng dữ liệu trở lại.
                     await firestoreModule.setDoc(personalRef, {
                         ...personalPayload,
                         updatedAt: firestoreModule.serverTimestamp(),
                         updatedBy: state.account.user.uid,
-                    }, { merge: true });
+                    });
                     if (state.account.syncYear === academicYear) {
                         state.account.lastPersonalHash = personalHash;
                         state.account.personalYearExists = true;
+                        const currentHash = cloudPayloadHash(buildPersonalYearPayload(academicYear));
+                        if (currentHash === personalHash) state.account.personalDirtyHash = '';
+                        if (state.account.personalPendingWriteHash === personalHash) state.account.personalPendingWriteHash = '';
                     }
                     wrote = true;
                 } catch (error) {
+                    if (state.account.personalPendingWriteHash === personalHash) state.account.personalPendingWriteHash = '';
+                    state.account.personalDirtyHash = cloudPayloadHash(buildPersonalYearPayload(academicYear));
                     failure = failure || error;
                     console.error('Không thể đồng bộ dữ liệu riêng của giáo viên:', error);
                 }
@@ -1458,6 +1514,7 @@ service cloud.firestore {
         function queueCloudWorkspaceSync() {
             if (!accountCloudSyncEnabled() || state.account.syncApplyingRemote) return;
             if (!state.account.sharedYearLoaded || !state.account.personalYearLoaded) return;
+            markPersonalWorkspaceDirty();
             markAccountSyncOutbox('local-change');
             if (state.account.syncTimer) clearTimeout(state.account.syncTimer);
             if (!accountNetworkOnline()) {
@@ -1538,7 +1595,18 @@ service cloud.firestore {
                     state.account.personalYearLoaded = true;
                     state.account.personalYearExists = snapshot.exists();
                     if (snapshot.exists()) {
-                        applyPersonalYearSnapshot(snapshot.data(), academicYear);
+                        const incomingHash = cloudPayloadHash(normalizePersonalYearPayload(snapshot.data(), academicYear));
+                        const localHash = cloudPayloadHash(buildPersonalYearPayload(academicYear));
+                        if (!state.account.lastPersonalHash && !state.account.personalDirtyHash) {
+                            state.account.lastPersonalHash = incomingHash;
+                            if (incomingHash === localHash || !state.account.personalYearExists) {
+                                applyPersonalYearSnapshot(snapshot.data(), academicYear);
+                            } else {
+                                applyPersonalYearSnapshot(snapshot.data(), academicYear);
+                            }
+                        } else {
+                            applyPersonalYearSnapshot(snapshot.data(), academicYear);
+                        }
                     } else {
                         state.account.lastPersonalHash = '';
                     }

@@ -362,6 +362,33 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             return parseAIJson(recoveredText);
         }
 
+        const OFFLINE_OCR_ASSETS = Object.freeze({
+            workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js',
+            corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0/tesseract-core-lstm.wasm.js',
+            langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast',
+        });
+
+        function parseOcrTsvWords(tsvText) {
+            const rows = String(tsvText || '').split(/\r?\n/);
+            if (rows.length < 2) return [];
+            const header = rows[0].split('\t');
+            const index = Object.fromEntries(header.map((name, i) => [name, i]));
+            const required = ['left', 'top', 'width', 'height', 'conf', 'text'];
+            if (!required.every(key => Number.isInteger(index[key]))) return [];
+            return rows.slice(1).map(row => {
+                const cols = row.split('\t');
+                const text = cleanText(cols[index.text]);
+                const confidence = Number(cols[index.conf]);
+                if (!text || !Number.isFinite(confidence) || confidence < 0) return null;
+                const left = Number(cols[index.left]);
+                const top = Number(cols[index.top]);
+                const width = Number(cols[index.width]);
+                const height = Number(cols[index.height]);
+                if (![left, top, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return null;
+                return normalizeOcrWord({ text, confidence, bbox: { x0:left, y0:top, x1:left + width, y1:top + height } });
+            }).filter(Boolean);
+        }
+
         async function runOfflineOcr(imageFile, onStage) {
             await ensureVendorLibrary('tesseract');
             if (!window.Tesseract?.createWorker) {
@@ -380,31 +407,45 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             let worker = null;
             try {
                 const oem = window.Tesseract.OEM?.LSTM_ONLY ?? 1;
-                // Tesseract.js hỗ trợ nhiều ngôn ngữ ổn định hơn khi truyền mảng mã ngôn ngữ.
-                // Tránh chuỗi "vie+eng" vì một số build CDN có thể xử lý không nhất quán.
-                worker = await window.Tesseract.createWorker(['vie', 'eng'], oem, {
-                    logger: message => {
-                        if (!onStage) return;
-                        const label = progressLabels[message?.status] || cleanText(message?.status) || 'đang xử lý';
-                        const percent = Number.isFinite(message?.progress) ? ` ${Math.round(message.progress * 100)}%` : '';
-                        onStage(`OCR trên máy: ${label}${percent}`);
-                    },
-                });
+                const logger = message => {
+                    if (!onStage) return;
+                    const label = progressLabels[message?.status] || cleanText(message?.status) || 'đang xử lý';
+                    const percent = Number.isFinite(message?.progress) ? ` ${Math.round(message.progress * 100)}%` : '';
+                    onStage(`OCR trên máy: ${label}${percent}`);
+                };
+                // Chỉ định rõ worker/core/lang để Service Worker có thể chuẩn bị trước các tài nguyên này.
+                // Nếu đang online mà đường dẫn tối ưu gặp lỗi, thử lại cấu hình mặc định của Tesseract.
+                try {
+                    worker = await window.Tesseract.createWorker(['vie', 'eng'], oem, {
+                        ...OFFLINE_OCR_ASSETS,
+                        logger,
+                    });
+                } catch (firstError) {
+                    if (!navigator.onLine) throw firstError;
+                    if (onStage) onStage('OCR: đang thử lại bộ máy dự phòng...');
+                    worker = await window.Tesseract.createWorker(['vie', 'eng'], oem, { logger });
+                }
                 if (!worker?.recognize) throw new Error('Bộ OCR khởi tạo không đầy đủ');
                 if (worker.setParameters) {
                     await worker.setParameters({
                         preserve_interword_spaces: '1',
                         tessedit_pageseg_mode: '3',
+                        user_defined_dpi: '300',
                     });
                 }
-                // Không yêu cầu output blocks ở đây. Một số build Tesseract.js CDN có thể phát sinh
-                // TypeError "Cannot read properties of undefined (reading 'undefined')" khi serialize blocks.
-                // Text-only ổn định hơn; nếu không có tọa độ thì hệ thống vẫn dựng mẫu để chỉnh thủ công.
-                const result = await worker.recognize(imageFile);
+                // TSV cho tọa độ từng từ ổn định hơn blocks và giúp dựng lại đúng ô TKB khi mất mạng.
+                let result;
+                try {
+                    result = await worker.recognize(imageFile, {}, { text: true, tsv: true });
+                } catch (tsvError) {
+                    console.warn('OCR TSV không khả dụng, quay về text-only:', tsvError);
+                    result = await worker.recognize(imageFile);
+                }
                 const data = result?.data && typeof result.data === 'object' ? result.data : {};
+                const tsvWords = parseOcrTsvWords(data.tsv);
                 return {
                     text: cleanText(data.text),
-                    words: extractOcrWords(data),
+                    words: tsvWords.length ? tsvWords : extractOcrWords(data),
                 };
             } catch (error) {
                 const message = cleanText(error?.message) || 'OCR trên máy gặp lỗi không xác định';
@@ -745,6 +786,177 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             };
         }
 
+        function detectTimetableHeaderCandidates(words) {
+            const lines = groupOcrWordsIntoLines(words);
+            return lines.map(line => {
+                const centers = new Map();
+                line.words.forEach((word, index) => {
+                    const lookup = normalizeLookupText(word.text);
+                    const combined = lookup.match(/^thu([2-7])$/i)?.[1];
+                    if (combined) centers.set(Number(combined), word.cx);
+                    if (/^[2-7]$/.test(lookup)) {
+                        const previous = normalizeLookupText(line.words[index - 1]?.text || '');
+                        if (previous.includes('thu') || line.lookup.includes('thu')) centers.set(Number(lookup), word.cx);
+                    }
+                });
+                const dayCount = centers.size;
+                const hasPeriodHeader = line.lookup.includes('tiet') || line.lookup.includes('tkb');
+                return { line, centers, score: dayCount * 2 + Number(hasPeriodHeader) };
+            }).filter(item => item.centers.size >= 4)
+                .sort((a, b) => a.line.cy - b.line.cy);
+        }
+
+        function completeTimetableDayCenters(candidate, minX, maxX) {
+            const known = [...candidate.centers.entries()].sort((a, b) => a[0] - b[0]);
+            let step = 0;
+            if (known.length >= 2) {
+                const slopes = [];
+                for (let i = 1; i < known.length; i++) {
+                    const deltaDay = known[i][0] - known[i - 1][0];
+                    if (deltaDay > 0) slopes.push((known[i][1] - known[i - 1][1]) / deltaDay);
+                }
+                step = medianOcrValue(slopes.filter(value => value > 0), 0);
+            }
+            if (!(step > 0)) step = Math.max(1, (maxX - minX) / 6.7);
+            const anchor = known[0] || [2, minX + step * 0.85];
+            const centers = SCHOOL_DAYS.map((day, index) => {
+                const number = index + 2;
+                return candidate.centers.get(number) ?? (anchor[1] + (number - anchor[0]) * step);
+            });
+            // Bảo đảm tăng dần; OCR đôi khi đặt nhầm một chữ số của tiêu đề.
+            for (let i = 1; i < centers.length; i++) {
+                if (!(centers[i] > centers[i - 1])) centers[i] = centers[i - 1] + step;
+            }
+            return { centers, step };
+        }
+
+        function inferTimetablePeriodCenters(words, headerBottom, sectionBottom, leftBoundary) {
+            const candidates = words.filter(word => word.cy > headerBottom && word.cy < sectionBottom && word.cx < leftBoundary)
+                .map(word => ({ word, period: Number.parseInt(normalizeLookupText(word.text), 10) }))
+                .filter(item => item.period >= 1 && item.period <= 5);
+            const byPeriod = new Map();
+            candidates.forEach(item => {
+                const current = byPeriod.get(item.period);
+                if (!current || item.word.confidence > current.confidence) byPeriod.set(item.period, item.word);
+            });
+            const known = [...byPeriod.entries()].sort((a, b) => a[0] - b[0]);
+            let rowStep = 0;
+            if (known.length >= 2) {
+                const slopes = [];
+                for (let i = 1; i < known.length; i++) {
+                    const delta = known[i][0] - known[i - 1][0];
+                    if (delta > 0) slopes.push((known[i][1].cy - known[i - 1][1].cy) / delta);
+                }
+                rowStep = medianOcrValue(slopes.filter(value => value > 0), 0);
+            }
+            const available = Math.max(30, sectionBottom - headerBottom);
+            if (!(rowStep > 0)) rowStep = available / 5.4;
+            const firstKnown = known[0];
+            const firstCenter = firstKnown
+                ? firstKnown[1].cy - (firstKnown[0] - 1) * rowStep
+                : headerBottom + rowStep * 0.65;
+            const centers = [1,2,3,4,5].map(period => byPeriod.get(period)?.cy ?? (firstCenter + (period - 1) * rowStep));
+            for (let i = 1; i < centers.length; i++) {
+                if (!(centers[i] > centers[i - 1])) centers[i] = centers[i - 1] + rowStep;
+            }
+            return { centers, anchorCount: byPeriod.size, rowStep };
+        }
+
+        function parseTimetableOcrCell(cellText) {
+            const content = cleanText(cellText);
+            if (!content) return null;
+            const classMatch = content.match(/\b(?:6|7|8|9|10|11|12)\s*[A-ZĐ]\s*\d{1,2}\b/i);
+            const className = classMatch ? classMatch[0].replace(/\s+/g, '').toUpperCase() : '';
+            let subject = content;
+            if (classMatch) subject = cleanText(content.replace(classMatch[0], ' ').replace(/^[-–—:|]+|[-–—:|]+$/g, ''));
+            // Các ô chỉ còn số thứ/tiết không phải tiết học.
+            if (!className && /^(?:[1-7]|thu\s*[2-7]|tiet\s*[1-5])$/i.test(normalizeLookupText(content))) return null;
+            return {
+                className,
+                subject,
+                content,
+            };
+        }
+
+        function createTimetableDraftFromSpatialOcr(ocrResult, sourceError = '') {
+            const text = cleanText(ocrResult?.text);
+            const words = Array.isArray(ocrResult?.words) ? ocrResult.words.map(normalizeOcrWord).filter(Boolean) : [];
+            if (words.length < 12) return null;
+            const headers = detectTimetableHeaderCandidates(words);
+            if (!headers.length) return null;
+            const minX = Math.min(...words.map(word => word.x0));
+            const maxX = Math.max(...words.map(word => word.x1));
+            const maxY = Math.max(...words.map(word => word.y1));
+            // Giữ tối đa hai tiêu đề ngày cách nhau đủ xa: sáng và chiều.
+            const selectedHeaders = [];
+            headers.forEach(candidate => {
+                if (!selectedHeaders.some(item => Math.abs(item.line.cy - candidate.line.cy) < 24)) selectedHeaders.push(candidate);
+            });
+            const sessionHeaders = selectedHeaders.slice(0, 2);
+            if (!sessionHeaders.length) return null;
+
+            const base = createTimetableDraftFromOcr(text, 'offline-spatial', sourceError);
+            let totalCells = 0;
+            let totalPeriodAnchors = 0;
+            let detectedHeaderDays = 0;
+
+            sessionHeaders.forEach((candidate, sessionIndex) => {
+                const sessionKey = sessionIndex === 0 ? 'morning' : 'afternoon';
+                const targetSession = base.sessions.find(session => session.key === sessionKey);
+                if (!targetSession) return;
+                const { centers: dayCenters, step: dayStep } = completeTimetableDayCenters(candidate, minX, maxX);
+                detectedHeaderDays += candidate.centers.size;
+                const leftBoundary = dayCenters[0] - dayStep * 0.52;
+                const nextHeader = sessionHeaders[sessionIndex + 1];
+                let sectionBottom = nextHeader ? nextHeader.line.y0 - 4 : maxY + medianOcrValue(words.map(word => word.height), 12);
+                const periodLayout = inferTimetablePeriodCenters(words, candidate.line.y1, sectionBottom, leftBoundary);
+                totalPeriodAnchors += periodLayout.anchorCount;
+                // Nếu có đủ mốc tiết, thu hẹp đáy phần để chữ “BUỔI CHIỀU” không bị kéo vào tiết 5 sáng.
+                if (periodLayout.anchorCount >= 3) {
+                    sectionBottom = Math.min(sectionBottom, periodLayout.centers[4] + periodLayout.rowStep * 0.55);
+                }
+                const xBounds = dayCenters.map((center, index) => ({
+                    left: index === 0 ? leftBoundary : (dayCenters[index - 1] + center) / 2,
+                    right: index === dayCenters.length - 1 ? center + dayStep * 0.52 : (center + dayCenters[index + 1]) / 2,
+                }));
+                const yBounds = periodLayout.centers.map((center, index) => ({
+                    top: index === 0 ? candidate.line.y1 : (periodLayout.centers[index - 1] + center) / 2,
+                    bottom: index === 4 ? sectionBottom : (center + periodLayout.centers[index + 1]) / 2,
+                }));
+
+                targetSession.periods.forEach((period, periodIndex) => {
+                    const yBand = yBounds[periodIndex];
+                    SCHOOL_DAYS.forEach((day, dayIndex) => {
+                        const xBand = xBounds[dayIndex];
+                        const cellWords = words.filter(word =>
+                            word.cx >= xBand.left && word.cx < xBand.right
+                            && word.cy >= yBand.top && word.cy < yBand.bottom
+                            && word.confidence >= 10);
+                        const parsed = parseTimetableOcrCell(ocrWordsToMultilineText(cellWords));
+                        if (!parsed) return;
+                        period.cells.push({ day, ...parsed });
+                        totalCells += 1;
+                    });
+                });
+            });
+
+            if (!totalCells) return null;
+            base.sourceMode = 'offline-spatial';
+            base.fallbackReason = cleanText(sourceError);
+            base.ocrLayoutConfidence = Math.max(30, Math.min(98, Math.round(
+                (Math.min(1, detectedHeaderDays / 12) * 0.42
+                + Math.min(1, totalPeriodAnchors / 10) * 0.33
+                + Math.min(1, totalCells / 12) * 0.25) * 100
+            )));
+            base.warnings = [];
+            if (sessionHeaders.length < 2) base.warnings.push('OCR chỉ xác định chắc chắn một phần của thời khóa biểu; hãy kiểm tra lại buổi còn lại.');
+            if (totalPeriodAnchors < 8) base.warnings.push('Một số số tiết không đọc rõ nên vị trí hàng được ước lượng theo khoảng cách đều.');
+            if (detectedHeaderDays < 10) base.warnings.push('Một số tiêu đề Thứ bị mờ; hệ thống đã nội suy vị trí cột từ các Thứ đọc được.');
+            const lowConfidence = words.filter(word => Number.isFinite(word.confidence) && word.confidence < 45).length;
+            if (lowConfidence >= 6) base.warnings.push(`Có ${lowConfidence} cụm chữ mờ; nên đối chiếu lại các ô quan trọng.`);
+            return base;
+        }
+
         function createTimetableDraftFromOcr(ocrText, sourceMode = 'offline-ocr', sourceError = '') {
             const text = cleanText(ocrText);
             const warnings = sourceMode === 'manual'
@@ -893,14 +1105,16 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             const draft = kind === 'plan'
                 ? (sourceMode === 'offline-ocr' ? createPlanDraftFromSpatialOcr(ocrResult, sourceError) : null)
                     || createPlanDraftFromOcr(ocrResult.text, sourceMode, sourceError)
-                : createTimetableDraftFromOcr(ocrResult.text, sourceMode, sourceError);
+                : (sourceMode === 'offline-ocr' ? createTimetableDraftFromSpatialOcr(ocrResult, sourceError) : null)
+                    || createTimetableDraftFromOcr(ocrResult.text, sourceMode, sourceError);
             const data = normalizeRecognitionSafely(normalize, draft, `${kind} dự phòng`);
             if (!data) throw new Error('Không thể tạo mẫu dữ liệu dự phòng');
             data.sourceMode = cleanText(draft.sourceMode) || sourceMode;
             data.offlineOcrText = cleanText(ocrResult.text);
             data.cacheHash = hash;
             data.cacheHit = false;
-            cacheRecognition(kind, hash, data);
+            const cachedOffline = cacheRecognition(kind, hash, data);
+            if (!cachedOffline && sourceMode === 'manual') data.cacheHash = '';
             setRecognitionRuntime(data.sourceMode === 'offline-spatial'
                 ? 'OCR · đã tự ghép bảng'
                 : sourceMode === 'offline-ocr' ? 'OCR trên máy' : 'Nhập thủ công',
@@ -993,7 +1207,14 @@ LƯỢT TRƯỚC CHƯA DỰNG ĐƯỢC BẢNG. Hãy đọc lại ẢNH GỐC the
             if (source === 'offline-spatial') {
                 const confidence = Number.isFinite(Number(data?.ocrLayoutConfidence))
                     ? ` Mức tự tin ghép bảng: ${Math.round(Number(data.ocrLayoutConfidence))}%.` : '';
-                return { icon: '🧩', title: 'OCR đã tự ghép theo vị trí.', text: `Hệ thống dùng tọa độ chữ để phân vào đúng cột Sáng, Chiều và Đi công tác.${confidence}` };
+                const isTimetable = Array.isArray(data?.sessions);
+                return {
+                    icon: '🧩',
+                    title: 'OCR đã tự ghép theo vị trí.',
+                    text: isTimetable
+                        ? `Hệ thống dùng tọa độ chữ để phân vào đúng buổi, Thứ và tiết TKB.${confidence}`
+                        : `Hệ thống dùng tọa độ chữ để phân vào đúng cột Sáng, Chiều và Đi công tác.${confidence}`
+                };
             }
             if (source === 'offline-ocr') {
                 return { icon: '🖥️', title: 'Đang dùng OCR trên máy.', text: 'Không dùng Gemini. Văn bản tiếng Việt được đọc trên thiết bị và mẫu được mở để hiệu chỉnh thủ công.' };

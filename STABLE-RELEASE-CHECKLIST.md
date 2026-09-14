@@ -1,6 +1,6 @@
-# Stable Release Checklist — v53.3
+# Stable Release Checklist — v53.3.4
 
-- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.3.
+- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.4.
 - [x] Giữ nguyên dữ liệu và chức năng v53.2.
 - [x] Module bảng thi đua v53.3 tải trước `15-init.js`.
 - [x] Service Worker cache CSS/JS v53.3.
@@ -17,3 +17,10 @@
 
 - [x] HĐTN_SHDC / HĐTN_SHL dùng chung chuỗi PPCT HĐTN.
 - [x] Migration schema 5 đánh số lại lịch cũ an toàn.
+
+- [x] OCR TKB ngoại tuyến có dựng ô theo tọa độ TSV.
+- [x] Cache TKB trắng/nhập tay bị loại và cache ảnh nguồn được xóa cùng TKB.
+- [x] Service Worker làm ấm tài nguyên OCR để hỗ trợ mất mạng sau lần tải online.
+- [x] Snapshot Firestore cũ không dựng lại dữ liệu local vừa xóa.
+- [x] Personal year workspace ghi đè snapshot đầy đủ để xóa map con trên cloud thật sự.
+- [x] Fixture v53.3.4 OCR/sync resilience PASS.

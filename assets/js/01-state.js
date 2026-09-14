@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.3.3';
+        const APP_VERSION = '53.3.4';
         const DATA_SCHEMA_VERSION = 5;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -63,7 +63,7 @@
         const MAX_AUXILIARY_WEEKS = AUXILIARY_PLAN_WEEKS.length;
         const TOTAL_ACADEMIC_CALENDAR_WEEKS = MAX_SCHOOL_WEEKS + MAX_AUXILIARY_WEEKS;
         const RECOGNITION_CACHE_KEY = 'teacher_recognition_cache_v1';
-        const RECOGNITION_ENGINE_VERSION = 4;
+        const RECOGNITION_ENGINE_VERSION = 5;
         const CURRICULUM_PROFILES_STORAGE = 'teacher_curriculum_profiles_v2';
         const YEAR_WORKSPACES_STORAGE = 'teacher_year_workspaces_v1';
         const SELECTED_ACADEMIC_YEAR_STORAGE = 'teacher_selected_academic_year';
@@ -486,6 +486,7 @@
                 warnings: [...new Set(warnings)],
                 sourceMode: cleanText(data.sourceMode) || 'legacy',
                 offlineOcrText: cleanText(data.offlineOcrText),
+                ocrLayoutConfidence: Number.isFinite(Number(data.ocrLayoutConfidence)) ? Number(data.ocrLayoutConfidence) : null,
                 cacheHash: cleanText(data.cacheHash),
                 cacheHit: Boolean(data.cacheHit),
             };
@@ -1425,6 +1426,8 @@
                 sharedWorkItemsLoaded: false,
                 lastSharedHash: '',
                 lastPersonalHash: '',
+                personalDirtyHash: '',
+                personalPendingWriteHash: '',
                 sharedRevision: 0,
                 sharedBasePayload: null,
                 sharedUpdatedAt: null,

@@ -171,6 +171,9 @@
         try {
             registration = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
             await refreshCacheStatus();
+            if (navigator.onLine) {
+                (registration.active || registration.waiting || registration.installing)?.postMessage?.({ type: 'WARM_OCR_CACHE' });
+            }
             if (registration.waiting) showUpdateAvailable();
 
             registration.addEventListener('updatefound', () => {
@@ -206,7 +209,10 @@
         updateAppMode();
         notify('✅ Sổ Tay Giáo Viên đã được cài như ứng dụng', 'success');
     });
-    window.addEventListener('online', updateNetworkState);
+    window.addEventListener('online', () => {
+        updateNetworkState();
+        (registration?.active || registration?.waiting)?.postMessage?.({ type: 'WARM_OCR_CACHE' });
+    });
     window.addEventListener('offline', updateNetworkState);
 
     installBtn?.addEventListener('click', promptInstall);

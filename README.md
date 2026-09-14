@@ -1,6 +1,6 @@
-# Sổ Tay Giáo Viên Pro v53.3.3 — STABLE
+# Sổ Tay Giáo Viên Pro v53.3.4 — STABLE
 
-> Gói hiện tại: **v53.3.3 — STABLE**. Các changelog cũ vẫn được giữ để truy vết lịch sử.
+> Gói hiện tại: **v53.3.4 — STABLE**. Các changelog cũ vẫn được giữ để truy vết lịch sử.
 
 Bản v53.3 kế thừa trực tiếp v53.2 STABLE, giữ nguyên Sổ điểm, PPCT sáng/chiều, kế hoạch tuần, Sổ chủ nhiệm, cơ cấu tổ/ban cán sự và quy chế nề nếp 2026–2027. Nâng cấp trọng tâm là **Bảng thi đua lớp tự động**.
 
@@ -8,6 +8,15 @@ Bản v53.3 kế thừa trực tiếp v53.2 STABLE, giữ nguyên Sổ điểm, 
 ### Hotfix v53.3.1
 Sổ chủ nhiệm đã được sửa theo cơ chế **nhập một lần – tự cập nhật toàn bộ**: sau khi ghi lỗi, KPI lỗi nề nếp, Bảng ưu tiên GVCN, Nề nếp 2026–2027 & gợi ý xếp loại, trạng thái chưa xử lý và bảng thi đua đều được render lại ngay.
 
+
+
+### OCR ngoại tuyến & chống dữ liệu xuất hiện lại v53.3.4
+- Khi Gemini không dùng được hoặc mất mạng, OCR trên máy không còn chỉ lấy văn bản: hệ thống dùng tọa độ OCR để dựng lại **buổi × thứ × tiết TKB** và điền các ô nhận diện được.
+- Service Worker chủ động làm ấm Tesseract worker/core và bộ ngôn ngữ Việt + Anh khi đang online để lần mất mạng sau có thể dùng OCR ngay trên thiết bị.
+- Kết quả TKB trắng hoặc chế độ nhập tay không còn được lưu cache; engine nhận dạng tăng phiên bản nên cache TKB trắng của bản cũ tự hết hiệu lực.
+- Khi xóa TKB tuần, cache nhận dạng của ảnh nguồn cũng bị xóa để ảnh cũ không tự dựng lại từ “bộ nhớ ảnh”.
+- Đồng bộ Firestore có khóa chống snapshot cũ ghi đè thay đổi local đang chờ lưu; document dữ liệu cá nhân được ghi theo snapshot đầy đủ để các tuần đã xóa cũng bị xóa thật trên cloud.
+- Lưu ý: trên thiết bị mới, nên mở v53.3.4 ít nhất một lần khi có mạng để PWA tải sẵn bộ OCR trước khi cần dùng hoàn toàn ngoại tuyến.
 
 ### PPCT HĐTN thống nhất v53.3.3
 - `HĐTN_SHDC`, `HĐTN_SHL` và các cách ghi HĐTN tương đương được nhận diện là cùng môn HĐTN.
@@ -39,6 +48,6 @@ Sổ chủ nhiệm đã được sửa theo cơ chế **nhập một lần – t
 - Dữ liệu bảng thi đua mới nằm trong `book.competition`.
 
 ## Triển khai
-Giải nén toàn bộ gói vào thư mục site/repository. Service Worker dùng `APP_VERSION = 53.3.3`; cache của v53.2 và các bản cũ sẽ được thay thế sau khi Service Worker mới kích hoạt.
+Giải nén toàn bộ gói vào thư mục site/repository. Service Worker dùng `APP_VERSION = 53.3.4`; cache của v53.2 và các bản cũ sẽ được thay thế sau khi Service Worker mới kích hoạt.
 
-Xem thêm `V53.3-CHANGELOG.md`, `TESTING.md`, `AUDIT-REPORT.md` và `STABLE-RELEASE-CHECKLIST.md`.
+Xem thêm `V53.3.4-CHANGELOG.md`, `V53.3-CHANGELOG.md`, `TESTING.md`, `AUDIT-REPORT.md` và `STABLE-RELEASE-CHECKLIST.md`.

@@ -15,3 +15,6 @@ node tests/run-quality-patch-v53-3-2.js
 `run-homeroom-autosync-fixtures.js` kiểm tra chuỗi nhập lỗi → ưu tiên GVCN → gợi ý xếp loại. `run-quality-patch-v53-3-2.js` kiểm tra ngoại lệ vắng có phép, lỗi theo số lượng và bộ lọc lỗi nề nếp.
 
 `run-session-ppct-fixtures.js` từ v53.3.3 kiểm tra thêm HĐTN_SHDC/HĐTN_SHL dùng chung chuỗi PPCT, kể cả khi nằm khác buổi.
+
+## v53.3.4 OCR & sync resilience
+Chạy `node tests/run-ocr-resilience-v53-3-4.js` để kiểm tra wiring OCR tọa độ, cache tự phục hồi, xóa cache cùng TKB, prewarm OCR và khóa snapshot Firestore cũ.

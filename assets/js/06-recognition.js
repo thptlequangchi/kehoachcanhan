@@ -38,15 +38,65 @@
             return JSON.parse(JSON.stringify(value));
         }
 
+        function countRecognizedTimetableCells(data) {
+            return Array.isArray(data?.sessions)
+                ? data.sessions.flatMap(session => Array.isArray(session?.periods) ? session.periods : [])
+                    .reduce((total, period) => total + (Array.isArray(period?.cells) ? period.cells.length : 0), 0)
+                : 0;
+        }
+
+        function isRecognitionCacheUseful(kind, data) {
+            if (!data || cleanText(data.sourceMode) === 'manual') return false;
+            if (kind === 'timetable') {
+                // Không lưu lại một TKB trắng do OCR lỗi. Nếu lưu, lần sau cùng ảnh sẽ luôn
+                // bị trả về từ cache và người dùng không có cơ hội OCR lại sau khi mạng/engine phục hồi.
+                return countRecognizedTimetableCells(data) > 0;
+            }
+            if (kind === 'plan') {
+                const hasDayContent = Array.isArray(data.days) && data.days.some(day =>
+                    cleanText(day?.morning) || cleanText(day?.afternoon) || cleanText(day?.businessTrip));
+                return hasDayContent || cleanText(data.offlineOcrText).length >= 20;
+            }
+            return true;
+        }
+
+        function forgetRecognitionEntry(kind, hash, options = {}) {
+            if (!kind || !hash) return false;
+            const key = `${kind}:${hash}`;
+            delete state.recognitionCache[key];
+            if (options.dropRecent !== false) {
+                const previewUrl = state.recentRecognitionPreviews?.[key];
+                if (previewUrl && window.URL?.revokeObjectURL) {
+                    try { window.URL.revokeObjectURL(previewUrl); } catch (_) { /* noop */ }
+                }
+                if (state.recentRecognitionFiles) delete state.recentRecognitionFiles[key];
+                if (state.recentRecognitionPreviews) delete state.recentRecognitionPreviews[key];
+            }
+            if (window.teacherNotebookIndexedDB?.ready) {
+                window.teacherNotebookIndexedDB.deleteRecognitionEntry?.(key);
+            } else {
+                writeStoredJSON(RECOGNITION_CACHE_KEY, state.recognitionCache);
+            }
+            return true;
+        }
+
         function getCachedRecognition(kind, hash) {
-            const entry = state.recognitionCache[`${kind}:${hash}`];
+            const key = `${kind}:${hash}`;
+            const entry = state.recognitionCache[key];
             if (!entry || entry.kind !== kind || !entry.data
                 || Number(entry.engineVersion) !== RECOGNITION_ENGINE_VERSION) return null;
+            if (!isRecognitionCacheUseful(kind, entry.data)) {
+                forgetRecognitionEntry(kind, hash, { dropRecent: false });
+                return null;
+            }
             return cloneRecognitionData(entry.data);
         }
 
         function cacheRecognition(kind, hash, data) {
-            if (!hash || !data) return;
+            if (!hash || !data || !isRecognitionCacheUseful(kind, data)) {
+                if (hash) forgetRecognitionEntry(kind, hash, { dropRecent: false });
+                return false;
+            }
             const cacheData = cloneRecognitionData(data);
             cacheData.cacheHit = false;
             state.recognitionCache[`${kind}:${hash}`] = {
@@ -64,6 +114,7 @@
             } else {
                 writeStoredJSON(RECOGNITION_CACHE_KEY, state.recognitionCache);
             }
+            return true;
         }
 
         function refreshRecognitionCache(kind, data) {
@@ -91,3 +142,5 @@
             if (typeof renderStorageCenter === 'function') renderStorageCenter();
             showToast('Đã xóa bộ nhớ nhận dạng ảnh', 'info');
         });
+
+        window.teacherNotebookForgetRecognitionEntry = forgetRecognitionEntry;
