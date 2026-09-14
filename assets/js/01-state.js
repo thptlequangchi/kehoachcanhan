@@ -45,8 +45,8 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.3.2';
-        const DATA_SCHEMA_VERSION = 4;
+        const APP_VERSION = '53.3.3';
+        const DATA_SCHEMA_VERSION = 5;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
         const GEMINI_MODEL = 'gemini-3.5-flash';

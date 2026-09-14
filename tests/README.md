@@ -13,3 +13,5 @@ node tests/run-quality-patch-v53-3-2.js
 `run-state-fixtures.js` kiểm tra cả Sổ điểm v51.4 và **Sổ chủ nhiệm v51.5** trong year workspace; `run-session-ppct-fixtures.js` giữ các fixture PPCT sáng/chiều độc lập của v51.3.
 
 `run-homeroom-autosync-fixtures.js` kiểm tra chuỗi nhập lỗi → ưu tiên GVCN → gợi ý xếp loại. `run-quality-patch-v53-3-2.js` kiểm tra ngoại lệ vắng có phép, lỗi theo số lượng và bộ lọc lỗi nề nếp.
+
+`run-session-ppct-fixtures.js` từ v53.3.3 kiểm tra thêm HĐTN_SHDC/HĐTN_SHL dùng chung chuỗi PPCT, kể cả khi nằm khác buổi.

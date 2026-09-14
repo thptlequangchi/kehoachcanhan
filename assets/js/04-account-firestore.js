@@ -2169,6 +2169,14 @@ service cloud.firestore {
                     if (workspace) workspace.homeroom = state.homeroom;
                     currentVersion = 3;
                 }
+                // Schema 4: mốc tương thích v53.3.2 (không cần biến đổi dữ liệu).
+                if (currentVersion < 4) currentVersion = 4;
+                // Schema 5 (v53.3.3): gộp các nhánh HĐTN (SHDC/SHL/...) về một chuỗi PPCT.
+                // Chỉ đánh số lại lịch báo giảng hiện có; không xóa hay đổi TKB/PPCT nguồn.
+                if (currentVersion < 5) {
+                    if (renumberStoredSchedulesFrom(1).length > 0) changed = true;
+                    currentVersion = 5;
+                }
 
                 localStorage.setItem(storageKey, String(DATA_SCHEMA_VERSION));
                 console.info(`✅ Data migration ${state.selectedAcademicYear}: ${fromVersion} → ${DATA_SCHEMA_VERSION}${changed ? ' (có cập nhật dữ liệu)' : ''}`);

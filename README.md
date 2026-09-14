@@ -1,12 +1,19 @@
-# Sổ Tay Giáo Viên Pro v53.3.2 — STABLE
+# Sổ Tay Giáo Viên Pro v53.3.3 — STABLE
 
-> Gói hiện tại: **v53.3.2 — STABLE**. Các changelog cũ vẫn được giữ để truy vết lịch sử.
+> Gói hiện tại: **v53.3.3 — STABLE**. Các changelog cũ vẫn được giữ để truy vết lịch sử.
 
 Bản v53.3 kế thừa trực tiếp v53.2 STABLE, giữ nguyên Sổ điểm, PPCT sáng/chiều, kế hoạch tuần, Sổ chủ nhiệm, cơ cấu tổ/ban cán sự và quy chế nề nếp 2026–2027. Nâng cấp trọng tâm là **Bảng thi đua lớp tự động**.
 
 
 ### Hotfix v53.3.1
 Sổ chủ nhiệm đã được sửa theo cơ chế **nhập một lần – tự cập nhật toàn bộ**: sau khi ghi lỗi, KPI lỗi nề nếp, Bảng ưu tiên GVCN, Nề nếp 2026–2027 & gợi ý xếp loại, trạng thái chưa xử lý và bảng thi đua đều được render lại ngay.
+
+
+### PPCT HĐTN thống nhất v53.3.3
+- `HĐTN_SHDC`, `HĐTN_SHL` và các cách ghi HĐTN tương đương được nhận diện là cùng môn HĐTN.
+- Chuỗi Tiết PPCT chạy liên tục theo lớp: nếu SHDC là Tiết 1 thì SHL kế tiếp là Tiết 2, không khởi động lại vì khác nhãn hoặc khác buổi.
+- Giữ nguyên nhãn hiển thị SHDC/SHL trên thời khóa biểu và lịch báo giảng; chỉ thống nhất khóa môn dùng để đánh số PPCT.
+- Schema 5 tự rà soát/đánh số lại lịch báo giảng cũ khi mở bản mới, không xóa dữ liệu nguồn.
 
 ### Quality Patch v53.3.2
 - Tự động 4 trường hợp vắng có phép: thông thường, Noel, lễ tôn giáo có xác nhận, vắng dài ngày chỉ trừ 3 ngày đầu.
@@ -32,6 +39,6 @@ Sổ chủ nhiệm đã được sửa theo cơ chế **nhập một lần – t
 - Dữ liệu bảng thi đua mới nằm trong `book.competition`.
 
 ## Triển khai
-Giải nén toàn bộ gói vào thư mục site/repository. Service Worker dùng `APP_VERSION = 53.3.2`; cache của v53.2 và các bản cũ sẽ được thay thế sau khi Service Worker mới kích hoạt.
+Giải nén toàn bộ gói vào thư mục site/repository. Service Worker dùng `APP_VERSION = 53.3.3`; cache của v53.2 và các bản cũ sẽ được thay thế sau khi Service Worker mới kích hoạt.
 
 Xem thêm `V53.3-CHANGELOG.md`, `TESTING.md`, `AUDIT-REPORT.md` và `STABLE-RELEASE-CHECKLIST.md`.

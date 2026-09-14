@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v53.3.2 STABLE — Service Worker */
-const APP_VERSION = '53.3.2';
+/* Sổ Tay Giáo Viên v53.3.3 STABLE — Service Worker */
+const APP_VERSION = '53.3.3';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;

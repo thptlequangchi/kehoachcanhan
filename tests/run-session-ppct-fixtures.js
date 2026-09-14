@@ -44,5 +44,25 @@ tests.push(['week 1 ppct restarts by session',ev(`(()=>{const m=state.teachingSc
 tests.push(['week 2 continues each session independently',ev(`(()=>{const m=state.teachingSchedule[2].find(x=>x.session==='Buổi sáng'),a=state.teachingSchedule[2].find(x=>x.session==='Buổi chiều');return m.ppctPeriod==='3'&&a.ppctPeriod==='3'&&m.topic==='Sáng chung 3'&&a.topic==='Chiều riêng 3'})()`)]);
 tests.push(['course key contains session',ev(`scheduleClassSubjectKey({class:'12A2',subject:'Toán',session:'Buổi sáng'})!==scheduleClassSubjectKey({class:'12A2',subject:'Toán',session:'Buổi chiều'})`)]);
 
+// v53.3.3: HĐTN_SHDC + HĐTN_SHL là cùng một môn HĐTN, dùng một chuỗi PPCT.
+ev(`state.curriculumProfiles=normalizeCurriculumProfiles([
+ {scope:'class',grade:'10',className:'10A4',subject:'HĐTN',session:'all',weeks:[
+  {week:1,lessons:[{ppctPeriod:'1',topic:'HĐTN 1'},{ppctPeriod:'2',topic:'HĐTN 2'}]},
+  {week:2,lessons:[{ppctPeriod:'3',topic:'HĐTN 3'},{ppctPeriod:'4',topic:'HĐTN 4'}]}
+ ]}
+]);
+state.teachingSchedule={1:[
+ normalizeScheduleItem({day:'Thứ 2',session:'Buổi sáng',period:'1',class:'10A4',subject:'HĐTN_SHDC'},1,0),
+ normalizeScheduleItem({day:'Thứ 7',session:'Buổi chiều',period:'5',class:'10A4',subject:'HĐTN_SHL'},1,1)
+],2:[
+ normalizeScheduleItem({day:'Thứ 2',session:'Buổi sáng',period:'1',class:'10A4',subject:'HĐTN_SHDC'},2,0),
+ normalizeScheduleItem({day:'Thứ 7',session:'Buổi chiều',period:'5',class:'10A4',subject:'HĐTN_SHL'},2,1)
+]}; renumberSchedulePpct(1); renumberSchedulePpct(2);`);
+
+tests.push(['HĐTN aliases share subject family',ev(`canonicalScheduleSubjectKey('HĐTN_SHDC')==='hdtn'&&canonicalScheduleSubjectKey('HĐTN_SHL')==='hdtn'&&curriculumSubjectMatches('HĐTN_SHDC','HĐTN_SHL')`)]);
+tests.push(['HĐTN ignores morning-afternoon split for PPCT sequence',ev(`scheduleClassSubjectKey({class:'10A4',subject:'HĐTN_SHDC',session:'Buổi sáng'})===scheduleClassSubjectKey({class:'10A4',subject:'HĐTN_SHL',session:'Buổi chiều'})`)]);
+tests.push(['HĐTN week 1 SHDC then SHL is 1,2',ev(`state.teachingSchedule[1].map(x=>x.ppctPeriod).join(',')==='1,2'&&state.teachingSchedule[1][0].topic==='HĐTN 1'&&state.teachingSchedule[1][1].topic==='HĐTN 2'`)]);
+tests.push(['HĐTN week 2 continues 3,4',ev(`state.teachingSchedule[2].map(x=>x.ppctPeriod).join(',')==='3,4'&&state.teachingSchedule[2][0].topic==='HĐTN 3'&&state.teachingSchedule[2][1].topic==='HĐTN 4'`)]);
+
 for(const [name,ok] of tests) console.log(name,ok?'PASS':'FAIL');
 if(tests.some(([,ok])=>!ok)) process.exit(1);

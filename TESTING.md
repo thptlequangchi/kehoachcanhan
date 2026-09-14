@@ -1,4 +1,4 @@
-# TESTING — v53.3.2 STABLE
+# TESTING — v53.3.3 STABLE
 
 ## Lệnh kiểm tra
 ```bash
@@ -9,7 +9,7 @@ node tests/run-homeroom-autosync-fixtures.js
 ```
 
 ## Invariant v53.3
-- APP_VERSION state = Service Worker = release manifest = `53.3.2`.
+- APP_VERSION state = Service Worker = release manifest = `53.3.3`.
 - Toàn bộ HTML ID duy nhất; tài nguyên HTML và APP_SHELL tồn tại.
 - Tất cả JavaScript qua `node --check`.
 - Dữ liệu v53.2 được normalize sang cấu trúc có `book.competition` mà không phá dữ liệu cũ.
@@ -38,3 +38,8 @@ node tests/run-homeroom-autosync-fixtures.js
 - Fixture lỗi theo số lượng: đơn giá × số lượng, không bị cap ±100.
 - Kiểm tra filter “Có lỗi nề nếp” dùng conduct.violationCount.
 - Kiểm tra APP_SHELL chứa đầy đủ module lazy quan trọng.
+
+## v53.3.3 — PPCT HĐTN
+- Fixture xác nhận HĐTN_SHDC và HĐTN_SHL dùng cùng khóa môn.
+- Fixture xác nhận chuỗi PPCT 1,2 ở tuần 1 và tiếp tục 3,4 ở tuần 2, kể cả SHDC/SHL nằm ở hai buổi khác nhau.
+- Các môn thông thường (ví dụ Toán) vẫn giữ PPCT sáng/chiều độc lập như v51.3.

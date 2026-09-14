@@ -19,15 +19,21 @@
             return session === 'all' ? base : `${base} · ${curriculumSessionLabel(session)}`;
         }
 
-        function curriculumSubjectMatches(profileSubject, lessonSubject) {
-            const profileKey = normalizeLookupText(profileSubject);
-            const lessonKey = normalizeLookupText(lessonSubject);
-            return !profileKey || !lessonKey || profileKey.includes(lessonKey) || lessonKey.includes(profileKey);
+        function isExperientialActivitySubject(value) {
+            const key = normalizeLookupText(value);
+            if (!key) return false;
+            // HĐTN_SHDC (sinh hoạt dưới cờ), HĐTN_SHL (sinh hoạt lớp),
+            // HĐTN_HN... chỉ là các hình thức/nhánh của cùng môn HĐTN.
+            // normalizeLookupText() loại ký tự “đ”, vì vậy HĐTN thường thành “htn”.
+            return key === 'hdtn' || key === 'htn'
+                || key.startsWith('hdtn') || key.startsWith('htn')
+                || key.startsWith('hoatdongtrainghiem') || key.startsWith('hoatongtrainghiem');
         }
 
         function canonicalScheduleSubjectKey(value) {
             const subjectKey = normalizeLookupText(value);
             if (!subjectKey) return '';
+            if (isExperientialActivitySubject(subjectKey)) return 'hdtn';
             const knownKeys = [
                 state.teacherProfile?.subject,
                 ...(state.curriculumProfiles || []).map(profile => profile.subject),
@@ -44,28 +50,60 @@
             return canonicalKey;
         }
 
+        function curriculumSubjectMatches(profileSubject, lessonSubject) {
+            const profileKey = canonicalScheduleSubjectKey(profileSubject);
+            const lessonKey = canonicalScheduleSubjectKey(lessonSubject);
+            return !profileKey || !lessonKey || profileKey === lessonKey
+                || profileKey.includes(lessonKey) || lessonKey.includes(profileKey);
+        }
+
+        function scheduleCourseSessionKey(subject, session = '') {
+            // HĐTN dùng một chuỗi PPCT chung cho SHDC + SHL (+ các nhánh HĐTN khác),
+            // kể cả khi TKB bố trí các hoạt động ở hai buổi khác nhau.
+            return canonicalScheduleSubjectKey(subject) === 'hdtn'
+                ? 'all'
+                : normalizeCurriculumSession(session);
+        }
+
+        function scheduleCourseKey(className, subject, session = '') {
+            return `${normalizeClassKey(className)}|${canonicalScheduleSubjectKey(subject)}|${scheduleCourseSessionKey(subject, session)}`;
+        }
+
         function getPreferredScheduleSubjectLabel(week, className, subject) {
             const requestedSubject = cleanText(subject) || state.teacherProfile.subject;
+            const requestedKey = normalizeLookupText(requestedSubject);
             const classKey = normalizeClassKey(className);
             const timetable = state.timetablesByWeek?.[week];
-            for (const session of timetable?.sessions || []) {
-                for (const period of session.periods || []) {
-                    const matchedCell = (period.cells || []).find(cell =>
-                        normalizeClassKey(cell.className) === classKey
-                        && curriculumSubjectMatches(requestedSubject, cell.subject || cell.content)
-                    );
-                    if (cleanText(matchedCell?.subject)) return cleanText(matchedCell.subject);
+            // Giữ đúng nhãn chi tiết trên TKB (ví dụ HĐTN_SHDC / HĐTN_SHL),
+            // chỉ dùng quan hệ cùng môn để tính chuỗi PPCT chứ không đổi tên hiển thị.
+            for (const exactOnly of [true, false]) {
+                for (const session of timetable?.sessions || []) {
+                    for (const period of session.periods || []) {
+                        const matchedCell = (period.cells || []).find(cell => {
+                            if (normalizeClassKey(cell.className) !== classKey) return false;
+                            const cellSubject = cell.subject || cell.content;
+                            return exactOnly
+                                ? normalizeLookupText(cellSubject) === requestedKey
+                                : curriculumSubjectMatches(requestedSubject, cellSubject);
+                        });
+                        if (cleanText(matchedCell?.subject)) return cleanText(matchedCell.subject);
+                    }
                 }
             }
-            const matchedScheduleItem = (state.teachingSchedule?.[week] || []).find(item =>
+            const scheduleItems = state.teachingSchedule?.[week] || [];
+            const matchedScheduleItem = scheduleItems.find(item =>
+                !item.makeupLesson
+                && normalizeClassKey(item.class) === classKey
+                && normalizeLookupText(item.subject) === requestedKey
+            ) || scheduleItems.find(item =>
                 !item.makeupLesson
                 && normalizeClassKey(item.class) === classKey
                 && curriculumSubjectMatches(requestedSubject, item.subject)
             );
             if (cleanText(matchedScheduleItem?.subject)) return cleanText(matchedScheduleItem.subject);
-            const matchedProfile = (state.curriculumProfiles || []).find(profile =>
-                curriculumSubjectMatches(requestedSubject, profile.subject)
-            );
+            const profiles = state.curriculumProfiles || [];
+            const matchedProfile = profiles.find(profile => normalizeLookupText(profile.subject) === requestedKey)
+                || profiles.find(profile => curriculumSubjectMatches(requestedSubject, profile.subject));
             return cleanText(matchedProfile?.subject) || requestedSubject;
         }
 
@@ -162,7 +200,7 @@
 
         function getAutomaticPpctStart(week, className, subject, session = '') {
             const classKey = normalizeClassKey(className);
-            const sessionKey = normalizeCurriculumSession(session);
+            const sessionKey = scheduleCourseSessionKey(subject, session);
             let previousActualCount = 0;
             let previousScheduleMax = 0;
             for (let previousWeek = 1; previousWeek < week; previousWeek++) {
@@ -174,7 +212,7 @@
                         !item.notTeaching
                         && normalizeClassKey(item.class) === classKey
                         && curriculumSubjectMatches(subject, item.subject)
-                        && (sessionKey === 'all' || normalizeCurriculumSession(item.session) === sessionKey)
+                        && scheduleCourseSessionKey(item.subject, item.session) === sessionKey
                     );
                     previousActualCount += actualItems.length;
                     actualItems.forEach(item => {
@@ -183,24 +221,22 @@
                     });
                 } else {
                     const timetableCount = countTimetableLessonsForClass(
-                        state.timetablesByWeek?.[previousWeek], className, subject, session
+                        state.timetablesByWeek?.[previousWeek], className, subject, sessionKey
                     );
                     if (timetableCount > 0) previousActualCount += timetableCount;
-                    else previousActualCount += getCurriculumForClass(previousWeek, className, subject, session).lessons?.length || 0;
+                    else previousActualCount += getCurriculumForClass(previousWeek, className, subject, sessionKey).lessons?.length || 0;
                 }
             }
             return Math.max(previousActualCount + 1, previousScheduleMax + 1, 1);
         }
 
         function scheduleClassSubjectKey(item) {
-            return `${normalizeClassKey(item?.class)}|${canonicalScheduleSubjectKey(item?.subject)}|${normalizeCurriculumSession(item?.session)}`;
+            return scheduleCourseKey(item?.class, item?.subject, item?.session);
         }
 
         function scheduleItemsShareCourse(item, className, subject, session = '') {
-            const requestedSession = normalizeCurriculumSession(session);
-            return normalizeClassKey(item?.class) === normalizeClassKey(className)
-                && canonicalScheduleSubjectKey(item?.subject) === canonicalScheduleSubjectKey(subject)
-                && (requestedSession === 'all' || normalizeCurriculumSession(item?.session) === requestedSession);
+            return scheduleCourseKey(item?.class, item?.subject, item?.session)
+                === scheduleCourseKey(className, subject, session);
         }
 
         function unlockPpctSequenceAfterMakeup(week, makeupItem) {
@@ -295,9 +331,9 @@
         function getCurriculumLessonByPpct(className, subject, ppctPeriod, cache = new Map(), session = '') {
             const ppct = Number.parseInt(ppctPeriod, 10);
             if (!(ppct > 0)) return null;
-            const sessionKey = normalizeCurriculumSession(session);
+            const sessionKey = scheduleCourseSessionKey(subject, session);
             const key = `${normalizeClassKey(className)}|${canonicalScheduleSubjectKey(subject)}|${sessionKey}`;
-            if (!cache.has(key)) cache.set(key, buildCurriculumLessonMap(className, subject, session));
+            if (!cache.has(key)) cache.set(key, buildCurriculumLessonMap(className, subject, sessionKey));
             return cache.get(key).get(ppct) || null;
         }
 
@@ -400,7 +436,7 @@
                     for (const cell of period.cells || []) {
                         const className = cleanText(cell.className) || 'Chưa xác định';
                         const subject = cleanText(cell.subject) || state.teacherProfile.subject;
-                        const key = `${normalizeClassKey(className)}|${normalizeLookupText(subject)}|${sessionKey}`;
+                        const key = scheduleCourseKey(className, subject, sessionLabel);
                         if (unique.has(key)) continue;
                         const match = getCurriculumForClass(week, className, subject, sessionLabel);
                         unique.set(key, {
@@ -446,7 +482,7 @@
                 const missingText = missing.length
                     ? ` Chưa có phân phối tuần ${week} cho: <strong>${missing.map(item => `${escapeHTML(item.className)} · ${escapeHTML(item.session)}`).join(', ')}</strong>.`
                     : '';
-                curriculumMatchSummary.innerHTML = `⚠️ Đã khớp <strong>${matched.length}/${mappings.length}</strong> lớp/môn/buổi.${missingText} Tiết PPCT được tự đánh liên tục riêng cho từng lớp + môn + buổi.`;
+                curriculumMatchSummary.innerHTML = `⚠️ Đã khớp <strong>${matched.length}/${mappings.length}</strong> lớp/môn/buổi.${missingText} Tiết PPCT được tự đánh liên tục theo lớp + môn + buổi; riêng HĐTN_SHDC/HĐTN_SHL dùng chung một chuỗi HĐTN kể cả khác buổi.`;
             }
         }
 
@@ -481,7 +517,7 @@
                 const normalizedClass = normalizeClassKey(className);
                 const cleanSubject = cleanText(subject) || state.teacherProfile.subject;
                 const subjectKey = canonicalScheduleSubjectKey(cleanSubject);
-                const sessionKey = normalizeCurriculumSession(session);
+                const sessionKey = scheduleCourseSessionKey(cleanSubject, session);
                 if (!normalizedClass || !subjectKey) return;
                 const key = `${normalizedClass}|${subjectKey}|${sessionKey}`;
                 const current = courses.get(key);

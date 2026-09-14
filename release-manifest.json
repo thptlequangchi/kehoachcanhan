@@ -1,9 +1,9 @@
 {
   "application": "Sổ Tay Giáo Viên Pro",
-  "release": "53.3.2",
+  "release": "53.3.3",
   "channel": "stable",
-  "releasedAt": "2026-09-12",
-  "dataSchemaVersion": 4,
+  "releasedAt": "2026-09-14",
+  "dataSchemaVersion": 5,
   "backupVersion": 7,
   "academicCalendar": {
     "mainWeeks": 37,
@@ -34,7 +34,8 @@
     "homeroomAbsenceExceptions": true,
     "homeroomQuantityBasedRules": true,
     "fullOfflineCoreModules": true,
-    "homeroomConductFilterUnified": true
+    "homeroomConductFilterUnified": true,
+    "experientialActivityUnifiedPpct": true
   },
   "compatibility": {
     "preservesV52Data": true,

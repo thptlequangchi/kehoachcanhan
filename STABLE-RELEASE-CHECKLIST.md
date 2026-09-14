@@ -1,6 +1,6 @@
 # Stable Release Checklist — v53.3
 
-- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.2.
+- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.3.
 - [x] Giữ nguyên dữ liệu và chức năng v53.2.
 - [x] Module bảng thi đua v53.3 tải trước `15-init.js`.
 - [x] Service Worker cache CSS/JS v53.3.
@@ -14,3 +14,6 @@
 - [x] State fixtures PASS.
 - [x] PPCT fixtures PASS.
 - [x] Toàn bộ JavaScript `node --check` PASS.
+
+- [x] HĐTN_SHDC / HĐTN_SHL dùng chung chuỗi PPCT HĐTN.
+- [x] Migration schema 5 đánh số lại lịch cũ an toàn.

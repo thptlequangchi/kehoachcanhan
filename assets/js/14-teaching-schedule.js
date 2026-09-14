@@ -1481,14 +1481,19 @@
         function findCurriculumMapEntry(curriculumMap, className, subject, session = '') {
             const classKey = normalizeClassKey(className);
             const subjectKey = normalizeLookupText(subject);
-            const sessionKey = normalizeCurriculumSession(session);
+            const canonicalSubjectKey = canonicalScheduleSubjectKey(subject);
+            const sessionKey = scheduleCourseSessionKey(subject, session);
             return (curriculumMap || []).find(item =>
                 normalizeClassKey(item.className) === classKey
                 && normalizeLookupText(item.subject) === subjectKey
-                && normalizeCurriculumSession(item.session || item.sessionKey) === sessionKey
+                && scheduleCourseSessionKey(item.subject, item.session || item.sessionKey) === sessionKey
             ) || (curriculumMap || []).find(item =>
                 normalizeClassKey(item.className) === classKey
-                && normalizeCurriculumSession(item.session || item.sessionKey) === sessionKey
+                && canonicalScheduleSubjectKey(item.subject) === canonicalSubjectKey
+                && scheduleCourseSessionKey(item.subject, item.session || item.sessionKey) === sessionKey
+            ) || (curriculumMap || []).find(item =>
+                normalizeClassKey(item.className) === classKey
+                && scheduleCourseSessionKey(item.subject, item.session || item.sessionKey) === sessionKey
             ) || null;
         }
 
@@ -1521,7 +1526,7 @@
             const curriculumLessonCache = new Map();
             return slots.map(slot => {
                 const curriculum = findCurriculumMapEntry(curriculumMap, slot.class, slot.subject, slot.session);
-                const occurrenceKey = `${normalizeClassKey(slot.class)}|${normalizeLookupText(slot.subject)}|${normalizeCurriculumSession(slot.session)}`;
+                const occurrenceKey = scheduleCourseKey(slot.class, slot.subject, slot.session);
                 const occurrence = occurrenceByClass.get(occurrenceKey) || 0;
                 occurrenceByClass.set(occurrenceKey, occurrence + 1);
                 const ppctPeriod = String((Number.parseInt(curriculum?.ppctStart, 10) || 1) + occurrence);
