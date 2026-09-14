@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.2 (quality patch)
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.5 (live conduct sync patch)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -363,15 +363,22 @@
             const entries = (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester));
             const regulationEntries = entries.map(entry => ({ entry, rule:homeroomRuleById(entry.ruleId) }))
                 .filter(item => item.rule?.scope === 'student' && homeroomIsSchoolRule(item.rule));
-            const violationItems = regulationEntries.filter(item => item.rule.type !== 'commendation' && (homeroomClampPoints(item.entry.points) < 0 || item.rule.discipline));
+            const regulationViolationItems = regulationEntries.filter(item => item.rule.type !== 'commendation' && (homeroomClampPoints(item.entry.points) < 0 || item.rule.discipline));
+            // Ghi nhận "Vi phạm" nhập tự do vẫn phải xuất hiện trong tổng số lỗi HK.
+            // Chúng không tự tạo điểm quy chế/hình thức xử lý nếu chưa gắn một điều khoản chính thức.
+            const regulationEntryIds = new Set(regulationEntries.map(item => item.entry.id));
+            const manualViolationItems = entries
+                .filter(entry => entry.type === 'violation' && !regulationEntryIds.has(entry.id))
+                .map(entry => ({ entry, rule:null }));
+            const violationItems = [...regulationViolationItems, ...manualViolationItems];
             const violationCount = violationItems.length;
-            const phoneCount = violationItems.filter(item => item.rule.special === 'phone').length;
-            const lowerOneCount = violationItems.filter(item => item.rule.discipline === 'lower1').length;
-            const directWeak = violationItems.filter(item => item.rule.discipline === 'weak');
+            const phoneCount = violationItems.filter(item => item.rule?.special === 'phone').length;
+            const lowerOneCount = violationItems.filter(item => item.rule?.discipline === 'lower1').length;
+            const directWeak = violationItems.filter(item => item.rule?.discipline === 'weak');
             const baseline = violationCount <= 1 ? 'Tốt' : (violationCount <= 4 ? 'Khá' : (violationCount <= 6 ? 'Trung bình' : 'Yếu'));
             const reasons = [];
             if (violationCount > 6) reasons.push(`Có ${violationCount} lỗi (>6 lỗi/học kỳ)`);
-            directWeak.forEach(item => reasons.push(item.rule.label));
+            directWeak.forEach(item => reasons.push(item.rule?.label || item.entry.content || 'Vi phạm nghiêm trọng'));
             if (phoneCount >= 2) reasons.push(`Sử dụng điện thoại ${phoneCount} lần trong học kỳ (từ lần 2)`);
             const suggested = reasons.length ? 'Yếu' : homeroomConductDowngrade(baseline, lowerOneCount);
             const totalRegulationPoints = Math.round(regulationEntries.reduce((sum, item) => sum + homeroomClampPoints(item.entry.points), 0) * 2) / 2;
@@ -383,7 +390,7 @@
                 baseline, suggested, violationCount, phoneCount, lowerOneCount, directWeakCount:directWeak.length,
                 reasons:[...new Set(reasons)], totalRegulationPoints, rewardPoints, deductionPoints,
                 regulationEntryCount:regulationEntries.length, unresolvedViolationCount,
-                lastViolationDate:lastViolation?.entry?.date || '', lastViolationLabel:lastViolation?.rule?.label || ''
+                lastViolationDate:lastViolation?.entry?.date || '', lastViolationLabel:lastViolation?.rule?.label || lastViolation?.entry?.content || 'Vi phạm'
             };
         }
 
@@ -1556,8 +1563,11 @@
 
         function homeroomAddStudentEntry(event) {
             event.preventDefault();
-            const book = homeroomActiveBook();
+            // Lấy workspace và book từ CÙNG một snapshot. homeroomEnsureState() chuẩn hóa bằng
+            // cách tạo object mới; gọi nó sau homeroomActiveBook() sẽ làm `book` thành tham chiếu cũ,
+            // khiến ghi nhận vừa thêm không nằm trong state đang render/persist.
             const data = homeroomEnsureState();
+            const book = data.selectedBookId && data.books?.[data.selectedBookId] ? data.books[data.selectedBookId] : null;
             const student = homeroomFindStudent(book, data.selectedStudentId);
             if (!book || !student) {
                 showToast('⚠️ Hãy chọn học sinh cần ghi nhận', 'info');
@@ -1605,6 +1615,11 @@
             }, book.entries.length);
             book.entries.push(entry);
             book.updatedAt = new Date().toISOString();
+            // Commit ngay vào workspace đang hoạt động trước khi render/persist để bảng Nề nếp
+            // và Firestore cùng nhìn thấy đúng bản ghi vừa thêm.
+            state.homeroom = data;
+            const activeWorkspace = typeof getActiveYearWorkspace === 'function' ? getActiveYearWorkspace() : null;
+            if (activeWorkspace) activeWorkspace.homeroom = data;
             homeroomById('homeroomStudentLogContent').value = '';
             homeroomById('homeroomStudentLogFollowUp').value = '';
             homeroomById('homeroomConductRuleSelect').value = '';

@@ -1,6 +1,6 @@
-# Stable Release Checklist — v53.3.4
+# Stable Release Checklist — v53.3.5
 
-- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.4.
+- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.5.
 - [x] Giữ nguyên dữ liệu và chức năng v53.2.
 - [x] Module bảng thi đua v53.3 tải trước `15-init.js`.
 - [x] Service Worker cache CSS/JS v53.3.
@@ -24,3 +24,6 @@
 - [x] Snapshot Firestore cũ không dựng lại dữ liệu local vừa xóa.
 - [x] Personal year workspace ghi đè snapshot đầy đủ để xóa map con trên cloud thật sự.
 - [x] Fixture v53.3.4 OCR/sync resilience PASS.
+
+- [x] Fixture v53.3.5 live-sync Nề nếp PASS.
+- [x] Ghi lỗi học sinh cập nhật ngay Lỗi HK / Chưa xử lý / Điểm quy chế.

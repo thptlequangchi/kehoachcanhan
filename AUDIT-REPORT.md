@@ -1,31 +1,23 @@
-# AUDIT REPORT — v53.3.4 STABLE
+# AUDIT REPORT — v53.3.5 STABLE
 
 Ngày rà soát: 14/09/2026
 
 ## Phạm vi nâng cấp
-Bản v53.3.4 kế thừa trực tiếp v53.3.3 STABLE và tập trung sửa hai lỗi thực tế: **mất mạng thì OCR thời khóa biểu không dựng được ô** và **xóa thời khóa biểu/ảnh nguồn nhưng dữ liệu cũ có thể xuất hiện lại**.
+Bản v53.3.5 kế thừa trực tiếp v53.3.4 STABLE và sửa lỗi thực tế ở **Nề nếp 2026–2027 & gợi ý xếp loại**: sau khi nhập lỗi học sinh, bản ghi có thể không đi vào state đang render/persist nên tổng **Lỗi HK** vẫn bằng 0.
 
 ## Nguyên nhân đã xác định
-1. OCR dự phòng trước đây chủ yếu giữ transcript văn bản và cố ý không suy đoán giao điểm buổi × thứ × tiết, vì vậy TKB hiển thị trắng dù OCR có thể đã đọc được chữ.
-2. Kết quả TKB trắng có thể bị cache theo hash ảnh; lần tải lại cùng ảnh trả ngay cache trắng.
-3. Xóa TKB chưa xóa cache nhận dạng tương ứng.
-4. Trong lúc local vừa xóa/sửa nhưng chưa ghi xong, snapshot Firestore cũ có thể được áp dụng lại.
-5. Dữ liệu cá nhân trước đây ghi bằng `setDoc(..., {merge:true})`; với cấu trúc map theo tuần, việc bỏ một khóa local có nguy cơ không biểu diễn được thao tác xóa trên cloud.
+`homeroomActiveBook()` gọi chuẩn hóa workspace và trả về một `book`. Ngay sau đó `homeroomAddStudentEntry()` lại gọi `homeroomEnsureState()`. Hàm chuẩn hóa tạo object workspace mới, vì vậy biến `book` trước đó trở thành tham chiếu cũ. Bản ghi mới được `push` vào object cũ, còn giao diện và Firestore đọc object mới nên không thấy lỗi vừa nhập.
 
-## Khắc phục v53.3.4
-- Thêm OCR không gian từ TSV/tọa độ Tesseract để phát hiện hai vùng sáng/chiều, hàng tiết 1–5 và cột Thứ 2–7, rồi gán chữ vào từng ô.
-- Bump Recognition Engine lên 5; cache cũ tự hết hiệu lực.
-- Không cache TKB trắng hoặc kết quả `manual`; cache vô dụng gặp lại sẽ tự loại.
-- Xóa TKB tuần đồng thời quên cache ảnh nguồn ở RAM/IndexedDB/recent recognition.
-- Service Worker làm ấm Tesseract main/worker/core cùng `vie` và `eng` traineddata khi online.
-- Bổ sung dirty/pending hash cho personal cloud sync để snapshot cũ không ghi đè thay đổi local chưa đồng bộ.
-- Personal year workspace được ghi như snapshot đầy đủ thay vì deep-merge, nên tuần đã xóa được xóa thật trên Firestore.
+## Khắc phục v53.3.5
+- Lấy `data` và `book` từ **cùng một snapshot đã chuẩn hóa** trong luồng thêm ghi nhận học sinh.
+- Commit `state.homeroom` và `activeWorkspace.homeroom` trước khi render/persist.
+- Bổ sung tương thích cho ghi nhận tự do `type=violation`: vẫn tính vào `Lỗi HK` và `Chưa xử lý`; không tự sinh điểm/hình thức quy chế nếu chưa gắn điều khoản.
+- Giữ nguyên toàn bộ bản vá OCR/offline/xóa bền vững của v53.3.4 và PPCT HĐTN của v53.3.3.
 
 ## Tương thích dữ liệu
-- APP_VERSION / Stable Guard / Service Worker / release manifest đồng bộ `53.3.4`.
-- DATA_SCHEMA_VERSION vẫn là `5`; không có migration phá dữ liệu.
-- Toàn bộ thay đổi v53.3.3 về chuỗi PPCT HĐTN được giữ nguyên.
-- Dữ liệu TKB, PPCT, kế hoạch, sổ điểm và sổ chủ nhiệm cũ tiếp tục được normalize như trước.
+- APP_VERSION / Stable Guard / Service Worker / release manifest đồng bộ `53.3.5`.
+- DATA_SCHEMA_VERSION vẫn là `5`; không migration phá dữ liệu.
+- Sổ điểm, TKB, PPCT, kế hoạch tuần, Sổ chủ nhiệm, bảng thi đua và dữ liệu cloud cũ được giữ nguyên.
 
 ## Kết luận
-Bản v53.3.4 đủ điều kiện STABLE sau khi toàn bộ static audit, fixtures cũ và fixture resilience mới đều PASS. Thiết bị mới cần có ít nhất một lần online để tải sẵn runtime/ngôn ngữ OCR trước khi dùng hoàn toàn ngoại tuyến.
+Bản v53.3.5 đủ điều kiện STABLE khi static audit, fixtures cũ và fixture live-sync mới đều PASS.

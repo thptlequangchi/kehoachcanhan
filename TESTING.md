@@ -1,4 +1,4 @@
-# TESTING — v53.3.4 STABLE
+# TESTING — v53.3.5 STABLE
 
 ## Lệnh kiểm tra
 ```bash
@@ -6,12 +6,13 @@ python tests/run-static-audit.py
 node tests/run-state-fixtures.js
 node tests/run-session-ppct-fixtures.js
 node tests/run-homeroom-autosync-fixtures.js
+node tests/run-homeroom-live-sync-v53-3-5.js
 node tests/run-quality-patch-v53-3-2.js
 node tests/run-ocr-resilience-v53-3-4.js
 ```
 
 ## Invariant v53.3
-- APP_VERSION state = Service Worker = release manifest = `53.3.4`.
+- APP_VERSION state = Service Worker = release manifest = `53.3.5`.
 - Toàn bộ HTML ID duy nhất; tài nguyên HTML và APP_SHELL tồn tại.
 - Tất cả JavaScript qua `node --check`.
 - Dữ liệu v53.2 được normalize sang cấu trúc có `book.competition` mà không phá dữ liệu cũ.
@@ -53,3 +54,9 @@ node tests/run-ocr-resilience-v53-3-4.js
 - Service Worker phải có cơ chế `WARM_OCR_CACHE` và cache Tesseract worker/core + `vie`/`eng` traineddata.
 - Khi local có thay đổi chưa đồng bộ, snapshot Firestore cũ không được áp dụng trở lại.
 - Ghi dữ liệu cá nhân Firestore theo snapshot đầy đủ, không deep-merge map TKB, để tuần đã xóa không tồn tại ngầm trên cloud.
+
+## v53.3.5 — Live sync Nề nếp học sinh
+- Fixture mô phỏng `normalizeHomeroomWorkspace()` tạo object mới mỗi lần để bắt đúng lỗi stale-reference.
+- Sau submit, entry phải tồn tại trong `state.homeroom` và workspace năm học đang hoạt động.
+- `Lỗi HK` và `Điểm quy chế` phải cập nhật ngay với lỗi quy chế.
+- Vi phạm nhập tự do vẫn tăng `Lỗi HK/Chưa xử lý` nhưng không tự sinh điểm quy chế.
