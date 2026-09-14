@@ -14,3 +14,8 @@
 .homeroom-field-help{display:block;margin-top:4px;color:#64748b;font-size:10px;line-height:1.4}.homeroom-class-conduct-box{padding:11px;border-radius:13px;background:#fffbeb;border:1px solid #fde68a;margin-bottom:12px}.homeroom-class-conduct-box .homeroom-subsection-title{margin-bottom:8px}.homeroom-class-conduct-box .homeroom-subsection-title>span{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.homeroom-class-conduct-box .homeroom-subsection-title>span span,.homeroom-class-conduct-box .homeroom-subsection-title>span strong{padding:3px 6px;border-radius:999px;background:#fff;border:1px solid #fde68a;color:#92400e;font-size:10px}
 .homeroom-journal-divider{margin:13px 0 9px;padding-top:12px;border-top:1px dashed #cbd5e1;color:#64748b;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.homeroom-log-badges{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:5px}
 @media(max-width:760px){.homeroom-regulation-head{flex-direction:column}.homeroom-draft-badge{align-self:flex-start}.homeroom-conduct-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.homeroom-class-conduct-box .homeroom-subsection-title{align-items:flex-start}}
+
+/* v53.3.6 · Bộ điểm theo dõi nội bộ GVCN */
+.homeroom-regulation-table .is-teacher-tracking-rule{background:#eff6ff}
+.homeroom-regulation-table .is-teacher-tracking-rule.is-reward-rule{background:#ecfdf5}
+.homeroom-regulation-badge.gvcn{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}

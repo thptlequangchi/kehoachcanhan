@@ -1,10 +1,17 @@
-# Sổ Tay Giáo Viên Pro v53.3.5 — STABLE
+# Sổ Tay Giáo Viên Pro v53.3.6 — STABLE
 
-> Gói hiện tại: **v53.3.5 — STABLE**. Các changelog cũ vẫn được giữ để truy vết lịch sử.
+> Gói hiện tại: **v53.3.6 — STABLE**. Các changelog cũ vẫn được giữ để truy vết lịch sử.
 
 Bản v53.3 kế thừa trực tiếp v53.2 STABLE, giữ nguyên Sổ điểm, PPCT sáng/chiều, kế hoạch tuần, Sổ chủ nhiệm, cơ cấu tổ/ban cán sự và quy chế nề nếp 2026–2027. Nâng cấp trọng tâm là **Bảng thi đua lớp tự động**.
 
 
+
+
+### Bổ sung điểm nề nếp & khen thưởng GVCN v53.3.6
+- Thêm nhóm trừ điểm nội bộ: không hoàn thành bài thu hoạch, nộp chậm, không hoàn thành/không tham gia cuộc thi online bắt buộc, không hoàn thành nhiệm vụ được giao, thiếu chuẩn bị chuyên đề, không hoàn thành nhiệm vụ cá nhân, nộp minh chứng/biểu mẫu chậm.
+- Thêm nhóm khen thưởng: tham gia đội văn nghệ, thể thao/CLB/truyền thông, hỗ trợ hoạt động, bài thu hoạch xuất sắc, hoàn thành tốt chương trình online, đạt giải cấp trường, tiến bộ rõ rệt, có sáng kiến/hỗ trợ tập thể.
+- Mức mặc định do hệ thống gợi ý; GVCN có thể điều chỉnh trước khi lưu. Các mục này được gắn nhãn **GVCN** và không được coi là điểm chính thức của dự thảo nhà trường.
+- Điểm bổ sung được cộng vào điểm nề nếp cá nhân và số lỗi theo dõi; không tự động cộng/trừ vào bảng thi đua lớp theo quy chế.
 
 ### Đồng bộ lỗi học sinh tức thời v53.3.5
 - Sửa lỗi ghi nhận vi phạm xong nhưng cột **Lỗi HK** vẫn bằng `0` do bản ghi bị thêm vào tham chiếu Sổ chủ nhiệm cũ sau bước chuẩn hóa state.
@@ -54,6 +61,6 @@ Sổ chủ nhiệm đã được sửa theo cơ chế **nhập một lần – t
 - Dữ liệu bảng thi đua mới nằm trong `book.competition`.
 
 ## Triển khai
-Giải nén toàn bộ gói vào thư mục site/repository. Service Worker dùng `APP_VERSION = 53.3.5`; cache của v53.2 và các bản cũ sẽ được thay thế sau khi Service Worker mới kích hoạt.
+Giải nén toàn bộ gói vào thư mục site/repository. Service Worker dùng `APP_VERSION = 53.3.6`; cache của v53.2 và các bản cũ sẽ được thay thế sau khi Service Worker mới kích hoạt.
 
-Xem thêm `V53.3.5-CHANGELOG.md`, `V53.3-CHANGELOG.md`, `TESTING.md`, `AUDIT-REPORT.md` và `STABLE-RELEASE-CHECKLIST.md`.
+Xem thêm `V53.3.6-CHANGELOG.md`, `V53.3.5-CHANGELOG.md`, `V53.3-CHANGELOG.md`, `TESTING.md`, `AUDIT-REPORT.md` và `STABLE-RELEASE-CHECKLIST.md`.

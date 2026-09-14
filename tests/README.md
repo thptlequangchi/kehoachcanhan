@@ -22,3 +22,6 @@ Chạy `node tests/run-ocr-resilience-v53-3-4.js` để kiểm tra wiring OCR t�
 
 ## v53.3.5 Homeroom live sync
 Chạy `node tests/run-homeroom-live-sync-v53-3-5.js` để kiểm tra lỗi stale-reference khi thêm vi phạm, cập nhật tức thời Lỗi HK/Điểm quy chế và ghi nhận vi phạm tự do.
+
+## v53.3.6 GVCN supplemental scoring
+Chạy `node tests/run-homeroom-supplemental-v53-3-6.js` để kiểm tra danh mục trừ/thưởng GVCN, khả năng chỉnh điểm, cập nhật Lỗi HK/điểm nề nếp và việc không làm sai điểm thi đua lớp theo quy chế.

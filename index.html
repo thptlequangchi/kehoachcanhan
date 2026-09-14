@@ -1082,7 +1082,7 @@
 
                 <section class="homeroom-regulation-panel" id="homeroomRegulationPanel" aria-label="Đánh giá nề nếp theo quy chế năm học 2026-2027">
                     <div class="homeroom-regulation-head">
-                        <div><h3>⚖️ Nề nếp 2026–2027 &amp; gợi ý xếp loại</h3><small>Tự động đồng bộ ngay sau mỗi ghi nhận: số lỗi học kỳ, điểm quy chế, lỗi chưa xử lý, hạ bậc và gợi ý xếp loại theo dự thảo.</small></div>
+                        <div><h3>⚖️ Nề nếp 2026–2027 &amp; gợi ý xếp loại</h3><small>Tự động đồng bộ ngay sau mỗi ghi nhận: số lỗi học kỳ, điểm nề nếp, lỗi chưa xử lý, hạ bậc và gợi ý xếp loại; các mục GVCN bổ sung được tách rõ khỏi dự thảo.</small></div>
                         <span class="homeroom-draft-badge">DỰ THẢO · 08/09/2026</span>
                     </div>
                     <div class="homeroom-conduct-summary" id="homeroomConductSummary">Chưa mở sổ chủ nhiệm.</div>
@@ -1091,8 +1091,8 @@
                 </section>
 
                 <details class="homeroom-rules-panel" id="homeroomRulesPanel">
-                    <summary>📘 Quy chế nề nếp 2026–2027 <small>48 lỗi vi phạm + các mức khen thưởng</small></summary>
-                    <div class="homeroom-rules-note">Điểm trừ/thưởng được nhập theo đúng mức trong <strong>bản dự thảo</strong> và <strong>không tự nhân hệ số tái phạm</strong>. Về xếp loại: lấy Tốt làm chuẩn; 2–4 lỗi gợi ý Khá, 5–6 lỗi gợi ý Trung bình, trên 6 lỗi gợi ý Yếu; các lỗi có quy định “hạ 1 bậc” hoặc “hạnh kiểm yếu” được xử lý riêng.</div>
+                    <summary>📘 Quy chế nề nếp 2026–2027 <small>48 lỗi vi phạm + khen thưởng + bộ điểm theo dõi GVCN</small></summary>
+                    <div class="homeroom-rules-note">Điểm của các mục quy chế được nhập theo đúng mức trong <strong>bản dự thảo</strong> và <strong>không tự nhân hệ số tái phạm</strong>. Các mục <strong>Bổ sung GVCN</strong> là điểm theo dõi nội bộ, có thể chỉnh trước khi lưu và không thay thế quy định chính thức. Về xếp loại: lấy Tốt làm chuẩn; 2–4 lỗi gợi ý Khá, 5–6 lỗi gợi ý Trung bình, trên 6 lỗi gợi ý Yếu; các lỗi có quy định “hạ 1 bậc” hoặc “hạnh kiểm yếu” được xử lý riêng.</div>
                     <div class="homeroom-rules-table-wrap" id="homeroomRulesTable"></div>
                 </details>
 
@@ -1218,9 +1218,9 @@
                             <label><span>Nhóm ghi nhận</span><select id="homeroomStudentLogType">
                                 <option value="absence_excused">Vắng có phép</option><option value="absence_unexcused">Vắng không phép</option><option value="late">Đi muộn</option><option value="violation">Vi phạm</option><option value="commendation">Khen thưởng</option><option value="parent_contact">Trao đổi phụ huynh</option><option value="support">Hỗ trợ học sinh</option><option value="note">Ghi chú</option>
                             </select></label>
-                            <label class="full"><span>Nội dung theo quy chế nề nếp</span><select id="homeroomConductRuleSelect"><option value="">— Ghi nhận tự do / không tính điểm —</option></select><small class="homeroom-field-help">Chọn lỗi/khen thưởng để tự điền điểm và mức xử lý theo dự thảo 2026–2027.</small></label>
+                            <label class="full"><span>Nội dung nề nếp / khen thưởng</span><select id="homeroomConductRuleSelect"><option value="">— Ghi nhận tự do / không tính điểm —</option></select><small class="homeroom-field-help">Chọn mục để tự điền điểm. Nhóm “Bổ sung GVCN” là điểm theo dõi nội bộ và có thể điều chỉnh trước khi lưu.</small></label>
                             <label id="homeroomAbsenceExceptionField" hidden><span>Lý do / ngoại lệ vắng có phép</span><select id="homeroomAbsenceException"><option value="normal">Thông thường (−2)</option><option value="noel">Noel – HS Công giáo (0)</option><option value="religious_holiday">Lễ tôn giáo có giấy xác nhận (−0,5)</option><option value="long_term">Vắng học lâu dài (chỉ trừ 3 ngày đầu)</option></select><small id="homeroomAbsenceExceptionHelp" class="homeroom-field-help"></small></label>
-                            <label><span>Điểm quy chế</span><input id="homeroomStudentLogBasePoints" type="number" min="-100" max="100" step="0.5" value="0" /></label>
+                            <label><span>Điểm nề nếp</span><input id="homeroomStudentLogBasePoints" type="number" min="-100" max="100" step="0.5" value="0" /></label>
                             <label><span>Mức độ</span><select id="homeroomStudentLogSeverity"><option value="neutral">Không xếp mức</option><option value="positive">Tích cực</option><option value="light">Nhẹ</option><option value="medium">Trung bình</option><option value="heavy">Nặng</option><option value="critical">Nghiêm trọng</option></select></label>
                             <label><span>Mức áp dụng</span><input id="homeroomRepeatPreview" type="text" value="—" readonly /></label>
                             <label class="full"><span>Hình thức xử lý / lưu ý</span><input id="homeroomRuleEffectPreview" type="text" value="—" readonly /></label>

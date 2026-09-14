@@ -1,6 +1,6 @@
-# Stable Release Checklist — v53.3.5
+# Stable Release Checklist — v53.3.6
 
-- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.5.
+- [x] APP_VERSION đồng bộ state / Service Worker / release manifest = 53.3.6.
 - [x] Giữ nguyên dữ liệu và chức năng v53.2.
 - [x] Module bảng thi đua v53.3 tải trước `15-init.js`.
 - [x] Service Worker cache CSS/JS v53.3.
@@ -27,3 +27,8 @@
 
 - [x] Fixture v53.3.5 live-sync Nề nếp PASS.
 - [x] Ghi lỗi học sinh cập nhật ngay Lỗi HK / Chưa xử lý / Điểm quy chế.
+
+- [x] Bộ điểm GVCN bổ sung tách biệt rõ với dự thảo quy chế.
+- [x] Ghi nhận GVCN tự chọn đúng Vi phạm/Khen thưởng và tự điền mức điểm gợi ý.
+- [x] Điểm GVCN tính vào theo dõi cá nhân nhưng không làm thay đổi điểm thi đua lớp theo quy chế.
+- [x] Fixture v53.3.6 supplemental conduct/reward PASS.

@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.5 (live conduct sync patch)
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.6 (GVCN supplemental conduct/reward scoring)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -170,6 +170,29 @@
             { id:'nn26_reward_rule77', group:'Khen thưởng theo quy chế', label:'Thực hiện tốt quy định 77 tại địa phương', type:'commendation', points:2, severity:'positive', scope:'student', adjustable:true, note:'Có tham gia +2; tham gia tích cực +5 điểm/HS.' },
         ]);
 
+        // Bộ điểm theo dõi nội bộ do GVCN sử dụng. Đây KHÔNG phải mức điểm trong dự thảo quy chế
+        // của nhà trường; mục đích là giúp theo dõi các nhiệm vụ học tập/hoạt động thường ngày một cách nhất quán.
+        // Điểm mặc định có thể được GVCN điều chỉnh trước khi lưu từng ghi nhận.
+        const HOMEROOM_TEACHER_TRACKING_RULES = Object.freeze([
+            { id:'gvcn_deduct_reflection_missing', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không hoàn thành bài thu hoạch theo yêu cầu', type:'violation', points:-5, severity:'medium', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -5 điểm; GVCN có thể điều chỉnh theo mức độ và thời hạn được giao.' },
+            { id:'gvcn_deduct_reflection_late', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Nộp bài thu hoạch / sản phẩm quá hạn', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -2 điểm cho trường hợp nộp chậm nhưng đã hoàn thành.' },
+            { id:'gvcn_deduct_online_incomplete', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không hoàn thành cuộc thi / bài thi online bắt buộc', type:'violation', points:-5, severity:'medium', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -5 điểm; dùng khi học sinh có tham gia nhưng chưa hoàn thành yêu cầu.' },
+            { id:'gvcn_deduct_online_absent', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không tham gia cuộc thi / bài thi online bắt buộc không có lý do', type:'violation', points:-10, severity:'medium', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -10 điểm; nên ghi rõ tên cuộc thi và thời hạn trong Nội dung.' },
+            { id:'gvcn_deduct_assigned_task', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không hoàn thành nhiệm vụ được GVCN / lớp giao', type:'violation', points:-5, severity:'medium', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -5 điểm cho nhiệm vụ cá nhân đã được giao rõ ràng.' },
+            { id:'gvcn_deduct_presentation_prep', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không chuẩn bị nội dung sinh hoạt / chuyên đề được phân công', type:'violation', points:-5, severity:'medium', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_deduct_personal_duty', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không hoàn thành trực nhật / nhiệm vụ cá nhân được phân công', type:'violation', points:-5, severity:'medium', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_deduct_form_late', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không nộp minh chứng / phiếu / biểu mẫu đúng hạn', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true },
+
+            { id:'gvcn_reward_arts_team', group:'Bổ sung GVCN · Khen thưởng', label:'Tham gia đội văn nghệ của lớp / trường', type:'commendation', points:5, severity:'positive', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý +5 điểm cho mỗi đợt/chương trình có tham gia thực chất.' },
+            { id:'gvcn_reward_sports_club', group:'Bổ sung GVCN · Khen thưởng', label:'Tham gia đội thể thao / CLB / đội truyền thông / sự kiện', type:'commendation', points:5, severity:'positive', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_reward_event_support', group:'Bổ sung GVCN · Khen thưởng', label:'Tích cực tập luyện, hỗ trợ chương trình / hoạt động tập thể', type:'commendation', points:3, severity:'positive', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_reward_reflection_excellent', group:'Bổ sung GVCN · Khen thưởng', label:'Hoàn thành xuất sắc bài thu hoạch / sản phẩm học tập', type:'commendation', points:5, severity:'positive', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_reward_online_complete', group:'Bổ sung GVCN · Khen thưởng', label:'Hoàn thành tốt cuộc thi / chương trình online bắt buộc', type:'commendation', points:3, severity:'positive', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_reward_school_award', group:'Bổ sung GVCN · Khen thưởng', label:'Đạt thành tích / giải trong cuộc thi cấp trường', type:'commendation', points:10, severity:'positive', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý +10 điểm. Các giải cấp thị xã/tỉnh/quốc gia tiếp tục dùng mức khen thưởng chính thức đã có trong danh mục.' },
+            { id:'gvcn_reward_progress', group:'Bổ sung GVCN · Khen thưởng', label:'Có tiến bộ rõ rệt, được giáo viên / tập thể tuyên dương', type:'commendation', points:5, severity:'positive', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_reward_initiative_help', group:'Bổ sung GVCN · Khen thưởng', label:'Có sáng kiến hoặc hỗ trợ bạn / lớp hiệu quả', type:'commendation', points:3, severity:'positive', scope:'student', source:'teacher', adjustable:true },
+        ]);
+
         const HOMEROOM_SCHOOL_EXTRA_WEAK_RULES = Object.freeze([
             { id:'nn26_extra_cheating', label:'Gian lận trong kiểm tra, thi cử', type:'violation', points:0, severity:'critical', scope:'student', discipline:'weak', group:'Vi phạm xếp hạnh kiểm yếu' },
             { id:'nn26_extra_serious_repeat', label:'Sai phạm nghiêm trọng hoặc lặp lại nhiều lần, đã giáo dục nhưng chưa sửa chữa', type:'violation', points:0, severity:'critical', scope:'student', discipline:'weak', group:'Vi phạm xếp hạnh kiểm yếu' },
@@ -180,6 +203,7 @@
         const HOMEROOM_CONDUCT_RULES = Object.freeze([
             ...HOMEROOM_SCHOOL_RULES_2026.filter(rule => rule.scope === 'student'),
             ...HOMEROOM_SCHOOL_REWARD_RULES_2026.filter(rule => rule.scope === 'student'),
+            ...HOMEROOM_TEACHER_TRACKING_RULES.filter(rule => rule.scope === 'student'),
             ...HOMEROOM_SCHOOL_EXTRA_WEAK_RULES,
         ]);
         const HOMEROOM_CLASS_CONDUCT_RULES = Object.freeze([
@@ -187,6 +211,7 @@
             ...HOMEROOM_SCHOOL_REWARD_RULES_2026.filter(rule => rule.scope === 'class'),
         ]);
         const HOMEROOM_ALL_SCHOOL_RULES = Object.freeze([...HOMEROOM_SCHOOL_RULES_2026, ...HOMEROOM_SCHOOL_REWARD_RULES_2026, ...HOMEROOM_SCHOOL_EXTRA_WEAK_RULES]);
+        const HOMEROOM_ALL_TRACKING_RULES = Object.freeze([...HOMEROOM_ALL_SCHOOL_RULES, ...HOMEROOM_TEACHER_TRACKING_RULES]);
 
         function homeroomById(id) {
             return document.getElementById(id);
@@ -226,7 +251,7 @@
         }
 
         function homeroomRuleById(ruleId) {
-            return HOMEROOM_ALL_SCHOOL_RULES.find(rule => rule.id === cleanText(ruleId)) || HOMEROOM_LEGACY_CONDUCT_RULES.find(rule => rule.id === cleanText(ruleId)) || null;
+            return HOMEROOM_ALL_TRACKING_RULES.find(rule => rule.id === cleanText(ruleId)) || HOMEROOM_LEGACY_CONDUCT_RULES.find(rule => rule.id === cleanText(ruleId)) || null;
         }
 
         function homeroomSeverityMeta(severity) {
@@ -321,7 +346,7 @@
             const count = (book.entries || []).filter(entry => entry.studentId === studentId && entry.ruleId === ruleId && homeroomEntryInWeek(entry, dateValue)).length;
             const rule = homeroomRuleById(ruleId);
             // Quy chế 2026–2027 quy định mức trừ cố định theo lần; không tự nhân hệ số tái phạm.
-            if (rule && HOMEROOM_ALL_SCHOOL_RULES.some(item => item.id === rule.id)) return { repeatCount:count, multiplier:1 };
+            if (rule && HOMEROOM_ALL_TRACKING_RULES.some(item => item.id === rule.id)) return { repeatCount:count, multiplier:1 };
             return { repeatCount:count, multiplier: count === 0 ? 1 : (count === 1 ? 1.5 : 2) };
         }
 
@@ -331,13 +356,21 @@
             return Boolean(rule && HOMEROOM_ALL_SCHOOL_RULES.some(item => item.id === rule.id));
         }
 
+        function homeroomIsTeacherTrackingRule(rule) {
+            return Boolean(rule && HOMEROOM_TEACHER_TRACKING_RULES.some(item => item.id === rule.id));
+        }
+
+        function homeroomIsScoredConductRule(rule) {
+            return homeroomIsSchoolRule(rule) || homeroomIsTeacherTrackingRule(rule);
+        }
+
         function homeroomEntryRule(entry) {
             return homeroomRuleById(entry?.ruleId);
         }
 
         function homeroomEntryIsRegulationViolation(entry) {
             const rule = homeroomEntryRule(entry);
-            return Boolean(entry?.studentId && rule?.scope === 'student' && homeroomIsSchoolRule(rule)
+            return Boolean(entry?.studentId && rule?.scope === 'student' && homeroomIsScoredConductRule(rule)
                 && rule.type !== 'commendation' && (homeroomClampPoints(entry?.points) < 0 || rule.discipline));
         }
 
@@ -363,10 +396,13 @@
             const entries = (book?.entries || []).filter(entry => entry.studentId === studentId && String(entry.semester) === String(semester));
             const regulationEntries = entries.map(entry => ({ entry, rule:homeroomRuleById(entry.ruleId) }))
                 .filter(item => item.rule?.scope === 'student' && homeroomIsSchoolRule(item.rule));
-            const regulationViolationItems = regulationEntries.filter(item => item.rule.type !== 'commendation' && (homeroomClampPoints(item.entry.points) < 0 || item.rule.discipline));
+            const teacherTrackingEntries = entries.map(entry => ({ entry, rule:homeroomRuleById(entry.ruleId) }))
+                .filter(item => item.rule?.scope === 'student' && homeroomIsTeacherTrackingRule(item.rule));
+            const scoredEntries = [...regulationEntries, ...teacherTrackingEntries];
+            const regulationViolationItems = scoredEntries.filter(item => item.rule.type !== 'commendation' && (homeroomClampPoints(item.entry.points) < 0 || item.rule.discipline));
             // Ghi nhận "Vi phạm" nhập tự do vẫn phải xuất hiện trong tổng số lỗi HK.
-            // Chúng không tự tạo điểm quy chế/hình thức xử lý nếu chưa gắn một điều khoản chính thức.
-            const regulationEntryIds = new Set(regulationEntries.map(item => item.entry.id));
+            // Chúng không tự tạo điểm nếu chưa gắn một điều khoản/danh mục có chấm điểm.
+            const regulationEntryIds = new Set(scoredEntries.map(item => item.entry.id));
             const manualViolationItems = entries
                 .filter(entry => entry.type === 'violation' && !regulationEntryIds.has(entry.id))
                 .map(entry => ({ entry, rule:null }));
@@ -381,15 +417,19 @@
             directWeak.forEach(item => reasons.push(item.rule?.label || item.entry.content || 'Vi phạm nghiêm trọng'));
             if (phoneCount >= 2) reasons.push(`Sử dụng điện thoại ${phoneCount} lần trong học kỳ (từ lần 2)`);
             const suggested = reasons.length ? 'Yếu' : homeroomConductDowngrade(baseline, lowerOneCount);
-            const totalRegulationPoints = Math.round(regulationEntries.reduce((sum, item) => sum + homeroomClampPoints(item.entry.points), 0) * 2) / 2;
-            const rewardPoints = Math.round(regulationEntries.filter(item => item.rule.type === 'commendation').reduce((sum,item)=>sum+Math.max(0,homeroomClampPoints(item.entry.points)),0)*2)/2;
-            const deductionPoints = Math.round(regulationEntries.filter(item => item.rule.type !== 'commendation').reduce((sum,item)=>sum+Math.min(0,homeroomClampPoints(item.entry.points)),0)*2)/2;
+            // totalRegulationPoints được giữ tên để tương thích dữ liệu/UI cũ, nhưng từ v53.3.6
+            // là tổng điểm nề nếp đang theo dõi = quy chế chính thức + bộ điểm GVCN bổ sung.
+            const totalRegulationPoints = Math.round(scoredEntries.reduce((sum, item) => sum + homeroomClampPoints(item.entry.points), 0) * 2) / 2;
+            const officialRegulationPoints = Math.round(regulationEntries.reduce((sum, item) => sum + homeroomClampPoints(item.entry.points), 0) * 2) / 2;
+            const teacherTrackingPoints = Math.round(teacherTrackingEntries.reduce((sum, item) => sum + homeroomClampPoints(item.entry.points), 0) * 2) / 2;
+            const rewardPoints = Math.round(scoredEntries.filter(item => item.rule.type === 'commendation').reduce((sum,item)=>sum+Math.max(0,homeroomClampPoints(item.entry.points)),0)*2)/2;
+            const deductionPoints = Math.round(scoredEntries.filter(item => item.rule.type !== 'commendation').reduce((sum,item)=>sum+Math.min(0,homeroomClampPoints(item.entry.points)),0)*2)/2;
             const unresolvedViolationCount = violationItems.filter(item => !item.entry.resolved).length;
             const lastViolation = [...violationItems].sort((a,b) => String(b.entry.date || '').localeCompare(String(a.entry.date || '')) || String(b.entry.createdAt || '').localeCompare(String(a.entry.createdAt || '')))[0] || null;
             return {
                 baseline, suggested, violationCount, phoneCount, lowerOneCount, directWeakCount:directWeak.length,
-                reasons:[...new Set(reasons)], totalRegulationPoints, rewardPoints, deductionPoints,
-                regulationEntryCount:regulationEntries.length, unresolvedViolationCount,
+                reasons:[...new Set(reasons)], totalRegulationPoints, officialRegulationPoints, teacherTrackingPoints, rewardPoints, deductionPoints,
+                regulationEntryCount:regulationEntries.length, teacherTrackingEntryCount:teacherTrackingEntries.length, scoredEntryCount:scoredEntries.length, unresolvedViolationCount,
                 lastViolationDate:lastViolation?.entry?.date || '', lastViolationLabel:lastViolation?.rule?.label || lastViolation?.entry?.content || 'Vi phạm'
             };
         }
@@ -1097,7 +1137,7 @@
                 return;
             }
             tableEl.innerHTML = `<table class="homeroom-monitor-table"><thead><tr>
-                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Lỗi nề nếp HK</th><th>Điểm quy chế</th><th>Điểm tuần</th><th>Xu hướng 4 tuần</th><th>Nghiêm trọng</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
+                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Lỗi nề nếp HK</th><th>Điểm nề nếp</th><th>Điểm tuần</th><th>Xu hướng 4 tuần</th><th>Nghiêm trọng</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
                 </tr></thead><tbody>${shownRows.map(({ student, metrics, status }) => {
                     const alertTitle = status.alerts.length ? status.alerts.join(' · ') : 'Chưa chạm ngưỡng';
                     const trend = metrics.trend || { direction:'stable', label:'Ổn định', scores:[100,100,100,100], weeks:[] };
@@ -1136,7 +1176,7 @@
         }
 
         function homeroomRuleOptionLabel(rule) {
-            const tt = Number.isFinite(Number(rule.no)) ? `TT ${rule.no} · ` : '';
+            const tt = Number.isFinite(Number(rule.no)) ? `TT ${rule.no} · ` : (homeroomIsTeacherTrackingRule(rule) ? 'GVCN · ' : '');
             const effect = homeroomSchoolRuleEffectLabel(rule);
             return `${tt}${rule.label} · ${homeroomFormatPoints(rule.points)}${effect ? ` · ${effect}` : ''}`;
         }
@@ -1159,7 +1199,8 @@
             if (table) {
                 const violationRows = HOMEROOM_SCHOOL_RULES_2026.map(rule => `<tr class="${rule.severity === 'critical' ? 'is-critical-rule' : ''}"><td>${homeroomEscapeHtml(rule.no)}</td><td>${rule.scope === 'student' ? 'Học sinh' : 'Lớp'}</td><td>${homeroomEscapeHtml(rule.group)}</td><td><strong>${homeroomEscapeHtml(rule.label)}</strong>${rule.note ? `<small class="homeroom-rule-note">${homeroomEscapeHtml(rule.note)}</small>` : ''}</td><td><strong class="points-negative">${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</strong></td><td>${homeroomSchoolRuleEffectLabel(rule) ? `<span class="homeroom-discipline-badge">${homeroomEscapeHtml(homeroomSchoolRuleEffectLabel(rule))}</span>` : '—'}</td></tr>`).join('');
                 const rewardRows = HOMEROOM_SCHOOL_REWARD_RULES_2026.map(rule => `<tr class="is-reward-rule"><td>+</td><td>${rule.scope === 'student' ? 'Học sinh' : 'Lớp'}</td><td>Khen thưởng</td><td><strong>${homeroomEscapeHtml(rule.label)}</strong>${rule.note ? `<small class="homeroom-rule-note">${homeroomEscapeHtml(rule.note)}</small>` : ''}</td><td><strong class="points-positive">${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</strong></td><td>Khuyến khích</td></tr>`).join('');
-                table.innerHTML = `<table class="homeroom-rules-table homeroom-regulation-table"><thead><tr><th>TT</th><th>Áp dụng</th><th>Nhóm</th><th>Nội dung</th><th>Điểm</th><th>Xử lý</th></tr></thead><tbody>${violationRows}${rewardRows}</tbody></table>`;
+                const teacherRows = HOMEROOM_TEACHER_TRACKING_RULES.map(rule => `<tr class="is-teacher-tracking-rule ${rule.type === 'commendation' ? 'is-reward-rule' : ''}"><td>GVCN</td><td>Học sinh</td><td>${homeroomEscapeHtml(rule.group.replace('Bổ sung GVCN · ', ''))}</td><td><strong>${homeroomEscapeHtml(rule.label)}</strong>${rule.note ? `<small class="homeroom-rule-note">${homeroomEscapeHtml(rule.note)}</small>` : ''}<small class="homeroom-rule-note"><b>Điểm theo dõi nội bộ</b>, không thay thế mức chính thức của nhà trường.</small></td><td><strong class="${rule.points > 0 ? 'points-positive' : 'points-negative'}">${homeroomEscapeHtml(homeroomFormatPoints(rule.points))}</strong></td><td>GVCN có thể điều chỉnh</td></tr>`).join('');
+                table.innerHTML = `<table class="homeroom-rules-table homeroom-regulation-table"><thead><tr><th>TT</th><th>Áp dụng</th><th>Nhóm</th><th>Nội dung</th><th>Điểm</th><th>Xử lý</th></tr></thead><tbody>${violationRows}${rewardRows}${teacherRows}</tbody></table>`;
             }
         }
 
@@ -1190,7 +1231,7 @@
             const counts = Object.fromEntries(HOMEROOM_CONDUCT_LEVELS.map(level => [level, rows.filter(row => row.assessment.suggested === level).length]));
             if (summary) summary.innerHTML = `<div class="homeroom-conduct-kpis"><span><b>${book.students.length}</b> HS</span><span class="level-good"><b>${counts['Tốt']}</b> Tốt</span><span class="level-fair"><b>${counts['Khá']}</b> Khá</span><span class="level-average"><b>${counts['Trung bình']}</b> Trung bình</span><span class="level-weak"><b>${counts['Yếu']}</b> Yếu</span></div><small>Gợi ý tự động theo số lỗi và hình thức xử lý trong <strong>dự thảo</strong>; GVCN kiểm tra hồ sơ thực tế trước khi kết luận.</small>`;
             if (table) {
-                table.innerHTML = rows.length ? `<div class="homeroom-conduct-table-wrap"><table class="homeroom-conduct-table"><thead><tr><th>Học sinh</th><th>Lỗi HK</th><th>Chưa xử lý</th><th>Điểm quy chế</th><th>Hạ bậc</th><th>Điện thoại</th><th>Gợi ý</th><th>Lỗi gần nhất</th><th>Lý do bắt buộc</th></tr></thead><tbody>${rows.map(({student,assessment}) => `<tr class="conduct-${homeroomConductLevelClass(assessment.suggested)}"><td><button type="button" class="homeroom-monitor-link" data-homeroom-conduct-student="${homeroomEscapeHtml(student.id)}"><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></button></td><td><strong>${assessment.violationCount}</strong></td><td>${assessment.unresolvedViolationCount ? `<span class="homeroom-serious-state active">${assessment.unresolvedViolationCount}</span>` : '<span class="homeroom-serious-state history">0</span>'}</td><td>${homeroomEscapeHtml(homeroomFormatPoints(assessment.totalRegulationPoints))}</td><td>${assessment.lowerOneCount}</td><td>${assessment.phoneCount}</td><td><span class="homeroom-conduct-level level-${homeroomConductLevelClass(assessment.suggested)}">${homeroomEscapeHtml(assessment.suggested)}</span></td><td>${assessment.lastViolationDate ? `<strong>${homeroomEscapeHtml(homeroomFormatDate(assessment.lastViolationDate))}</strong><small>${homeroomEscapeHtml(assessment.lastViolationLabel)}</small>` : '—'}</td><td>${assessment.reasons.length ? homeroomEscapeHtml(assessment.reasons.join(' · ')) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="homeroom-mini-empty">Chưa có học sinh.</div>';
+                table.innerHTML = rows.length ? `<div class="homeroom-conduct-table-wrap"><table class="homeroom-conduct-table"><thead><tr><th>Học sinh</th><th>Lỗi HK</th><th>Chưa xử lý</th><th>Điểm nề nếp</th><th>Hạ bậc</th><th>Điện thoại</th><th>Gợi ý</th><th>Lỗi gần nhất</th><th>Lý do bắt buộc</th></tr></thead><tbody>${rows.map(({student,assessment}) => `<tr class="conduct-${homeroomConductLevelClass(assessment.suggested)}"><td><button type="button" class="homeroom-monitor-link" data-homeroom-conduct-student="${homeroomEscapeHtml(student.id)}"><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></button></td><td><strong>${assessment.violationCount}</strong></td><td>${assessment.unresolvedViolationCount ? `<span class="homeroom-serious-state active">${assessment.unresolvedViolationCount}</span>` : '<span class="homeroom-serious-state history">0</span>'}</td><td>${homeroomEscapeHtml(homeroomFormatPoints(assessment.totalRegulationPoints))}</td><td>${assessment.lowerOneCount}</td><td>${assessment.phoneCount}</td><td><span class="homeroom-conduct-level level-${homeroomConductLevelClass(assessment.suggested)}">${homeroomEscapeHtml(assessment.suggested)}</span></td><td>${assessment.lastViolationDate ? `<strong>${homeroomEscapeHtml(homeroomFormatDate(assessment.lastViolationDate))}</strong><small>${homeroomEscapeHtml(assessment.lastViolationLabel)}</small>` : '—'}</td><td>${assessment.reasons.length ? homeroomEscapeHtml(assessment.reasons.join(' · ')) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="homeroom-mini-empty">Chưa có học sinh.</div>';
             }
             const classMetrics = homeroomClassConductMetrics(book, semester);
             if (classSummary) classSummary.innerHTML = `<span>HK${semester}</span><span>HS ${classMetrics.studentEntries} · Tập thể ${classMetrics.classEntries}</span><span class="points-negative">Trừ ${homeroomFormatPoints(classMetrics.deductions)}</span><span class="points-positive">Thưởng ${homeroomFormatPoints(classMetrics.rewards)}</span><strong>Ròng ${homeroomFormatPoints(classMetrics.net)}</strong>`;
@@ -1237,11 +1278,12 @@
             if (preview) {
                 if (absenceInfo) preview.value = `${absenceInfo.label} · ${homeroomFormatPoints(applied)}`;
                 else if (rule && homeroomIsSchoolRule(rule)) preview.value = info.repeatCount ? `Đã ghi ${info.repeatCount} lần · mức cố định ${homeroomFormatPoints(applied)}` : `Mức quy chế ${homeroomFormatPoints(applied)}`;
+                else if (rule && homeroomIsTeacherTrackingRule(rule)) preview.value = `${info.repeatCount ? `Đã ghi ${info.repeatCount} lần · ` : ''}Mức GVCN ${homeroomFormatPoints(applied)} · có thể điều chỉnh`;
                 else preview.value = rule && basePoints < 0 ? (info.repeatCount === 0 ? `Lần đầu · ${homeroomFormatPoints(applied)}` : `Đã ${info.repeatCount} lần · ×${String(multiplier).replace('.',',')} → ${homeroomFormatPoints(applied)}`) : `Không · ${homeroomFormatPoints(applied)}`;
             }
             if (effectPreview) {
                 const effect = homeroomSchoolRuleEffectLabel(rule);
-                effectPreview.value = rule ? (effect || absenceInfo?.note || rule.note || 'Không có hình thức hạ/xếp loại riêng') : '—';
+                effectPreview.value = rule ? (effect || absenceInfo?.note || rule.note || (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · không thay thế quy chế chính thức' : 'Không có hình thức hạ/xếp loại riêng')) : '—';
                 effectPreview.title = rule?.note || absenceInfo?.note || effect || '';
             }
         }
@@ -1263,7 +1305,7 @@
             if (points) points.value = String(total);
             if (note) {
                 const formula = rule?.quantityUnit && quantity > 1 ? ` · ${homeroomFormatPoints(rule.points)} × ${quantity} ${rule.quantityUnit} = ${homeroomFormatPoints(total)}` : '';
-                note.textContent = rule ? `${rule.note || `Điểm quy chế: ${homeroomFormatPoints(rule.points)}`}${formula}` : 'Chọn một lỗi/khen thưởng tập thể trong quy chế.';
+                note.textContent = rule ? `${rule.note || `Điểm nề nếp: ${homeroomFormatPoints(rule.points)}`}${formula}` : 'Chọn một lỗi/khen thưởng tập thể trong quy chế.';
             }
         }
 
@@ -1300,7 +1342,7 @@
                     <div class="homeroom-log-icon">${meta.icon}</div>
                     <div class="homeroom-log-main">
                         <div class="homeroom-log-head"><strong>${homeroomEscapeHtml(meta.label)}</strong><span>${homeroomEscapeHtml(homeroomFormatDate(entry.date) || 'Chưa ngày')}</span></div>
-                        <div class="homeroom-log-badges"><span class="homeroom-point-badge ${entry.points < 0 ? 'negative' : (entry.points > 0 ? 'positive' : 'neutral')}">${homeroomEscapeHtml(homeroomFormatPoints(entry.points))}</span><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(entry.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(entry.severity).label)}</span>${homeroomRuleById(entry.ruleId)?.no ? `<span class="homeroom-regulation-badge">TT ${homeroomEscapeHtml(homeroomRuleById(entry.ruleId).no)}</span>` : ''}${entry.absenceExceptionLabel ? `<span class="homeroom-regulation-badge">${homeroomEscapeHtml(entry.absenceExceptionLabel)}</span>` : ''}${entry.quantity > 1 ? `<span class="homeroom-regulation-badge">${homeroomEscapeHtml(entry.quantity)} ${homeroomEscapeHtml(entry.quantityUnit || 'đơn vị')}</span>` : ''}${homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)) ? `<span class="homeroom-discipline-badge">${homeroomEscapeHtml(homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)))}</span>` : ''}${entry.repeatMultiplier > 1 ? `<span class="homeroom-repeat-badge">Tái phạm ×${homeroomEscapeHtml(String(entry.repeatMultiplier).replace('.',','))}</span>` : ''}${entry.seriousFlag ? (entry.resolved ? '<span class="homeroom-serious-badge resolved">✓ Lịch sử nghiêm trọng</span>' : '<span class="homeroom-serious-badge">🚨 Nghiêm trọng đang xử lý</span>') : ''}</div>
+                        <div class="homeroom-log-badges"><span class="homeroom-point-badge ${entry.points < 0 ? 'negative' : (entry.points > 0 ? 'positive' : 'neutral')}">${homeroomEscapeHtml(homeroomFormatPoints(entry.points))}</span><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(entry.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(entry.severity).label)}</span>${homeroomRuleById(entry.ruleId)?.no ? `<span class="homeroom-regulation-badge">TT ${homeroomEscapeHtml(homeroomRuleById(entry.ruleId).no)}</span>` : (homeroomIsTeacherTrackingRule(homeroomRuleById(entry.ruleId)) ? '<span class="homeroom-regulation-badge gvcn">GVCN</span>' : '')}${entry.absenceExceptionLabel ? `<span class="homeroom-regulation-badge">${homeroomEscapeHtml(entry.absenceExceptionLabel)}</span>` : ''}${entry.quantity > 1 ? `<span class="homeroom-regulation-badge">${homeroomEscapeHtml(entry.quantity)} ${homeroomEscapeHtml(entry.quantityUnit || 'đơn vị')}</span>` : ''}${homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)) ? `<span class="homeroom-discipline-badge">${homeroomEscapeHtml(homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)))}</span>` : ''}${entry.repeatMultiplier > 1 ? `<span class="homeroom-repeat-badge">Tái phạm ×${homeroomEscapeHtml(String(entry.repeatMultiplier).replace('.',','))}</span>` : ''}${entry.seriousFlag ? (entry.resolved ? '<span class="homeroom-serious-badge resolved">✓ Lịch sử nghiêm trọng</span>' : '<span class="homeroom-serious-badge">🚨 Nghiêm trọng đang xử lý</span>') : ''}</div>
                         ${entry.content ? `<p>${homeroomEscapeHtml(entry.content)}</p>` : ''}
                         ${entry.followUp ? `<small>↳ Theo dõi: ${homeroomEscapeHtml(entry.followUp)}</small>` : ''}
                         ${entry.resolved && entry.resolvedAt ? `<small>✓ Xử lý lúc: ${homeroomEscapeHtml(new Date(entry.resolvedAt).toLocaleString('vi-VN'))}</small>` : ''}
@@ -1574,7 +1616,7 @@
                 return;
             }
             const rule = homeroomRuleById(homeroomById('homeroomConductRuleSelect')?.value);
-            const type = rule && homeroomIsSchoolRule(rule) ? rule.type : cleanText(homeroomById('homeroomStudentLogType')?.value);
+            const type = rule && homeroomIsScoredConductRule(rule) ? rule.type : cleanText(homeroomById('homeroomStudentLogType')?.value);
             const content = cleanText(homeroomById('homeroomStudentLogContent')?.value) || rule?.label || '';
             const followUp = cleanText(homeroomById('homeroomStudentLogFollowUp')?.value);
             const date = normalizeHomeroomDate(homeroomById('homeroomStudentLogDate')?.value) || homeroomTodayISO();
@@ -1605,7 +1647,9 @@
                 schoolRuleNo: rule?.no ?? null,
                 schoolScope: rule?.scope || '',
                 disciplineEffect: rule?.discipline || '',
-                regulationSource: homeroomIsSchoolRule(rule) ? 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026' : '',
+                regulationSource: homeroomIsSchoolRule(rule)
+                    ? 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026'
+                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.6' : ''),
                 regulationNote: rule?.note || '',
                 absenceException: absenceInfo?.exception || '',
                 absenceExceptionLabel: absenceInfo?.label || '',
@@ -1781,7 +1825,7 @@
                     'TT quy chế': homeroomRuleById(entry.ruleId)?.no ?? '',
                     'Phạm vi': homeroomRuleById(entry.ruleId)?.scope === 'student' ? 'Học sinh' : '',
                     'Hình thức xử lý': homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)),
-                    'Nguồn quy chế': entry.regulationSource || '',
+                    'Nguồn điểm / quy chế': entry.regulationSource || '',
                     'Điểm gốc': entry.basePoints,
                     'Hệ số tái phạm': entry.repeatMultiplier,
                     'Điểm áp dụng': entry.points,
@@ -1809,7 +1853,9 @@
                     'Tổng vắng': metrics.absenceTotal,
                     'Đi muộn': metrics.late,
                     'Lỗi nề nếp HK': metrics.conduct?.violationCount || 0,
-                    'Điểm quy chế HK': metrics.conduct?.totalRegulationPoints || 0,
+                    'Điểm nề nếp HK': metrics.conduct?.totalRegulationPoints || 0,
+                    'Trong đó điểm quy chế chính thức': metrics.conduct?.officialRegulationPoints || 0,
+                    'Trong đó điểm theo dõi GVCN': metrics.conduct?.teacherTrackingPoints || 0,
                     'Điểm tuần': metrics.weekScore,
                     'Cộng/trừ trong tuần': metrics.weekPoints,
                     'Mức điểm tuần': metrics.scoreBand.label,
@@ -1837,7 +1883,9 @@
                         'Số lỗi HK': assessment.violationCount,
                         'Điểm trừ': assessment.deductionPoints,
                         'Điểm thưởng': assessment.rewardPoints,
-                        'Điểm quy chế ròng': assessment.totalRegulationPoints,
+                        'Điểm nề nếp ròng': assessment.totalRegulationPoints,
+                        'Điểm quy chế chính thức': assessment.officialRegulationPoints,
+                        'Điểm theo dõi GVCN': assessment.teacherTrackingPoints,
                         'Số lần hạ 1 bậc': assessment.lowerOneCount,
                         'Số lần điện thoại': assessment.phoneCount,
                         'Mức theo số lỗi': assessment.baseline,

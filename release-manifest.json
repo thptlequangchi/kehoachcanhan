@@ -1,6 +1,6 @@
 {
   "application": "Sổ Tay Giáo Viên Pro",
-  "release": "53.3.5",
+  "release": "53.3.6",
   "channel": "stable",
   "releasedAt": "2026-09-14",
   "dataSchemaVersion": 5,
@@ -41,7 +41,9 @@
     "recognitionCacheSelfHealing": true,
     "personalCloudDeleteProtection": true,
     "homeroomConductLiveCommit": true,
-    "homeroomManualViolationCount": true
+    "homeroomManualViolationCount": true,
+    "homeroomTeacherTrackingScores": true,
+    "homeroomSupplementalRewards": true
   },
   "compatibility": {
     "preservesV52Data": true,

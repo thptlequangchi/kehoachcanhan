@@ -1,4 +1,4 @@
-# TESTING — v53.3.5 STABLE
+# TESTING — v53.3.6 STABLE
 
 ## Lệnh kiểm tra
 ```bash
@@ -7,12 +7,13 @@ node tests/run-state-fixtures.js
 node tests/run-session-ppct-fixtures.js
 node tests/run-homeroom-autosync-fixtures.js
 node tests/run-homeroom-live-sync-v53-3-5.js
+node tests/run-homeroom-supplemental-v53-3-6.js
 node tests/run-quality-patch-v53-3-2.js
 node tests/run-ocr-resilience-v53-3-4.js
 ```
 
 ## Invariant v53.3
-- APP_VERSION state = Service Worker = release manifest = `53.3.5`.
+- APP_VERSION state = Service Worker = release manifest = `53.3.6`.
 - Toàn bộ HTML ID duy nhất; tài nguyên HTML và APP_SHELL tồn tại.
 - Tất cả JavaScript qua `node --check`.
 - Dữ liệu v53.2 được normalize sang cấu trúc có `book.competition` mà không phá dữ liệu cũ.
@@ -60,3 +61,9 @@ node tests/run-ocr-resilience-v53-3-4.js
 - Sau submit, entry phải tồn tại trong `state.homeroom` và workspace năm học đang hoạt động.
 - `Lỗi HK` và `Điểm quy chế` phải cập nhật ngay với lỗi quy chế.
 - Vi phạm nhập tự do vẫn tăng `Lỗi HK/Chưa xử lý` nhưng không tự sinh điểm quy chế.
+
+## v53.3.6 — Điểm theo dõi GVCN
+- Danh mục bổ sung phải có cả lỗi bài thu hoạch/cuộc thi online và khen thưởng đội văn nghệ/thành tích cấp trường.
+- Mục GVCN được tự chọn đúng loại `violation`/`commendation` và mức điểm gợi ý.
+- Điểm GVCN được tính vào tổng điểm nề nếp cá nhân và tổng lỗi HK khi là vi phạm.
+- Mục GVCN không được `homeroomIsSchoolRule()` nhận là quy chế chính thức, nên không tự động tác động điểm thi đua lớp theo quy chế.
