@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.6 (GVCN supplemental conduct/reward scoring)
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.8 (seating PRO + classroom behavior rules)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -174,6 +174,17 @@
         // của nhà trường; mục đích là giúp theo dõi các nhiệm vụ học tập/hoạt động thường ngày một cách nhất quán.
         // Điểm mặc định có thể được GVCN điều chỉnh trước khi lưu từng ghi nhận.
         const HOMEROOM_TEACHER_TRACKING_RULES = Object.freeze([
+            { id:'gvcn_class_talking', group:'Bổ sung GVCN · Trong giờ học', label:'Nói chuyện riêng trong giờ học', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -2 điểm; có thể tăng nếu đã nhắc nhở nhiều lần.' },
+            { id:'gvcn_class_off_task', group:'Bổ sung GVCN · Trong giờ học', label:'Làm việc riêng / làm việc không đúng nhiệm vụ trong giờ', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_noise', group:'Bổ sung GVCN · Trong giờ học', label:'Gây ồn, làm mất trật tự trong giờ học', type:'violation', points:-2, severity:'medium', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_change_seat', group:'Bổ sung GVCN · Trong giờ học', label:'Tự ý đổi chỗ / rời vị trí khi chưa được phép', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_inattentive', group:'Bổ sung GVCN · Trong giờ học', label:'Không chú ý, mất tập trung sau khi đã được nhắc nhở', type:'violation', points:-1, severity:'light', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_no_notes', group:'Bổ sung GVCN · Trong giờ học', label:'Không ghi chép / không thực hiện nhiệm vụ học tập trên lớp', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_sleeping', group:'Bổ sung GVCN · Trong giờ học', label:'Ngủ gật / nằm bàn trong giờ học', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_playing', group:'Bổ sung GVCN · Trong giờ học', label:'Đùa nghịch, gây ảnh hưởng đến tiết học', type:'violation', points:-3, severity:'medium', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_disturb_peer', group:'Bổ sung GVCN · Trong giờ học', label:'Làm phiền / cản trở bạn học trong giờ', type:'violation', points:-3, severity:'medium', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_interrupt', group:'Bổ sung GVCN · Trong giờ học', label:'Nói leo / cắt lời / phát ngôn không đúng lúc trong giờ', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true },
+            { id:'gvcn_class_ignore_teacher', group:'Bổ sung GVCN · Trong giờ học', label:'Không chấp hành yêu cầu hoặc nhắc nhở của giáo viên trong giờ', type:'violation', points:-5, severity:'medium', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -5 điểm; trường hợp nghiêm trọng cần ghi nhận theo điều khoản quy chế phù hợp.' },
             { id:'gvcn_deduct_reflection_missing', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không hoàn thành bài thu hoạch theo yêu cầu', type:'violation', points:-5, severity:'medium', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -5 điểm; GVCN có thể điều chỉnh theo mức độ và thời hạn được giao.' },
             { id:'gvcn_deduct_reflection_late', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Nộp bài thu hoạch / sản phẩm quá hạn', type:'violation', points:-2, severity:'light', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -2 điểm cho trường hợp nộp chậm nhưng đã hoàn thành.' },
             { id:'gvcn_deduct_online_incomplete', group:'Bổ sung GVCN · Học tập – nhiệm vụ', label:'Không hoàn thành cuộc thi / bài thi online bắt buộc', type:'violation', points:-5, severity:'medium', scope:'student', source:'teacher', adjustable:true, note:'Mức gợi ý -5 điểm; dùng khi học sinh có tham gia nhưng chưa hoàn thành yêu cầu.' },
@@ -1027,6 +1038,293 @@
             renderHomeroom();
         }
 
+        function homeroomSeatKey(column, row, seat) {
+            return `c${column}-r${row}-s${seat}`;
+        }
+
+        function homeroomParseSeatKey(value) {
+            const match = /^c(\d+)-r(\d+)-s(\d+)$/.exec(cleanText(value));
+            if (!match) return null;
+            return {
+                column: Number.parseInt(match[1], 10),
+                row: Number.parseInt(match[2], 10),
+                seat: Number.parseInt(match[3], 10),
+            };
+        }
+
+        function homeroomSeatLabel(seatKey, { short = false } = {}) {
+            const parsed = homeroomParseSeatKey(seatKey);
+            if (!parsed) return '';
+            const seatLetter = parsed.seat === 1 ? 'A' : 'B';
+            return short
+                ? `D${parsed.column} · B${parsed.row}${seatLetter}`
+                : `Dãy ${parsed.column} · Bàn ${parsed.row} · Chỗ ${seatLetter}`;
+        }
+
+        function homeroomEnsureSeatingPlan(book) {
+            if (!book) return null;
+            const ids = new Set((book.students || []).map(student => student.id));
+            book.seatingPlan = normalizeHomeroomSeatingPlan(book.seatingPlan, ids);
+            return book.seatingPlan;
+        }
+
+        function homeroomStudentSeatKey(book, studentId) {
+            const plan = homeroomEnsureSeatingPlan(book);
+            if (!plan || !studentId) return '';
+            return Object.entries(plan.assignments || {}).find(([, id]) => id === studentId)?.[0] || '';
+        }
+
+        function homeroomSeatingStats(book) {
+            const plan = homeroomEnsureSeatingPlan(book);
+            if (!plan) return { totalSeats:0, occupied:0, free:0, unassigned:[], overflow:[] };
+            const totalSeats = Number(plan.columns || 4) * Number(plan.rows || 6) * Number(plan.seatsPerDesk || 2);
+            const assignedIds = new Set(Object.values(plan.assignments || {}));
+            const unassigned = (book.students || []).filter(student => !assignedIds.has(student.id));
+            const overflow = (book.students || []).length > totalSeats ? [...unassigned] : [];
+            return {
+                totalSeats,
+                occupied: Object.keys(plan.assignments || {}).length,
+                free: Math.max(0, totalSeats - Object.keys(plan.assignments || {}).length),
+                unassigned,
+                overflow,
+            };
+        }
+
+        function homeroomSeatingOptionHtml(book, currentSeatKey) {
+            const plan = homeroomEnsureSeatingPlan(book);
+            const currentStudentId = plan?.assignments?.[currentSeatKey] || '';
+            const assignedSeatByStudent = new Map(Object.entries(plan?.assignments || {}).map(([seatKey, studentId]) => [studentId, seatKey]));
+            return `<option value="">— Trống —</option>` + (book?.students || []).map(student => {
+                const assignedSeat = assignedSeatByStudent.get(student.id) || '';
+                const suffix = assignedSeat && assignedSeat !== currentSeatKey ? ` (${homeroomSeatLabel(assignedSeat, { short:true })})` : '';
+                return `<option value="${homeroomEscapeHtml(student.id)}" ${student.id === currentStudentId ? 'selected' : ''}>${homeroomEscapeHtml((student.name || 'Chưa nhập tên') + suffix)}</option>`;
+            }).join('');
+        }
+
+        function homeroomSeatStudentStatus(book, studentId) {
+            if (!book || !studentId) return { className:'', html:'', title:'' };
+            const metrics = homeroomStudentMetrics(book, studentId, homeroomGetSelectedSemester());
+            const faults = metrics.conduct?.violationCount || 0;
+            const critical = metrics.activeSeriousCount || 0;
+            const attention = critical > 0 || faults > 0 || metrics.absenceUnexcused > 0 || metrics.late >= 2;
+            const alerts = [];
+            if (critical) alerts.push(`<span class="homeroom-seat-alert critical">🚨 ${critical}</span>`);
+            if (faults) alerts.push(`<span class="homeroom-seat-alert">⚠️ ${faults} lỗi</span>`);
+            if (!attention && metrics.totalEntries > 0 && metrics.weekScore >= 100) alerts.push('<span class="homeroom-seat-alert good">✓ ổn</span>');
+            return {
+                className: critical ? 'has-critical' : (attention ? 'has-attention' : ''),
+                html: alerts.join(''),
+                title: critical ? 'Có vi phạm nghiêm trọng chưa xử lý' : (attention ? 'Học sinh cần chú ý' : ''),
+            };
+        }
+
+        function homeroomPrintSeating() {
+            const book = homeroomActiveBook();
+            if (!book) return;
+            document.body.dataset.printHomeroomClass = book.className || '';
+            window.print();
+        }
+
+        function homeroomRenderSeating(book) {
+            const summary = homeroomById('homeroomSeatingSummary');
+            const chart = homeroomById('homeroomSeatingChart');
+            ['homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomPrintSeatingBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect'].forEach(id => {
+                const el = homeroomById(id);
+                if (el) el.disabled = !book;
+            });
+            if (!summary || !chart) return;
+            if (!book) {
+                summary.textContent = 'Chưa mở sổ chủ nhiệm.';
+                chart.innerHTML = '<div class="homeroom-mini-empty">Mở sổ chủ nhiệm để tạo sơ đồ chỗ ngồi.</div>';
+                return;
+            }
+            const plan = homeroomEnsureSeatingPlan(book);
+            const stats = homeroomSeatingStats(book);
+            const selectedStudentId = homeroomEnsureState().selectedStudentId || '';
+            const capacityWarning = book.students.length > stats.totalSeats ? ` · <strong>${book.students.length - stats.totalSeats}</strong> HS vượt sức chứa 48 chỗ` : '';
+            summary.innerHTML = `<strong>${stats.occupied}/${stats.totalSeats}</strong> chỗ đã xếp · <strong>${stats.free}</strong> chỗ trống · <strong>${stats.unassigned.length}</strong> HS chưa có chỗ${capacityWarning}.`;
+            const rows = [];
+            for (let row = 1; row <= plan.rows; row += 1) {
+                const desks = [];
+                for (let column = 1; column <= plan.columns; column += 1) {
+                    const seatKeys = [homeroomSeatKey(column, row, 1), homeroomSeatKey(column, row, 2)];
+                    const isSelectedDesk = selectedStudentId && seatKeys.some(key => (plan.assignments || {})[key] === selectedStudentId);
+                    desks.push(`<article class="homeroom-seating-desk ${isSelectedDesk ? 'is-selected' : ''}">
+                        <div class="homeroom-seating-desk-head"><strong>Dãy ${column} · Bàn ${row}</strong><span>${isSelectedDesk ? 'Đang chọn' : '2 chỗ'}</span></div>
+                        <div class="homeroom-seating-seatpair">${seatKeys.map((seatKey, index) => {
+                            const studentId = (plan.assignments || {})[seatKey] || '';
+                            const student = homeroomFindStudent(book, studentId);
+                            const status = homeroomSeatStudentStatus(book, studentId);
+                            const selectedClass = studentId && studentId === selectedStudentId ? 'is-selected-student' : '';
+                            return `<label class="homeroom-seating-seat ${status.className} ${selectedClass}" data-homeroom-seat-drop="${homeroomEscapeHtml(seatKey)}" title="${homeroomEscapeHtml(status.title)}"><span>Chỗ ${index === 0 ? 'A' : 'B'}</span><div class="homeroom-seat-card ${student ? '' : 'is-empty'}">${student ? `<div class="homeroom-seat-card-main"><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong><div class="homeroom-seat-alerts">${status.html}</div></div><button type="button" class="homeroom-seat-drag" draggable="true" data-homeroom-seat-drag="${homeroomEscapeHtml(seatKey)}" title="Kéo để đổi chỗ">↕</button>` : '<div class="homeroom-seat-card-main"><strong>Chỗ trống</strong><small>Kéo học sinh vào đây</small></div>'}</div><select data-homeroom-seat-key="${homeroomEscapeHtml(seatKey)}">${homeroomSeatingOptionHtml(book, seatKey)}</select></label>`;
+                        }).join('')}</div>
+                    </article>`);
+                }
+                rows.push(`<div class="homeroom-seating-row">${desks.join('')}</div>`);
+            }
+            const unassignedHtml = stats.unassigned.length
+                ? `<div class="homeroom-seating-unassigned"><strong>Học sinh chưa xếp chỗ</strong><div class="homeroom-seating-chiplist">${stats.unassigned.map(student => `<span class="homeroom-seating-chip ${stats.overflow.some(item => item.id === student.id) ? 'overflow' : ''}">${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</span>`).join('')}</div></div>`
+                : '';
+            chart.innerHTML = `<div class="homeroom-seating-print-title">SƠ ĐỒ CHỖ NGỒI LỚP ${homeroomEscapeHtml(book.className || '')}</div><div class="homeroom-seating-front"><div class="homeroom-seating-board">BẢNG</div></div><div class="homeroom-seating-legend"><span>🪑 4 dãy bàn</span><span>📚 6 bàn / dãy</span><span>👥 2 chỗ / bàn</span><span>↕ Kéo để đổi chỗ hoặc chọn từ danh sách</span></div><div class="homeroom-seating-grid">${rows.join('')}</div>${unassignedHtml}`;
+        }
+
+        function homeroomInitializeSeating() {
+            const book = homeroomActiveBook();
+            if (!book) return;
+            book.seatingPlan = normalizeHomeroomSeatingPlan(null, new Set((book.students || []).map(student => student.id)));
+            book.updatedAt = new Date().toISOString();
+            homeroomSchedulePersist();
+            renderHomeroom();
+            showToast('✅ Đã tạo sơ đồ 4 dãy × 6 bàn × 2 chỗ', 'success');
+        }
+
+        function homeroomSeatKeys(plan) {
+            const keys = [];
+            for (let row = 1; row <= plan.rows; row += 1) {
+                for (let column = 1; column <= plan.columns; column += 1) {
+                    for (let seat = 1; seat <= plan.seatsPerDesk; seat += 1) keys.push(homeroomSeatKey(column, row, seat));
+                }
+            }
+            return keys;
+        }
+
+        function homeroomOrderStudentsForSeating(book, mode = 'roster') {
+            const students = [...(book?.students || [])];
+            if (mode === 'groups') {
+                const groups = [...(book.groups || [])];
+                const groupOrder = new Map(groups.map((group, index) => [group.id, index]));
+                return students.sort((a, b) => {
+                    const ga = groupOrder.has(a.groupId) ? groupOrder.get(a.groupId) : 999;
+                    const gb = groupOrder.has(b.groupId) ? groupOrder.get(b.groupId) : 999;
+                    return ga - gb || String(a.name || '').localeCompare(String(b.name || ''), 'vi', { sensitivity:'base' });
+                });
+            }
+            if (mode === 'gender') {
+                const male = students.filter(student => homeroomNormalizeKeyText(student.gender) === 'nam');
+                const female = students.filter(student => homeroomNormalizeKeyText(student.gender) === 'nữ' || homeroomNormalizeKeyText(student.gender) === 'nu');
+                const other = students.filter(student => !male.includes(student) && !female.includes(student));
+                const result = [];
+                let mi = 0, fi = 0;
+                let turnMale = male.length >= female.length;
+                while (mi < male.length || fi < female.length) {
+                    if (turnMale && mi < male.length) result.push(male[mi++]);
+                    else if (!turnMale && fi < female.length) result.push(female[fi++]);
+                    else if (mi < male.length) result.push(male[mi++]);
+                    else if (fi < female.length) result.push(female[fi++]);
+                    turnMale = !turnMale;
+                }
+                return result.concat(other);
+            }
+            return students;
+        }
+
+        function homeroomAutoAssignSeats() {
+            const book = homeroomActiveBook();
+            if (!book) return;
+            const plan = homeroomEnsureSeatingPlan(book);
+            const mode = cleanText(homeroomById('homeroomSeatingModeSelect')?.value) || 'roster';
+            const assignments = {};
+            const students = homeroomOrderStudentsForSeating(book, mode);
+            if (mode === 'groups' && (book.groups || []).length) {
+                const byGroup = new Map((book.groups || []).map(group => [group.id, students.filter(student => student.groupId === group.id)]));
+                const ungrouped = students.filter(student => !byGroup.has(student.groupId));
+                (book.groups || []).slice(0, plan.columns).forEach((group, groupIndex) => {
+                    const column = groupIndex + 1;
+                    const seats = [];
+                    for (let row = 1; row <= plan.rows; row += 1) for (let seat = 1; seat <= plan.seatsPerDesk; seat += 1) seats.push(homeroomSeatKey(column, row, seat));
+                    (byGroup.get(group.id) || []).slice(0, seats.length).forEach((student, index) => { assignments[seats[index]] = student.id; });
+                });
+                const already = new Set(Object.values(assignments));
+                const leftovers = students.filter(student => !already.has(student.id)).concat(ungrouped.filter(student => !already.has(student.id)));
+                const freeKeys = homeroomSeatKeys(plan).filter(key => !assignments[key]);
+                [...new Map(leftovers.map(student => [student.id, student])).values()].slice(0, freeKeys.length).forEach((student, index) => { assignments[freeKeys[index]] = student.id; });
+            } else {
+                const seatKeys = homeroomSeatKeys(plan);
+                students.slice(0, seatKeys.length).forEach((student, index) => { assignments[seatKeys[index]] = student.id; });
+            }
+            plan.assignments = assignments;
+            book.updatedAt = new Date().toISOString();
+            homeroomSchedulePersist();
+            renderHomeroom();
+            const overflow = Math.max(0, (book.students || []).length - homeroomSeatKeys(plan).length);
+            const labels = { roster:'theo danh sách', groups:'theo tổ', gender:'xen kẽ Nam/Nữ' };
+            showToast(overflow ? `⚠️ Đã xếp ${labels[mode] || ''} cho 48 học sinh, còn ${overflow} em chưa có chỗ.` : `✅ Đã xếp chỗ ${labels[mode] || ''}`, overflow ? 'warning' : 'success');
+        }
+
+        function homeroomHandleSeatDragStart(event) {
+            const handle = event.target.closest('[data-homeroom-seat-drag]');
+            if (!handle) return;
+            const sourceKey = cleanText(handle.dataset.homeroomSeatDrag);
+            if (!sourceKey) return;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', sourceKey);
+        }
+
+        function homeroomHandleSeatDragOver(event) {
+            const target = event.target.closest('[data-homeroom-seat-drop]');
+            if (!target) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            target.classList.add('is-dragover');
+        }
+
+        function homeroomHandleSeatDragLeave(event) {
+            const target = event.target.closest('[data-homeroom-seat-drop]');
+            if (target) target.classList.remove('is-dragover');
+        }
+
+        function homeroomHandleSeatDrop(event) {
+            const target = event.target.closest('[data-homeroom-seat-drop]');
+            if (!target) return;
+            event.preventDefault();
+            target.classList.remove('is-dragover');
+            const sourceKey = cleanText(event.dataTransfer.getData('text/plain'));
+            const targetKey = cleanText(target.dataset.homeroomSeatDrop);
+            if (!sourceKey || !targetKey || sourceKey === targetKey) return;
+            const book = homeroomActiveBook();
+            if (!book) return;
+            const plan = homeroomEnsureSeatingPlan(book);
+            const sourceStudent = plan.assignments?.[sourceKey] || '';
+            const targetStudent = plan.assignments?.[targetKey] || '';
+            if (!sourceStudent) return;
+            if (targetStudent) plan.assignments[sourceKey] = targetStudent;
+            else delete plan.assignments[sourceKey];
+            plan.assignments[targetKey] = sourceStudent;
+            book.updatedAt = new Date().toISOString();
+            homeroomSchedulePersist();
+            renderHomeroom();
+        }
+
+        function homeroomClearSeatAssignments() {
+            const book = homeroomActiveBook();
+            if (!book) return;
+            const plan = homeroomEnsureSeatingPlan(book);
+            plan.assignments = {};
+            book.updatedAt = new Date().toISOString();
+            homeroomSchedulePersist();
+            renderHomeroom();
+            showToast('🗑️ Đã xóa toàn bộ gán chỗ ngồi', 'success');
+        }
+
+        function homeroomHandleSeatingChange(event) {
+            const select = event.target.closest('[data-homeroom-seat-key]');
+            if (!select) return;
+            const book = homeroomActiveBook();
+            if (!book) return;
+            const plan = homeroomEnsureSeatingPlan(book);
+            const seatKey = cleanText(select.dataset.homeroomSeatKey);
+            const studentId = cleanText(select.value);
+            if (!seatKey) return;
+            Object.keys(plan.assignments || {}).forEach(key => {
+                if (key !== seatKey && plan.assignments[key] === studentId) delete plan.assignments[key];
+            });
+            if (!studentId) delete plan.assignments[seatKey];
+            else plan.assignments[seatKey] = studentId;
+            book.updatedAt = new Date().toISOString();
+            homeroomSchedulePersist();
+            renderHomeroom();
+        }
+
         function homeroomRenderRoster(book) {
             const wrap = homeroomById('homeroomRosterWrap');
             if (!wrap) return;
@@ -1040,7 +1338,7 @@
             }
             wrap.innerHTML = `<table class="homeroom-table">
                 <thead><tr>
-                    <th>STT</th><th class="homeroom-name-col">Họ và tên</th><th>Tổ</th><th>Chức vụ</th><th>Ngày sinh</th><th>Giới tính</th>
+                    <th>STT</th><th class="homeroom-name-col">Họ và tên</th><th>Tổ</th><th>Chỗ ngồi</th><th>Chức vụ</th><th>Ngày sinh</th><th>Giới tính</th>
                     <th>Phụ huynh</th><th>SĐT PH</th><th>SĐT HS</th><th>Địa chỉ</th><th>Ghi chú</th><th>Theo dõi</th><th></th>
                 </tr></thead>
                 <tbody>${book.students.map((student, index) => {
@@ -1060,6 +1358,7 @@
                         <td class="homeroom-stt">${index + 1}</td>
                         <td><input class="homeroom-cell-input homeroom-name-input" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="name" value="${homeroomEscapeHtml(student.name)}" placeholder="Họ và tên" /></td>
                         <td><select class="homeroom-cell-select homeroom-group-select" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="groupId"><option value="">—</option>${(book.groups || []).map(group => `<option value="${homeroomEscapeHtml(group.id)}" ${student.groupId === group.id ? 'selected' : ''}>${homeroomEscapeHtml(group.name)}</option>`).join('')}</select></td>
+                        <td><span class="homeroom-seat-badge ${homeroomStudentSeatKey(book, student.id) ? '' : 'empty'}">${homeroomEscapeHtml(homeroomSeatLabel(homeroomStudentSeatKey(book, student.id), { short:true }) || '—')}</span></td>
                         <td><div class="homeroom-role-tags">${homeroomStudentRoleLabels(book, student.id).map(role => `<span class="homeroom-role-tag ${role.kind === 'group' ? 'group-role' : ''}">${homeroomEscapeHtml(role.label)}</span>`).join('') || '<span class="text-muted">—</span>'}</div></td>
                         <td><input class="homeroom-cell-input" type="date" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="birthDate" value="${homeroomEscapeHtml(student.birthDate)}" /></td>
                         <td><select class="homeroom-cell-select" data-homeroom-student-id="${homeroomEscapeHtml(student.id)}" data-homeroom-field="gender">
@@ -1377,7 +1676,7 @@
 
         function homeroomRenderControls(book) {
             const disabled = !book;
-            ['homeroomAddStudentBtn','homeroomPasteRosterBtn','homeroomImportGradebookBtn','homeroomQuickLogBtn','homeroomExportExcelBtn','homeroomClearBookBtn','homeroomCreateFourGroupsBtn','homeroomAddGroupBtn','homeroomAutoAssignGroupsBtn','homeroomAddCustomOfficerBtn'].forEach(id => {
+            ['homeroomAddStudentBtn','homeroomPasteRosterBtn','homeroomImportGradebookBtn','homeroomQuickLogBtn','homeroomExportExcelBtn','homeroomClearBookBtn','homeroomCreateFourGroupsBtn','homeroomAddGroupBtn','homeroomAutoAssignGroupsBtn','homeroomAddCustomOfficerBtn','homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomPrintSeatingBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect'].forEach(id => {
                 const button = homeroomById(id);
                 if (button) button.disabled = disabled;
             });
@@ -1406,6 +1705,7 @@
             homeroomRenderMonitoring(book);
             homeroomRenderConductAssessment(book);
             homeroomRenderOrganization(book);
+            homeroomRenderSeating(book);
             homeroomRenderRoster(book);
             homeroomApplyRosterFilters();
             homeroomRenderStudentSelector(book);
@@ -1596,6 +1896,11 @@
             });
             Object.keys(book.classOfficers || {}).forEach(roleId => { if (book.classOfficers[roleId] === studentId) book.classOfficers[roleId] = ''; });
             (book.customOfficers || []).forEach(role => { if (role.studentId === studentId) role.studentId = ''; });
+            if (book.seatingPlan?.assignments) {
+                Object.keys(book.seatingPlan.assignments).forEach(seatKey => {
+                    if (book.seatingPlan.assignments[seatKey] === studentId) delete book.seatingPlan.assignments[seatKey];
+                });
+            }
             const data = homeroomEnsureState();
             if (data.selectedStudentId === studentId) data.selectedStudentId = book.students[0]?.id || '';
             book.updatedAt = new Date().toISOString();
@@ -1649,7 +1954,7 @@
                 disciplineEffect: rule?.discipline || '',
                 regulationSource: homeroomIsSchoolRule(rule)
                     ? 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026'
-                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.6' : ''),
+                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.8' : ''),
                 regulationNote: rule?.note || '',
                 absenceException: absenceInfo?.exception || '',
                 absenceExceptionLabel: absenceInfo?.label || '',
@@ -2013,6 +2318,15 @@
             homeroomById('homeroomAddGroupBtn')?.addEventListener('click', homeroomAddGroup);
             homeroomById('homeroomAutoAssignGroupsBtn')?.addEventListener('click', homeroomAutoAssignGroups);
             homeroomById('homeroomAddCustomOfficerBtn')?.addEventListener('click', homeroomAddCustomOfficer);
+            homeroomById('homeroomInitSeatingBtn')?.addEventListener('click', homeroomInitializeSeating);
+            homeroomById('homeroomAutoSeatBtn')?.addEventListener('click', homeroomAutoAssignSeats);
+            homeroomById('homeroomPrintSeatingBtn')?.addEventListener('click', homeroomPrintSeating);
+            homeroomById('homeroomClearSeatsBtn')?.addEventListener('click', homeroomClearSeatAssignments);
+            homeroomById('homeroomSeatingSection')?.addEventListener('change', homeroomHandleSeatingChange);
+            homeroomById('homeroomSeatingSection')?.addEventListener('dragstart', homeroomHandleSeatDragStart);
+            homeroomById('homeroomSeatingSection')?.addEventListener('dragover', homeroomHandleSeatDragOver);
+            homeroomById('homeroomSeatingSection')?.addEventListener('dragleave', homeroomHandleSeatDragLeave);
+            homeroomById('homeroomSeatingSection')?.addEventListener('drop', homeroomHandleSeatDrop);
             homeroomById('homeroomOrganizationSection')?.addEventListener('change', homeroomHandleOrganizationChange);
             homeroomById('homeroomOrganizationSection')?.addEventListener('click', event => {
                 const deleteGroup = event.target.closest('[data-homeroom-delete-group]');

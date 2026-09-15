@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v53.3.6 STABLE — Service Worker */
-const APP_VERSION = '53.3.6';
+/* Sổ Tay Giáo Viên v53.3.8 STABLE — Service Worker */
+const APP_VERSION = '53.3.8';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -38,6 +38,7 @@ const APP_SHELL = [
     './assets/css/homeroom-v53-1.css',
     './assets/css/homeroom-v53-2.css',
     './assets/css/homeroom-v53-3.css',
+    './assets/css/homeroom-v53-4.css',
     './assets/css/plan-revision-v51.css',
     './assets/css/release-v52.css',
     './assets/css/release-v52-5.css',
@@ -87,7 +88,6 @@ const APP_SHELL = [
     './assets/js/32-module-loader.js',
     './assets/js/33-browser-smoke.js',
     './assets/js/34-safety-snapshots.js',
-    './tests/browser-smoke.html',
     './assets/js/config.js'
 ];
 

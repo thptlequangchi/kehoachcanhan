@@ -45,7 +45,7 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.3.6';
+        const APP_VERSION = '53.3.8';
         const DATA_SCHEMA_VERSION = 5;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
@@ -1227,6 +1227,31 @@
             };
         }
 
+        function normalizeHomeroomSeatingPlan(value, studentIds = new Set()) {
+            const columns = 4;
+            const rows = 6;
+            const seatsPerDesk = 2;
+            const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            const rawAssignments = source.assignments && typeof source.assignments === 'object' && !Array.isArray(source.assignments) ? source.assignments : {};
+            const assignments = {};
+            const assignedStudents = new Set();
+            Object.entries(rawAssignments).forEach(([seatKey, studentId]) => {
+                const key = cleanText(seatKey);
+                const sid = cleanText(studentId);
+                if (!/^c[1-4]-r[1-6]-s[1-2]$/.test(key)) return;
+                if (!sid || !studentIds.has(sid) || assignedStudents.has(sid)) return;
+                assignments[key] = sid;
+                assignedStudents.add(sid);
+            });
+            return {
+                version: 1,
+                columns,
+                rows,
+                seatsPerDesk,
+                assignments,
+            };
+        }
+
         function normalizeHomeroomBook(value, fallbackId = '') {
             if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
             const className = cleanText(value.className || value.class);
@@ -1264,6 +1289,7 @@
                 customOfficers,
                 monitoringThresholds: normalizeHomeroomMonitoringThresholds(value.monitoringThresholds),
                 competition: normalizeHomeroomCompetition(value.competition),
+                seatingPlan: normalizeHomeroomSeatingPlan(value.seatingPlan, studentIds),
                 updatedAt: cleanText(value.updatedAt),
             };
         }
@@ -1280,7 +1306,7 @@
             const activeBook = books[selectedBookId] || null;
             const selectedStudentId = cleanText(source.selectedStudentId);
             return {
-                version: 6,
+                version: 7,
                 books,
                 selectedBookId: activeBook ? selectedBookId : '',
                 selectedClassName: cleanText(source.selectedClassName),

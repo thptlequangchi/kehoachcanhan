@@ -42,6 +42,7 @@
     <link rel="stylesheet" href="assets/css/homeroom-v53-1.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v53-2.css" />
     <link rel="stylesheet" href="assets/css/homeroom-v53-3.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-v53-4.css" />
     <link rel="stylesheet" href="assets/css/release-v52.css" />
     <link rel="stylesheet" href="assets/css/timetable-v52-1.css" />
     <link rel="stylesheet" href="assets/css/release-v52-5.css" />
@@ -1187,6 +1188,24 @@
                         <div class="homeroom-custom-officer-list" id="homeroomCustomOfficerList"></div>
                     </div>
                     <div class="homeroom-group-grid" id="homeroomGroupGrid"><div class="homeroom-mini-empty">Chưa có tổ. Nhấn “Tạo nhanh 4 tổ” hoặc “Thêm tổ”.</div></div>
+                </section>
+
+                <section class="homeroom-seating" id="homeroomSeatingSection" aria-label="Sơ đồ chỗ ngồi lớp chủ nhiệm">
+                    <div class="homeroom-seating-head">
+                        <div>
+                            <h3>🪑 Sơ đồ chỗ ngồi</h3>
+                            <small>Mặc định: <strong>4 dãy bàn</strong>, xếp theo hàng dọc; mỗi dãy có <strong>6 bàn</strong>, mỗi bàn <strong>2 chỗ ngồi</strong> (tổng 48 chỗ). Có thể xếp nhanh theo danh sách rồi chỉnh lại thủ công từng chỗ.</small>
+                        </div>
+                        <div class="homeroom-seating-actions">
+                            <label class="homeroom-seating-mode"><span>Cách xếp nhanh</span><select id="homeroomSeatingModeSelect"><option value="roster">Theo danh sách</option><option value="groups">Theo 4 tổ → 4 dãy</option><option value="gender">Xen kẽ Nam/Nữ</option></select></label>
+                            <button class="btn btn-outline btn-sm" id="homeroomInitSeatingBtn" type="button">🧱 Mẫu 4 dãy × 6 bàn</button>
+                            <button class="btn btn-primary btn-sm" id="homeroomAutoSeatBtn" type="button">⚡ Xếp nhanh</button>
+                            <button class="btn btn-outline btn-sm" id="homeroomPrintSeatingBtn" type="button">🖨️ In A4</button>
+                            <button class="btn btn-outline btn-sm" id="homeroomClearSeatsBtn" type="button">🗑️ Xóa xếp chỗ</button>
+                        </div>
+                    </div>
+                    <div class="homeroom-seating-summary" id="homeroomSeatingSummary">Chưa mở sổ chủ nhiệm.</div>
+                    <div class="homeroom-seating-chart" id="homeroomSeatingChart"><div class="homeroom-mini-empty">Mở sổ chủ nhiệm để tạo sơ đồ chỗ ngồi.</div></div>
                 </section>
 
                 <section class="homeroom-paste-panel" id="homeroomPastePanel" hidden aria-label="Dán danh sách học sinh chủ nhiệm">
