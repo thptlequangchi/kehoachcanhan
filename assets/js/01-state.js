@@ -45,8 +45,8 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.3.9';
-        const DATA_SCHEMA_VERSION = 6;
+        const APP_VERSION = '53.3.10';
+        const DATA_SCHEMA_VERSION = 7;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
         const GEMINI_MODEL = 'gemini-3.5-flash';
@@ -69,7 +69,7 @@
         const SELECTED_ACADEMIC_YEAR_STORAGE = 'teacher_selected_academic_year';
         const RECOGNITION_MODES = ['auto', 'accurate', 'economy', 'offline'];
         const BACKUP_FORMAT = 'teacher-notebook-backup';
-        const BACKUP_VERSION = 7;
+        const BACKUP_VERSION = 8;
         const PRE_RESTORE_BACKUP_KEY = 'teacher_pre_restore_backup_v1';
         const PRE_CLOUD_SYNC_BACKUP_KEY = 'teacher_pre_cloud_sync_backup_v1';
         const SHARED_PLAN_HISTORY_STORAGE = 'teacher_shared_plan_history_v1';
@@ -1215,6 +1215,8 @@
                 schoolScope: ['student','class'].includes(cleanText(value.schoolScope)) ? cleanText(value.schoolScope) : '',
                 disciplineEffect: ['lower1','weak'].includes(cleanText(value.disciplineEffect)) ? cleanText(value.disciplineEffect) : '',
                 regulationSource: cleanText(value.regulationSource),
+                sourceScope: ['school','class'].includes(cleanText(value.sourceScope)) ? cleanText(value.sourceScope) : '',
+                sourceRole: cleanText(value.sourceRole),
                 regulationNote: cleanText(value.regulationNote),
                 quantity: Number.isFinite(Number(value.quantity)) ? Math.min(999, Math.max(1, Math.round(Number(value.quantity)))) : 1,
                 quantityUnit: cleanText(value.quantityUnit),

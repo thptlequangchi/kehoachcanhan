@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.9 (4-group seating rotation every 2 weeks)
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.10 (school/class violation sources)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -10,6 +10,7 @@
         let homeroomPrivacyHidden = true;
         let homeroomMonitoringView = 'flagged';
         let homeroomWeekAnchorDate = '';
+        let homeroomStudentLogHistoryScope = 'year';
 
         const HOMEROOM_TYPE_META = {
             absence_excused: { label: 'Vắng có phép', icon: '🟡', tone: 'warning' },
@@ -24,6 +25,36 @@
             parent_meeting: { label: 'Họp phụ huynh', icon: '🏫', tone: 'info' },
             class_activity: { label: 'Hoạt động lớp', icon: '🎯', tone: 'success' },
         };
+
+        const HOMEROOM_INCIDENT_SOURCE_META = Object.freeze({
+            school_union: { scope:'school', label:'Đoàn trường', short:'Đoàn trường', icon:'🏫' },
+            school_supervisor: { scope:'school', label:'Giám thị', short:'Giám thị', icon:'🛡️' },
+            class_homeroom: { scope:'class', label:'Giáo viên chủ nhiệm', short:'GVCN', icon:'👩‍🏫' },
+            class_subject_teacher: { scope:'class', label:'Giáo viên bộ môn', short:'GVBM', icon:'📚' },
+            class_president: { scope:'class', label:'Lớp trưởng', short:'Lớp trưởng', icon:'⭐' },
+            class_group_leader: { scope:'class', label:'Tổ trưởng', short:'Tổ trưởng', icon:'👥' },
+            class_officer: { scope:'class', label:'Lớp phó / cán bộ lớp', short:'Cán bộ lớp', icon:'📌' },
+        });
+
+        function homeroomIncidentSourceMeta(entry) {
+            const role = cleanText(entry?.sourceRole);
+            if (HOMEROOM_INCIDENT_SOURCE_META[role]) return HOMEROOM_INCIDENT_SOURCE_META[role];
+            const scope = cleanText(entry?.sourceScope);
+            if (scope === 'school') return { scope:'school', label:'Nguồn cấp trường', short:'Cấp trường', icon:'🏫' };
+            // Dữ liệu cũ chưa có nguồn được xem là ghi nhận nội bộ GVCN để tránh tự động
+            // biến các bản ghi lịch sử thành lỗi cấp trường.
+            return HOMEROOM_INCIDENT_SOURCE_META.class_homeroom;
+        }
+
+        function homeroomIncidentScope(entry) {
+            return homeroomIncidentSourceMeta(entry).scope;
+        }
+
+        function homeroomIncidentSourceBadge(entry) {
+            const meta = homeroomIncidentSourceMeta(entry);
+            const scopeLabel = meta.scope === 'school' ? 'TRƯỜNG' : 'LỚP';
+            return `<span class="homeroom-source-badge source-${meta.scope}" title="${homeroomEscapeHtml(meta.label)}">${scopeLabel} · ${homeroomEscapeHtml(meta.short)}</span>`;
+        }
 
         const HOMEROOM_CLASS_ROLE_META = Object.freeze([
             { id:'classPresident', label:'Lớp trưởng', icon:'⭐' },
@@ -419,6 +450,10 @@
                 .map(entry => ({ entry, rule:null }));
             const violationItems = [...regulationViolationItems, ...manualViolationItems];
             const violationCount = violationItems.length;
+            const schoolViolationItems = violationItems.filter(item => homeroomIncidentScope(item.entry) === 'school');
+            const classViolationItems = violationItems.filter(item => homeroomIncidentScope(item.entry) !== 'school');
+            const schoolViolationCount = schoolViolationItems.length;
+            const classViolationCount = classViolationItems.length;
             const phoneCount = violationItems.filter(item => item.rule?.special === 'phone').length;
             const lowerOneCount = violationItems.filter(item => item.rule?.discipline === 'lower1').length;
             const directWeak = violationItems.filter(item => item.rule?.discipline === 'weak');
@@ -438,7 +473,7 @@
             const unresolvedViolationCount = violationItems.filter(item => !item.entry.resolved).length;
             const lastViolation = [...violationItems].sort((a,b) => String(b.entry.date || '').localeCompare(String(a.entry.date || '')) || String(b.entry.createdAt || '').localeCompare(String(a.entry.createdAt || '')))[0] || null;
             return {
-                baseline, suggested, violationCount, phoneCount, lowerOneCount, directWeakCount:directWeak.length,
+                baseline, suggested, violationCount, schoolViolationCount, classViolationCount, phoneCount, lowerOneCount, directWeakCount:directWeak.length,
                 reasons:[...new Set(reasons)], totalRegulationPoints, officialRegulationPoints, teacherTrackingPoints, rewardPoints, deductionPoints,
                 regulationEntryCount:regulationEntries.length, teacherTrackingEntryCount:teacherTrackingEntries.length, scoredEntryCount:scoredEntries.length, unresolvedViolationCount,
                 lastViolationDate:lastViolation?.entry?.date || '', lastViolationLabel:lastViolation?.rule?.label || lastViolation?.entry?.content || 'Vi phạm'
@@ -1523,7 +1558,7 @@
                     const compact = [
                         m.absenceTotal ? `<span title="Tổng lượt vắng">V ${m.absenceTotal}</span>` : '',
                         m.late ? `<span title="Lượt đi muộn">M ${m.late}</span>` : '',
-                        m.conduct?.violationCount ? `<span title="Tổng lỗi nề nếp theo quy chế trong học kỳ">Lỗi ${m.conduct.violationCount}</span>` : '',
+                        m.conduct?.violationCount ? `<span title="Lỗi cấp trường / lỗi nội bộ lớp trong học kỳ">Tr ${m.conduct.schoolViolationCount || 0} · L ${m.conduct.classViolationCount || 0}</span>` : '',
                         `<span title="Điểm rèn luyện tuần ${homeroomEscapeHtml(homeroomWeekLabel(homeroomWeekAnchorDate || homeroomTodayISO()))}">Đ ${homeroomFormatPoints(m.weekScore).replace('+','')}</span>`,
                         m.activeSeriousCount ? `<span class="critical" title="Vi phạm nghiêm trọng chưa xử lý">🚨 ${m.activeSeriousCount}</span>` : (m.resolvedSeriousCount ? `<span class="history" title="Có lịch sử vi phạm nghiêm trọng đã xử lý">✓🚨 ${m.resolvedSeriousCount}</span>` : ''),
                         m.trend?.direction === 'improving' ? '<span class="trend-up" title="Xu hướng 4 tuần tích cực">↗</span>' : (m.trend?.direction === 'declining' ? '<span class="trend-down" title="Xu hướng điểm 4 tuần giảm">↘</span>' : ''),
@@ -1610,7 +1645,7 @@
                 return;
             }
             tableEl.innerHTML = `<table class="homeroom-monitor-table"><thead><tr>
-                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Lỗi nề nếp HK</th><th>Điểm nề nếp</th><th>Điểm tuần</th><th>Xu hướng 4 tuần</th><th>Nghiêm trọng</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
+                <th>Học sinh</th><th>Vắng CP</th><th>Vắng KP</th><th>Tổng vắng</th><th>Đi muộn</th><th>Lỗi trường</th><th>Lỗi lớp</th><th>Điểm nề nếp</th><th>Điểm tuần</th><th>Xu hướng 4 tuần</th><th>Nghiêm trọng</th><th>Chưa xử lý</th><th>Lần gần nhất</th><th>Trạng thái</th><th></th>
                 </tr></thead><tbody>${shownRows.map(({ student, metrics, status }) => {
                     const alertTitle = status.alerts.length ? status.alerts.join(' · ') : 'Chưa chạm ngưỡng';
                     const trend = metrics.trend || { direction:'stable', label:'Ổn định', scores:[100,100,100,100], weeks:[] };
@@ -1621,8 +1656,8 @@
                     return `<tr class="monitor-${status.level}">
                         <td><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></td>
                         <td>${metrics.absenceExcused}</td><td>${metrics.absenceUnexcused}</td><td><strong>${metrics.absenceTotal}</strong></td>
-                        <td>${metrics.late}</td><td><strong>${metrics.conduct?.violationCount || 0}</strong><small>${metrics.conduct?.unresolvedViolationCount ? `Chưa xử lý ${metrics.conduct.unresolvedViolationCount}` : 'Đã đồng bộ'}</small></td>
-                        <td><strong class="${(metrics.conduct?.totalRegulationPoints || 0) < 0 ? 'points-negative' : ((metrics.conduct?.totalRegulationPoints || 0) > 0 ? 'points-positive' : '')}">${homeroomEscapeHtml(homeroomFormatPoints(metrics.conduct?.totalRegulationPoints || 0))}</strong><small>HK${semester}</small></td>
+                        <td>${metrics.late}</td><td><strong class="homeroom-source-count school">${metrics.conduct?.schoolViolationCount || 0}</strong><small>Đoàn · Giám thị</small></td><td><strong class="homeroom-source-count class">${metrics.conduct?.classViolationCount || 0}</strong><small>GVCN · GVBM · cán bộ lớp</small></td>
+                        <td><strong class="${(metrics.conduct?.totalRegulationPoints || 0) < 0 ? 'points-negative' : ((metrics.conduct?.totalRegulationPoints || 0) > 0 ? 'points-positive' : '')}">${homeroomEscapeHtml(homeroomFormatPoints(metrics.conduct?.totalRegulationPoints || 0))}</strong><small>HK${semester} · chưa xử lý ${metrics.conduct?.unresolvedViolationCount || 0}</small></td>
                         <td><strong class="homeroom-week-score score-${metrics.scoreBand.level}">${homeroomEscapeHtml(homeroomFormatPoints(metrics.weekScore).replace('+',''))}</strong><small>${homeroomEscapeHtml(metrics.scoreBand.label)} · ${homeroomEscapeHtml(homeroomFormatPoints(metrics.weekPoints))}</small></td>
                         <td><span class="homeroom-trend-badge trend-${homeroomEscapeHtml(trend.direction)}" title="${homeroomEscapeHtml(trendTitle)}">${trend.direction === 'improving' ? '↗' : (trend.direction === 'declining' ? '↘' : '→')} ${homeroomEscapeHtml(trend.label)}</span><small>${homeroomEscapeHtml((trend.scores || []).join(' → '))}</small></td>
                         <td>${seriousHtml}</td>
@@ -1702,9 +1737,11 @@
                     || a.assessment.deductionPoints - b.assessment.deductionPoints
                     || String(a.student.name || '').localeCompare(String(b.student.name || ''), 'vi', { numeric:true, sensitivity:'base' }));
             const counts = Object.fromEntries(HOMEROOM_CONDUCT_LEVELS.map(level => [level, rows.filter(row => row.assessment.suggested === level).length]));
-            if (summary) summary.innerHTML = `<div class="homeroom-conduct-kpis"><span><b>${book.students.length}</b> HS</span><span class="level-good"><b>${counts['Tốt']}</b> Tốt</span><span class="level-fair"><b>${counts['Khá']}</b> Khá</span><span class="level-average"><b>${counts['Trung bình']}</b> Trung bình</span><span class="level-weak"><b>${counts['Yếu']}</b> Yếu</span></div><small>Gợi ý tự động theo số lỗi và hình thức xử lý trong <strong>dự thảo</strong>; GVCN kiểm tra hồ sơ thực tế trước khi kết luận.</small>`;
+            const schoolFaultTotal = rows.reduce((sum, row) => sum + (row.assessment.schoolViolationCount || 0), 0);
+            const classFaultTotal = rows.reduce((sum, row) => sum + (row.assessment.classViolationCount || 0), 0);
+            if (summary) summary.innerHTML = `<div class="homeroom-conduct-kpis"><span><b>${book.students.length}</b> HS</span><span class="source-school"><b>${schoolFaultTotal}</b> Lỗi trường</span><span class="source-class"><b>${classFaultTotal}</b> Lỗi lớp</span><span class="level-good"><b>${counts['Tốt']}</b> Tốt</span><span class="level-fair"><b>${counts['Khá']}</b> Khá</span><span class="level-average"><b>${counts['Trung bình']}</b> Trung bình</span><span class="level-weak"><b>${counts['Yếu']}</b> Yếu</span></div><small><strong>Lỗi trường</strong> = Đoàn trường/Giám thị; <strong>Lỗi lớp</strong> = GVCN/GVBM/Lớp trưởng/Tổ trưởng/cán bộ lớp. Gợi ý xếp loại vẫn tính tổng các lỗi đã ghi nhận.</small>`;
             if (table) {
-                table.innerHTML = rows.length ? `<div class="homeroom-conduct-table-wrap"><table class="homeroom-conduct-table"><thead><tr><th>Học sinh</th><th>Lỗi HK</th><th>Chưa xử lý</th><th>Điểm nề nếp</th><th>Hạ bậc</th><th>Điện thoại</th><th>Gợi ý</th><th>Lỗi gần nhất</th><th>Lý do bắt buộc</th></tr></thead><tbody>${rows.map(({student,assessment}) => `<tr class="conduct-${homeroomConductLevelClass(assessment.suggested)}"><td><button type="button" class="homeroom-monitor-link" data-homeroom-conduct-student="${homeroomEscapeHtml(student.id)}"><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></button></td><td><strong>${assessment.violationCount}</strong></td><td>${assessment.unresolvedViolationCount ? `<span class="homeroom-serious-state active">${assessment.unresolvedViolationCount}</span>` : '<span class="homeroom-serious-state history">0</span>'}</td><td>${homeroomEscapeHtml(homeroomFormatPoints(assessment.totalRegulationPoints))}</td><td>${assessment.lowerOneCount}</td><td>${assessment.phoneCount}</td><td><span class="homeroom-conduct-level level-${homeroomConductLevelClass(assessment.suggested)}">${homeroomEscapeHtml(assessment.suggested)}</span></td><td>${assessment.lastViolationDate ? `<strong>${homeroomEscapeHtml(homeroomFormatDate(assessment.lastViolationDate))}</strong><small>${homeroomEscapeHtml(assessment.lastViolationLabel)}</small>` : '—'}</td><td>${assessment.reasons.length ? homeroomEscapeHtml(assessment.reasons.join(' · ')) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="homeroom-mini-empty">Chưa có học sinh.</div>';
+                table.innerHTML = rows.length ? `<div class="homeroom-conduct-table-wrap"><table class="homeroom-conduct-table"><thead><tr><th>Học sinh</th><th>Lỗi trường</th><th>Lỗi lớp</th><th>Chưa xử lý</th><th>Điểm nề nếp</th><th>Hạ bậc</th><th>Điện thoại</th><th>Gợi ý</th><th>Lỗi gần nhất</th><th>Lý do bắt buộc</th></tr></thead><tbody>${rows.map(({student,assessment}) => `<tr class="conduct-${homeroomConductLevelClass(assessment.suggested)}"><td><button type="button" class="homeroom-monitor-link" data-homeroom-conduct-student="${homeroomEscapeHtml(student.id)}"><strong>${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</strong></button></td><td><strong class="homeroom-source-count school">${assessment.schoolViolationCount || 0}</strong></td><td><strong class="homeroom-source-count class">${assessment.classViolationCount || 0}</strong></td><td>${assessment.unresolvedViolationCount ? `<span class="homeroom-serious-state active">${assessment.unresolvedViolationCount}</span>` : '<span class="homeroom-serious-state history">0</span>'}</td><td>${homeroomEscapeHtml(homeroomFormatPoints(assessment.totalRegulationPoints))}</td><td>${assessment.lowerOneCount}</td><td>${assessment.phoneCount}</td><td><span class="homeroom-conduct-level level-${homeroomConductLevelClass(assessment.suggested)}">${homeroomEscapeHtml(assessment.suggested)}</span></td><td>${assessment.lastViolationDate ? `<strong>${homeroomEscapeHtml(homeroomFormatDate(assessment.lastViolationDate))}</strong><small>${homeroomEscapeHtml(assessment.lastViolationLabel)}</small>` : '—'}</td><td>${assessment.reasons.length ? homeroomEscapeHtml(assessment.reasons.join(' · ')) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="homeroom-mini-empty">Chưa có học sinh.</div>';
             }
             const classMetrics = homeroomClassConductMetrics(book, semester);
             if (classSummary) classSummary.innerHTML = `<span>HK${semester}</span><span>HS ${classMetrics.studentEntries} · Tập thể ${classMetrics.classEntries}</span><span class="points-negative">Trừ ${homeroomFormatPoints(classMetrics.deductions)}</span><span class="points-positive">Thưởng ${homeroomFormatPoints(classMetrics.rewards)}</span><strong>Ròng ${homeroomFormatPoints(classMetrics.net)}</strong>`;
@@ -1807,7 +1844,9 @@
                 return;
             }
             const semester = homeroomGetSelectedSemester();
-            const entries = (book.entries || []).filter(entry => entry.studentId === student.id && String(entry.semester) === semester)
+            const scopeSelect = homeroomById('homeroomStudentLogScope');
+            if (scopeSelect) scopeSelect.value = homeroomStudentLogHistoryScope;
+            const entries = (book.entries || []).filter(entry => entry.studentId === student.id && (homeroomStudentLogHistoryScope === 'year' || String(entry.semester) === semester))
                 .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
             list.innerHTML = entries.length ? entries.map(entry => {
                 const meta = homeroomEntryMeta(entry.type);
@@ -1815,7 +1854,7 @@
                     <div class="homeroom-log-icon">${meta.icon}</div>
                     <div class="homeroom-log-main">
                         <div class="homeroom-log-head"><strong>${homeroomEscapeHtml(meta.label)}</strong><span>${homeroomEscapeHtml(homeroomFormatDate(entry.date) || 'Chưa ngày')}</span></div>
-                        <div class="homeroom-log-badges"><span class="homeroom-point-badge ${entry.points < 0 ? 'negative' : (entry.points > 0 ? 'positive' : 'neutral')}">${homeroomEscapeHtml(homeroomFormatPoints(entry.points))}</span><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(entry.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(entry.severity).label)}</span>${homeroomRuleById(entry.ruleId)?.no ? `<span class="homeroom-regulation-badge">TT ${homeroomEscapeHtml(homeroomRuleById(entry.ruleId).no)}</span>` : (homeroomIsTeacherTrackingRule(homeroomRuleById(entry.ruleId)) ? '<span class="homeroom-regulation-badge gvcn">GVCN</span>' : '')}${entry.absenceExceptionLabel ? `<span class="homeroom-regulation-badge">${homeroomEscapeHtml(entry.absenceExceptionLabel)}</span>` : ''}${entry.quantity > 1 ? `<span class="homeroom-regulation-badge">${homeroomEscapeHtml(entry.quantity)} ${homeroomEscapeHtml(entry.quantityUnit || 'đơn vị')}</span>` : ''}${homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)) ? `<span class="homeroom-discipline-badge">${homeroomEscapeHtml(homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)))}</span>` : ''}${entry.repeatMultiplier > 1 ? `<span class="homeroom-repeat-badge">Tái phạm ×${homeroomEscapeHtml(String(entry.repeatMultiplier).replace('.',','))}</span>` : ''}${entry.seriousFlag ? (entry.resolved ? '<span class="homeroom-serious-badge resolved">✓ Lịch sử nghiêm trọng</span>' : '<span class="homeroom-serious-badge">🚨 Nghiêm trọng đang xử lý</span>') : ''}</div>
+                        <div class="homeroom-log-badges">${homeroomIncidentSourceBadge(entry)}${homeroomStudentLogHistoryScope === 'year' ? `<span class="homeroom-regulation-badge">HK${homeroomEscapeHtml(entry.semester)}</span>` : ''}<span class="homeroom-point-badge ${entry.points < 0 ? 'negative' : (entry.points > 0 ? 'positive' : 'neutral')}">${homeroomEscapeHtml(homeroomFormatPoints(entry.points))}</span><span class="homeroom-severity-badge severity-${homeroomEscapeHtml(entry.severity)}">${homeroomEscapeHtml(homeroomSeverityMeta(entry.severity).label)}</span>${homeroomRuleById(entry.ruleId)?.no ? `<span class="homeroom-regulation-badge">TT ${homeroomEscapeHtml(homeroomRuleById(entry.ruleId).no)}</span>` : (homeroomIsTeacherTrackingRule(homeroomRuleById(entry.ruleId)) ? '<span class="homeroom-regulation-badge gvcn">GVCN</span>' : '')}${entry.absenceExceptionLabel ? `<span class="homeroom-regulation-badge">${homeroomEscapeHtml(entry.absenceExceptionLabel)}</span>` : ''}${entry.quantity > 1 ? `<span class="homeroom-regulation-badge">${homeroomEscapeHtml(entry.quantity)} ${homeroomEscapeHtml(entry.quantityUnit || 'đơn vị')}</span>` : ''}${homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)) ? `<span class="homeroom-discipline-badge">${homeroomEscapeHtml(homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)))}</span>` : ''}${entry.repeatMultiplier > 1 ? `<span class="homeroom-repeat-badge">Tái phạm ×${homeroomEscapeHtml(String(entry.repeatMultiplier).replace('.',','))}</span>` : ''}${entry.seriousFlag ? (entry.resolved ? '<span class="homeroom-serious-badge resolved">✓ Lịch sử nghiêm trọng</span>' : '<span class="homeroom-serious-badge">🚨 Nghiêm trọng đang xử lý</span>') : ''}</div>
                         ${entry.content ? `<p>${homeroomEscapeHtml(entry.content)}</p>` : ''}
                         ${entry.followUp ? `<small>↳ Theo dõi: ${homeroomEscapeHtml(entry.followUp)}</small>` : ''}
                         ${entry.resolved && entry.resolvedAt ? `<small>✓ Xử lý lúc: ${homeroomEscapeHtml(new Date(entry.resolvedAt).toLocaleString('vi-VN'))}</small>` : ''}
@@ -1825,7 +1864,7 @@
                         </div>
                     </div>
                 </article>`;
-            }).join('') : '<div class="homeroom-mini-empty">Học sinh này chưa có ghi nhận trong học kỳ đang chọn.</div>';
+            }).join('') : `<div class="homeroom-mini-empty">${homeroomStudentLogHistoryScope === 'year' ? 'Học sinh này chưa có ghi nhận trong năm học.' : 'Học sinh này chưa có ghi nhận trong học kỳ đang chọn.'}</div>`;
         }
 
         function homeroomRenderClassJournal(book) {
@@ -2128,7 +2167,9 @@
                 disciplineEffect: rule?.discipline || '',
                 regulationSource: homeroomIsSchoolRule(rule)
                     ? 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026'
-                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.9' : ''),
+                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.10' : ''),
+                sourceRole: cleanText(homeroomById('homeroomStudentLogSource')?.value) || 'class_homeroom',
+                sourceScope: HOMEROOM_INCIDENT_SOURCE_META[cleanText(homeroomById('homeroomStudentLogSource')?.value)]?.scope || 'class',
                 regulationNote: rule?.note || '',
                 absenceException: absenceInfo?.exception || '',
                 absenceExceptionLabel: absenceInfo?.label || '',
@@ -2304,6 +2345,8 @@
                     'TT quy chế': homeroomRuleById(entry.ruleId)?.no ?? '',
                     'Phạm vi': homeroomRuleById(entry.ruleId)?.scope === 'student' ? 'Học sinh' : '',
                     'Hình thức xử lý': homeroomSchoolRuleEffectLabel(homeroomRuleById(entry.ruleId)),
+                    'Cấp ghi nhận': homeroomIncidentScope(entry) === 'school' ? 'Lỗi trường' : 'Lỗi lớp',
+                    'Nguồn phát hiện': homeroomIncidentSourceMeta(entry).label,
                     'Nguồn điểm / quy chế': entry.regulationSource || '',
                     'Điểm gốc': entry.basePoints,
                     'Hệ số tái phạm': entry.repeatMultiplier,
@@ -2331,7 +2374,9 @@
                     'Vắng không phép': metrics.absenceUnexcused,
                     'Tổng vắng': metrics.absenceTotal,
                     'Đi muộn': metrics.late,
-                    'Lỗi nề nếp HK': metrics.conduct?.violationCount || 0,
+                    'Lỗi trường HK': metrics.conduct?.schoolViolationCount || 0,
+                    'Lỗi lớp HK': metrics.conduct?.classViolationCount || 0,
+                    'Tổng lỗi nề nếp HK': metrics.conduct?.violationCount || 0,
                     'Điểm nề nếp HK': metrics.conduct?.totalRegulationPoints || 0,
                     'Trong đó điểm quy chế chính thức': metrics.conduct?.officialRegulationPoints || 0,
                     'Trong đó điểm theo dõi GVCN': metrics.conduct?.teacherTrackingPoints || 0,
@@ -2347,7 +2392,9 @@
                     'Chuỗi điểm 4 tuần': (metrics.trend?.scores || []).join(' → '),
                     'Ghi nhận chưa xử lý': metrics.unresolved,
                     'Lần gần nhất': homeroomFormatDate(metrics.lastEntryDate),
-                    'Số lỗi theo quy chế': metrics.conduct?.violationCount || 0,
+                    'Lỗi trường': metrics.conduct?.schoolViolationCount || 0,
+                    'Lỗi lớp': metrics.conduct?.classViolationCount || 0,
+                    'Tổng số lỗi': metrics.conduct?.violationCount || 0,
                     'Gợi ý hạnh kiểm': metrics.conduct?.suggested || 'Tốt',
                     'Lý do xếp yếu': (metrics.conduct?.reasons || []).join(' | '),
                     'Trạng thái theo ngưỡng': status.label,
@@ -2359,7 +2406,9 @@
                         'STT': index + 1,
                         'Học sinh': student.name,
                         'Tổ': homeroomFindGroup(book, student.groupId)?.name || '',
-                        'Số lỗi HK': assessment.violationCount,
+                        'Lỗi trường HK': assessment.schoolViolationCount || 0,
+                        'Lỗi lớp HK': assessment.classViolationCount || 0,
+                        'Tổng số lỗi HK': assessment.violationCount,
                         'Điểm trừ': assessment.deductionPoints,
                         'Điểm thưởng': assessment.rewardPoints,
                         'Điểm nề nếp ròng': assessment.totalRegulationPoints,
@@ -2584,6 +2633,7 @@
                 if (deleteButton) homeroomDeleteStudent(deleteButton.dataset.homeroomDeleteStudent);
             });
             homeroomById('homeroomStudentSelect')?.addEventListener('change', event => { homeroomSelectStudent(event.target.value); homeroomUpdateRulePreview(); });
+            homeroomById('homeroomStudentLogScope')?.addEventListener('change', event => { homeroomStudentLogHistoryScope = event.target.value === 'year' ? 'year' : 'semester'; homeroomRenderStudentLog(homeroomActiveBook()); });
             homeroomById('homeroomStudentLogList')?.addEventListener('click', event => {
                 const toggle = event.target.closest('[data-homeroom-toggle-resolved]');
                 if (toggle) homeroomToggleResolved(toggle.dataset.homeroomToggleResolved);

@@ -1,5 +1,5 @@
 /* ==================================================================
-   SỔ TAY GIÁO VIÊN v53.3.9 — SƠ ĐỒ CHỖ NGỒI GVCN · LUÂN PHIÊN 2 TUẦN
+   SỔ TAY GIÁO VIÊN v53.3.10 — SƠ ĐỒ CHỖ NGỒI GVCN · LUÂN PHIÊN 2 TUẦN
    ================================================================== */
 .homeroom-seating{margin:18px 0;padding:16px;border:1px solid #cbd5e1;border-radius:20px;background:linear-gradient(180deg,#fcfcff 0%,#fff 54%);box-shadow:0 10px 30px rgba(15,23,42,.05)}
 .homeroom-seating-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}.homeroom-seating-head h3{margin:0 0 5px;font-size:18px;color:#0f172a}.homeroom-seating-head small{display:block;color:#64748b;line-height:1.5;max-width:900px}.homeroom-seating-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
@@ -29,3 +29,9 @@
 @media(max-width:900px){.homeroom-seating-rotation-info{grid-template-columns:1fr}.homeroom-seating-rotation-map{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.homeroom-seating-rotation-map{grid-template-columns:1fr 1fr}.homeroom-seating-rotation-toggle{width:100%;box-sizing:border-box}}
 @media print{.homeroom-seating-rotation-info{display:grid!important;grid-template-columns:1fr!important;padding:2mm!important;margin:0 0 2mm!important;border:1px solid #aaa!important;background:#fff!important}.homeroom-seating-rotation-info>div:first-child small{display:none!important}.homeroom-seating-rotation-map{grid-template-columns:repeat(4,1fr)!important;gap:1mm!important}.homeroom-seating-rotation-map span{min-height:auto!important;padding:1mm!important;border:1px solid #aaa!important;font-size:7pt!important}}
+
+/* v53.3.10 — phân nguồn lỗi trường / lỗi lớp */
+.homeroom-student-log-head{align-items:center}.homeroom-log-scope-control{display:flex;align-items:center;gap:7px;margin-left:auto}.homeroom-log-scope-control>span{font-size:10px;font-weight:800;color:#64748b}.homeroom-log-scope-control select{border:1px solid #cbd5e1;border-radius:9px;background:#fff;padding:6px 8px;font:inherit;font-size:10px;color:#0f172a}
+.homeroom-source-badge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;font-size:9px;font-weight:900;white-space:nowrap;letter-spacing:.02em}.homeroom-source-badge.source-school{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}.homeroom-source-badge.source-class{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+.homeroom-source-count{display:inline-flex;min-width:28px;justify-content:center;padding:4px 7px;border-radius:999px;font-size:11px}.homeroom-source-count.school{background:#fee2e2;color:#991b1b}.homeroom-source-count.class{background:#dbeafe;color:#1e40af}.homeroom-conduct-kpis .source-school{background:#fff1f2!important;border-color:#fecdd3!important;color:#9f1239!important}.homeroom-conduct-kpis .source-class{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1e40af!important}
+@media(max-width:700px){.homeroom-student-log-head{align-items:flex-start;flex-direction:column}.homeroom-log-scope-control{margin-left:0;width:100%;justify-content:space-between}.homeroom-log-scope-control select{min-width:170px}}

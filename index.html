@@ -1021,7 +1021,7 @@
                 <div class="card-header homeroom-header">
                     <div>
                         <h2>🏫 Sổ chủ nhiệm <small>hồ sơ · cơ cấu lớp · nề nếp · thi đua · phụ huynh</small></h2>
-                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, tổ học sinh, ban cán sự, chuyên cần, quy chế nề nếp 2026–2027, bảng thi đua tuần–tháng–năm, liên hệ phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
+                        <span class="sub" id="homeroomSubtitle">Hồ sơ lớp, tổ học sinh, ban cán sự, chuyên cần, lỗi cấp trường/lỗi nội bộ lớp, quy chế nề nếp 2026–2027, thi đua, phụ huynh và nhật ký chủ nhiệm — dữ liệu riêng của giáo viên.</span>
                     </div>
                     <div class="homeroom-private-badge" title="Sổ chủ nhiệm được lưu trong vùng dữ liệu cá nhân của giáo viên, không đưa vào Kế hoạch trường dùng chung.">🔐 Cá nhân</div>
                 </div>
@@ -1234,13 +1234,17 @@
 
                 <div class="homeroom-lower-grid">
                     <section class="homeroom-panel" id="homeroomStudentLogPanel">
-                        <div class="homeroom-panel-head"><h3 id="homeroomStudentLogTitle">📌 Theo dõi học sinh</h3><span class="text-muted">theo học kỳ</span></div>
+                        <div class="homeroom-panel-head homeroom-student-log-head"><h3 id="homeroomStudentLogTitle">📌 Theo dõi học sinh</h3><label class="homeroom-log-scope-control"><span>Lịch sử</span><select id="homeroomStudentLogScope"><option value="year" selected>Tất cả năm học</option><option value="semester">Học kỳ đang xem</option></select></label></div>
                         <form class="homeroom-inline-form" id="homeroomStudentLogForm">
                             <label><span>Học sinh</span><select id="homeroomStudentSelect"><option value="">— Chọn học sinh —</option></select></label>
                             <label><span>Ngày</span><input id="homeroomStudentLogDate" type="date" /></label>
                             <label><span>Nhóm ghi nhận</span><select id="homeroomStudentLogType">
                                 <option value="absence_excused">Vắng có phép</option><option value="absence_unexcused">Vắng không phép</option><option value="late">Đi muộn</option><option value="violation">Vi phạm</option><option value="commendation">Khen thưởng</option><option value="parent_contact">Trao đổi phụ huynh</option><option value="support">Hỗ trợ học sinh</option><option value="note">Ghi chú</option>
                             </select></label>
+                            <label><span>Nguồn ghi nhận</span><select id="homeroomStudentLogSource">
+                                <optgroup label="Lỗi cấp trường"><option value="school_union">Đoàn trường</option><option value="school_supervisor">Giám thị</option></optgroup>
+                                <optgroup label="Lỗi nội bộ lớp"><option value="class_homeroom" selected>Giáo viên chủ nhiệm</option><option value="class_subject_teacher">Giáo viên bộ môn</option><option value="class_president">Lớp trưởng</option><option value="class_group_leader">Tổ trưởng</option><option value="class_officer">Lớp phó / cán bộ lớp</option></optgroup>
+                            </select><small class="homeroom-field-help">Đoàn trường/Giám thị được tính vào <strong>Lỗi trường</strong>; GVCN/GVBM/cán bộ lớp được tính vào <strong>Lỗi lớp</strong>.</small></label>
                             <label class="full"><span>Nội dung nề nếp / khen thưởng</span><select id="homeroomConductRuleSelect"><option value="">— Ghi nhận tự do / không tính điểm —</option></select><small class="homeroom-field-help">Chọn mục để tự điền điểm. Nhóm “Bổ sung GVCN” là điểm theo dõi nội bộ và có thể điều chỉnh trước khi lưu.</small></label>
                             <label id="homeroomAbsenceExceptionField" hidden><span>Lý do / ngoại lệ vắng có phép</span><select id="homeroomAbsenceException"><option value="normal">Thông thường (−2)</option><option value="noel">Noel – HS Công giáo (0)</option><option value="religious_holiday">Lễ tôn giáo có giấy xác nhận (−0,5)</option><option value="long_term">Vắng học lâu dài (chỉ trừ 3 ngày đầu)</option></select><small id="homeroomAbsenceExceptionHelp" class="homeroom-field-help"></small></label>
                             <label><span>Điểm nề nếp</span><input id="homeroomStudentLogBasePoints" type="number" min="-100" max="100" step="0.5" value="0" /></label>

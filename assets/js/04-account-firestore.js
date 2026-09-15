@@ -2252,6 +2252,14 @@ service cloud.firestore {
                     if (workspace) workspace.homeroom = state.homeroom;
                     currentVersion = 6;
                 }
+                // Schema 7 (v53.3.10): thêm nguồn ghi nhận để tách lỗi cấp trường và lỗi nội bộ lớp.
+                // Bản ghi cũ không có nguồn vẫn được giữ nguyên; lớp hiển thị mặc định xem là nguồn GVCN.
+                if (currentVersion < 7) {
+                    state.homeroom = normalizeHomeroomWorkspace(state.homeroom);
+                    const workspace = getActiveYearWorkspace();
+                    if (workspace) workspace.homeroom = state.homeroom;
+                    currentVersion = 7;
+                }
 
                 localStorage.setItem(storageKey, String(DATA_SCHEMA_VERSION));
                 console.info(`✅ Data migration ${state.selectedAcademicYear}: ${fromVersion} → ${DATA_SCHEMA_VERSION}${changed ? ' (có cập nhật dữ liệu)' : ''}`);
