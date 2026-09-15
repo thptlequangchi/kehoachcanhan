@@ -1,17 +1,19 @@
-/* Sổ Tay Giáo Viên v53.3.13 STABLE — Service Worker */
-const APP_VERSION = '53.3.13';
+/* Sổ Tay Giáo Viên v53.3.14 STABLE — Service Worker */
+const APP_VERSION = '53.3.14';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
 const STATIC_CDN_HOSTS = new Set(['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'www.gstatic.com', 'tessdata.projectnaptha.com']);
 const INDEX_URL = new URL('./index.html', self.location.href).href;
 const ROOT_URL = new URL('./', self.location.href).href;
-const OCR_ASSETS = [
+const OPTIONAL_RUNTIME_ASSETS = [
     'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js',
     'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js',
     'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0/tesseract-core-lstm.wasm.js',
     'https://tessdata.projectnaptha.com/4.0.0_fast/vie.traineddata.gz',
     'https://tessdata.projectnaptha.com/4.0.0_fast/eng.traineddata.gz',
+    // Excel export should also remain usable after the app has been opened online once.
+    'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
 ];
 const APP_SHELL = [
     './',
@@ -91,9 +93,9 @@ const APP_SHELL = [
     './assets/js/config.js'
 ];
 
-async function warmOcrRuntimeCache() {
+async function warmOptionalRuntimeCache() {
     const cache = await caches.open(RUNTIME_CACHE);
-    await Promise.allSettled(OCR_ASSETS.map(async url => {
+    await Promise.allSettled(OPTIONAL_RUNTIME_ASSETS.map(async url => {
         const request = new Request(url, { mode: 'cors', credentials: 'omit' });
         const existing = await cache.match(request);
         if (existing) return true;
@@ -108,7 +110,7 @@ self.addEventListener('install', event => {
         const cache = await caches.open(CACHE_NAME);
         await cache.addAll(APP_SHELL);
         // OCR là dự phòng khi mất mạng. Làm ấm trước nhưng không để lỗi CDN chặn cài PWA.
-        await warmOcrRuntimeCache();
+        await warmOptionalRuntimeCache();
     })());
 });
 

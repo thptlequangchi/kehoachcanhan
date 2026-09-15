@@ -1147,10 +1147,15 @@
                             <button class="btn btn-primary btn-sm" id="homeroomAutoSeatBtn" type="button">⚡ Xếp nhanh</button>
                             <button class="btn btn-outline btn-sm" id="homeroomApplyRotationBtn" type="button">🔄 Áp dụng tuần hiện tại</button>
                             <button class="btn btn-outline btn-sm" id="homeroomAdvanceRotationBtn" type="button">➡️ Đổi dãy ngay</button>
-                            <button class="btn btn-outline btn-sm" id="homeroomPrintSeatingBtn" type="button">🖨️ In A4</button>
-                            <button class="btn btn-outline btn-sm" id="homeroomClearSeatsBtn" type="button">🗑️ Xóa xếp chỗ</button>
+                            <div class="homeroom-seating-export-group" aria-label="Xuất sơ đồ chỗ ngồi">
+                                <span>Xuất sơ đồ</span>
+                                <button class="btn btn-outline btn-sm" id="homeroomExportSeatingWordBtn" type="button" title="Xuất sơ đồ Word để chỉnh sửa hoặc in">📝 Word</button>
+                                <button class="btn btn-outline btn-sm" id="homeroomExportSeatingExcelBtn" type="button" title="Xuất sơ đồ và danh sách vị trí ra Excel">📊 Excel</button>
+                            </div>
+                            <button class="btn btn-outline btn-sm homeroom-seat-danger-btn" id="homeroomClearSeatsBtn" type="button">🗑️ Xóa xếp chỗ</button>
                         </div>
                     </div>
+                    <div class="homeroom-seating-export-help"><strong>Gợi ý:</strong> Word phù hợp để chỉnh sửa/in nhanh; Excel có thêm danh sách vị trí và bảng luân phiên 2 tuần để lưu hồ sơ.</div>
                     <div class="homeroom-seating-summary" id="homeroomSeatingSummary">Chưa mở sổ chủ nhiệm.</div>
                     <div class="homeroom-seating-rotation-info" id="homeroomSeatingRotationInfo" hidden></div>
                     <div class="homeroom-seating-chart" id="homeroomSeatingChart"><div class="homeroom-mini-empty">Mở sổ chủ nhiệm để tạo sơ đồ chỗ ngồi.</div></div>

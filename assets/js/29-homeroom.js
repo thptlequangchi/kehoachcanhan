@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.13 (editable student incident records)
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.14 (seating Word/Excel export + UX)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -1317,18 +1317,134 @@
             };
         }
 
-        function homeroomPrintSeating() {
+        function homeroomSeatingExportSnapshot(book) {
+            if (!book) return null;
+            const plan = homeroomEnsureSeatingPlan(book);
+            const rotation = homeroomSeatingRotationMeta(book);
+            const studentById = new Map((book.students || []).map(student => [student.id, student]));
+            const seatRows = [];
+            for (let row = 1; row <= plan.rows; row += 1) {
+                const desks = [];
+                for (let column = 1; column <= plan.columns; column += 1) {
+                    const seats = [1,2].map(seat => {
+                        const seatKey = homeroomSeatKey(column, row, seat);
+                        const studentId = plan.assignments?.[seatKey] || '';
+                        const student = studentById.get(studentId) || null;
+                        return { seatKey, seat, label:seat === 1 ? 'A' : 'B', student };
+                    });
+                    desks.push({ column, row, group:rotation.columnToGroup.get(column) || null, seats });
+                }
+                seatRows.push(desks);
+            }
+            const positionRows = (book.students || []).map((student, index) => {
+                const seatKey = homeroomStudentSeatKey(book, student.id);
+                const parsed = homeroomParseSeatKey(seatKey);
+                return {
+                    stt:index + 1,
+                    name:student.name || '',
+                    group:homeroomFindGroup(book, student.groupId)?.name || '',
+                    column:parsed?.column || '',
+                    desk:parsed?.row || '',
+                    seat:parsed ? (parsed.seat === 1 ? 'A' : 'B') : '',
+                    position:seatKey ? homeroomSeatLabel(seatKey) : 'Chưa xếp',
+                };
+            });
+            return {
+                book, plan, rotation, seatRows, positionRows,
+                academicYear:state.selectedAcademicYear || '',
+                teacher:book.homeroomTeacher || state.teacherProfile?.teacherName || '',
+                exportedAt:new Date(),
+            };
+        }
+
+        function homeroomSeatingRotationCycleRows(book) {
+            const plan = homeroomEnsureSeatingPlan(book);
+            const groups = [...(book?.groups || [])].slice(0,4);
+            const every = Math.max(1, Number.parseInt(plan?.rotationEveryWeeks,10) || 2);
+            const offset = Number.parseInt(plan?.rotationPhaseOffset,10) || 0;
+            return [0,1,2,3].map(block => {
+                const phase = ((block + offset) % 4 + 4) % 4;
+                const row = { period:`Tuần ${block * every + 1}–${block * every + every}` };
+                groups.forEach((group,index) => { row[group.name || `Tổ ${index+1}`] = `Dãy ${((index + phase) % 4) + 1}`; });
+                return row;
+            });
+        }
+
+        function homeroomSeatingFileBase(book) {
+            return `so-do-cho-ngoi-${homeroomSafeFilePart(book?.className || 'lop')}-${homeroomSafeFilePart(state.selectedAcademicYear || 'nam-hoc')}`;
+        }
+
+        function homeroomExportSeatingWord() {
             const book = homeroomActiveBook();
             if (!book) return;
-            document.body.dataset.printHomeroomClass = book.className || '';
-            window.print();
+            const snapshot = homeroomSeatingExportSnapshot(book);
+            const esc = homeroomEscapeHtml;
+            const rotation = snapshot.rotation;
+            const mapText = [1,2,3,4].map(column => `Dãy ${column}: ${rotation.columnToGroup.get(column)?.name || '—'}`).join(' · ');
+            const deskRows = snapshot.seatRows.map(desks => `<tr>${desks.map(desk => {
+                const names = desk.seats.map(item => `<div class="seat"><b>${item.label}.</b> ${esc(item.student?.name || '—')}</div>`).join('');
+                return `<td><div class="desk-title">Dãy ${desk.column} · Bàn ${desk.row}</div><div class="group">${esc(desk.group?.name || '')}</div>${names}</td>`;
+            }).join('')}</tr>`).join('');
+            const cycle = homeroomSeatingRotationCycleRows(book);
+            const cycleHeaders = [...new Set(cycle.flatMap(row => Object.keys(row).filter(key => key !== 'period')))];
+            const cycleTable = cycle.length && cycleHeaders.length ? `<h3>Chu kỳ luân phiên 2 tuần</h3><table class="cycle"><thead><tr><th>Giai đoạn</th>${cycleHeaders.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${cycle.map(row => `<tr><td>${esc(row.period)}</td>${cycleHeaders.map(h => `<td>${esc(row[h] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '';
+            const html = `<!doctype html><html><head><meta charset="utf-8"><title>Sơ đồ chỗ ngồi ${esc(book.className)}</title><style>
+                @page Section1{size:841.9pt 595.3pt;mso-page-orientation:landscape;margin:24pt 28pt 24pt 28pt}.Section1{page:Section1}body{font-family:Arial,sans-serif;color:#111827;font-size:10pt}h1{text-align:center;font-size:18pt;margin:0 0 4pt}p.meta{text-align:center;margin:2pt 0;color:#475569}.board{width:42%;margin:10pt auto;text-align:center;border:1.5pt solid #111827;padding:5pt;font-weight:700;letter-spacing:1pt}.layout{width:100%;border-collapse:separate;border-spacing:6pt}.layout td{width:25%;vertical-align:top;border:1pt solid #94a3b8;border-radius:6pt;padding:6pt}.desk-title{font-weight:700}.group{font-size:8.5pt;color:#1d4ed8;margin:2pt 0 5pt}.seat{border-top:.5pt solid #e2e8f0;padding:4pt 2pt;min-height:14pt}.cycle{width:100%;border-collapse:collapse;margin-top:6pt}.cycle th,.cycle td{border:1pt solid #cbd5e1;padding:5pt;text-align:center}.cycle th{background:#eef2ff}h3{font-size:11pt;margin:10pt 0 4pt}.foot{margin-top:8pt;color:#64748b;font-size:8.5pt}
+            </style></head><body><div class="Section1"><h1>SƠ ĐỒ CHỖ NGỒI LỚP ${esc(book.className || '')}</h1><p class="meta">Năm học ${esc(snapshot.academicYear)} · GVCN: ${esc(snapshot.teacher || '—')}</p><p class="meta">Tuần ${rotation.currentWeek} · ${esc(mapText)}</p><div class="board">BẢNG</div><table class="layout"><tbody>${deskRows}</tbody></table>${cycleTable}<div class="foot">Xuất từ Sổ Tay Giáo Viên · ${esc(snapshot.exportedAt.toLocaleString('vi-VN'))}</div></div></body></html>`;
+            downloadBlobFile(new Blob(['\ufeff', html], {type:'application/msword;charset=utf-8'}), `${homeroomSeatingFileBase(book)}.doc`);
+            showToast('✅ Đã xuất sơ đồ chỗ ngồi ra Word', 'success');
+        }
+
+        async function homeroomExportSeatingExcel() {
+            const book = homeroomActiveBook();
+            if (!book) return;
+            try { await ensureVendorLibrary('xlsx'); } catch (error) { showToast('❌ ' + error.message, 'error'); return; }
+            try {
+                const snapshot = homeroomSeatingExportSnapshot(book);
+                const rotation = snapshot.rotation;
+                const rows = [
+                    [`SƠ ĐỒ CHỖ NGỒI LỚP ${book.className || ''}`,'','','','','','',''],
+                    ['Năm học', snapshot.academicYear, 'GVCN', snapshot.teacher || '', 'Tuần áp dụng', rotation.currentWeek, 'Luân phiên', snapshot.plan.rotationEnabled ? '2 tuần/lần' : 'Tắt'],
+                    ['', '', '', '', '', '', '', ''],
+                    ['', '', 'BẢNG', '', '', '', '', ''],
+                    ...[1,2,3,4].reduce((acc,column) => acc, [])
+                ];
+                rows.push([1,2,3,4].flatMap(column => [`Dãy ${column}`, rotation.columnToGroup.get(column)?.name || '']));
+                snapshot.seatRows.forEach(desks => {
+                    rows.push(desks.flatMap(desk => desk.seats.map(item => `${item.label}. ${item.student?.name || '—'}`)));
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!merges'] = [
+                    {s:{r:0,c:0},e:{r:0,c:7}},
+                    {s:{r:3,c:2},e:{r:3,c:5}},
+                    {s:{r:4,c:0},e:{r:4,c:1}}, {s:{r:4,c:2},e:{r:4,c:3}}, {s:{r:4,c:4},e:{r:4,c:5}}, {s:{r:4,c:6},e:{r:4,c:7}},
+                ];
+                ws['!cols'] = Array.from({length:8},()=>({wch:20}));
+                ws['!rows'] = [{hpt:26},{hpt:22},{hpt:8},{hpt:24},{hpt:24},...Array.from({length:6},()=>({hpt:34}))];
+                const positionSheet = XLSX.utils.json_to_sheet(snapshot.positionRows.map(row => ({
+                    'STT':row.stt,'Họ và tên':row.name,'Tổ':row.group,'Dãy':row.column,'Bàn':row.desk,'Chỗ':row.seat,'Vị trí':row.position
+                })));
+                positionSheet['!cols']=[{wch:6},{wch:28},{wch:14},{wch:8},{wch:8},{wch:8},{wch:24}];
+                const cycleRows = homeroomSeatingRotationCycleRows(book);
+                const cycleSheet = XLSX.utils.json_to_sheet(cycleRows.map(row => ({'Giai đoạn':row.period,...Object.fromEntries(Object.entries(row).filter(([k])=>k!=='period'))})));
+                cycleSheet['!cols']=[{wch:14},...Array.from({length:4},()=>({wch:16}))];
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Sơ đồ chỗ ngồi');
+                XLSX.utils.book_append_sheet(wb, positionSheet, 'Danh sách vị trí');
+                XLSX.utils.book_append_sheet(wb, cycleSheet, 'Luân phiên 2 tuần');
+                XLSX.writeFile(wb, `${homeroomSeatingFileBase(book)}.xlsx`);
+                showToast('✅ Đã xuất sơ đồ + danh sách vị trí ra Excel', 'success');
+            } catch (error) {
+                console.error('Không thể xuất sơ đồ chỗ ngồi Excel:', error);
+                showToast('❌ Không thể xuất Excel sơ đồ: ' + error.message, 'error');
+            }
         }
 
         function homeroomRenderSeating(book) {
             const summary = homeroomById('homeroomSeatingSummary');
             const rotationInfo = homeroomById('homeroomSeatingRotationInfo');
             const chart = homeroomById('homeroomSeatingChart');
-            ['homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomPrintSeatingBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect','homeroomSeatingRotationEnabled','homeroomApplyRotationBtn','homeroomAdvanceRotationBtn'].forEach(id => {
+            ['homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomExportSeatingWordBtn','homeroomExportSeatingExcelBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect','homeroomSeatingRotationEnabled','homeroomApplyRotationBtn','homeroomAdvanceRotationBtn'].forEach(id => {
                 const el = homeroomById(id);
                 if (el) el.disabled = !book;
             });
@@ -1381,7 +1497,7 @@
             const unassignedHtml = stats.unassigned.length
                 ? `<div class="homeroom-seating-unassigned"><strong>Học sinh chưa xếp chỗ</strong><div class="homeroom-seating-chiplist">${stats.unassigned.map(student => `<span class="homeroom-seating-chip ${stats.overflow.some(item => item.id === student.id) ? 'overflow' : ''}">${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</span>`).join('')}</div></div>`
                 : '';
-            chart.innerHTML = `<div class="homeroom-seating-print-title">SƠ ĐỒ CHỖ NGỒI LỚP ${homeroomEscapeHtml(book.className || '')}</div><div class="homeroom-seating-front"><div class="homeroom-seating-board">BẢNG</div></div><div class="homeroom-seating-legend"><span>🪑 4 dãy = 4 tổ</span><span>🔄 Đổi dãy mỗi 2 tuần</span><span>📚 6 bàn / dãy</span><span>↕ Kéo để đổi chỗ hoặc chọn từ danh sách</span></div><div class="homeroom-seating-grid">${rows.join('')}</div>${unassignedHtml}`;
+            chart.innerHTML = `<div class="homeroom-seating-front"><div class="homeroom-seating-board">BẢNG</div></div><div class="homeroom-seating-legend"><span>🪑 4 dãy = 4 tổ</span><span>🔄 Đổi dãy mỗi 2 tuần</span><span>📚 6 bàn / dãy</span><span>↕ Kéo để đổi chỗ hoặc chọn từ danh sách</span></div><div class="homeroom-seating-grid">${rows.join('')}</div>${unassignedHtml}`;
         }
 
         function homeroomInitializeSeating() {
@@ -1968,7 +2084,7 @@
 
         function homeroomRenderControls(book) {
             const disabled = !book;
-            ['homeroomAddStudentBtn','homeroomPasteRosterBtn','homeroomImportGradebookBtn','homeroomQuickLogBtn','homeroomExportExcelBtn','homeroomClearBookBtn','homeroomCreateFourGroupsBtn','homeroomAddGroupBtn','homeroomAutoAssignGroupsBtn','homeroomAddCustomOfficerBtn','homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomPrintSeatingBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect','homeroomSeatingRotationEnabled','homeroomApplyRotationBtn','homeroomAdvanceRotationBtn'].forEach(id => {
+            ['homeroomAddStudentBtn','homeroomPasteRosterBtn','homeroomImportGradebookBtn','homeroomQuickLogBtn','homeroomExportExcelBtn','homeroomClearBookBtn','homeroomCreateFourGroupsBtn','homeroomAddGroupBtn','homeroomAutoAssignGroupsBtn','homeroomAddCustomOfficerBtn','homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomExportSeatingWordBtn','homeroomExportSeatingExcelBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect','homeroomSeatingRotationEnabled','homeroomApplyRotationBtn','homeroomAdvanceRotationBtn'].forEach(id => {
                 const button = homeroomById(id);
                 if (button) button.disabled = disabled;
             });
@@ -2430,6 +2546,7 @@
                     'STT': index + 1,
                     'Họ và tên': student.name,
                     'Tổ': homeroomFindGroup(book, student.groupId)?.name || '',
+                    'Chỗ ngồi': homeroomSeatLabel(homeroomStudentSeatKey(book, student.id)) || '',
                     'Chức vụ': homeroomStudentRoleLabels(book, student.id).map(item => item.label).join(' | '),
                     'Ngày sinh': homeroomFormatDate(student.birthDate),
                     'Giới tính': student.gender,
@@ -2591,6 +2708,10 @@
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monitoringRows), 'Tần suất cần chú ý');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(conductRows), 'Gợi ý hạnh kiểm');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classRows), 'Nhật ký & nề nếp lớp');
+                const seatingSnapshot = homeroomSeatingExportSnapshot(book);
+                if (seatingSnapshot) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(seatingSnapshot.positionRows.map(row => ({
+                    'STT':row.stt,'Họ và tên':row.name,'Tổ':row.group,'Dãy':row.column,'Bàn':row.desk,'Chỗ':row.seat,'Vị trí':row.position
+                }))), 'Chỗ ngồi');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(HOMEROOM_ALL_SCHOOL_RULES.map(rule => ({
                     'TT': rule.no ?? '',
                     'Phạm vi': rule.scope === 'student' ? 'Học sinh' : 'Lớp',
@@ -2643,7 +2764,8 @@
             homeroomById('homeroomSeatingRotationEnabled')?.addEventListener('change', homeroomToggleSeatingRotation);
             homeroomById('homeroomApplyRotationBtn')?.addEventListener('click', homeroomApplyCurrentRotation);
             homeroomById('homeroomAdvanceRotationBtn')?.addEventListener('click', homeroomAdvanceRotationNow);
-            homeroomById('homeroomPrintSeatingBtn')?.addEventListener('click', homeroomPrintSeating);
+            homeroomById('homeroomExportSeatingWordBtn')?.addEventListener('click', homeroomExportSeatingWord);
+            homeroomById('homeroomExportSeatingExcelBtn')?.addEventListener('click', homeroomExportSeatingExcel);
             homeroomById('homeroomClearSeatsBtn')?.addEventListener('click', homeroomClearSeatAssignments);
             homeroomById('homeroomSeatingSection')?.addEventListener('change', homeroomHandleSeatingChange);
             homeroomById('homeroomSeatingSection')?.addEventListener('dragstart', homeroomHandleSeatDragStart);
