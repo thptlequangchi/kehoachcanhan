@@ -47,6 +47,7 @@
     <link rel="stylesheet" href="assets/css/release-v52-5.css" />
     <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
     <link rel="stylesheet" href="assets/css/contrast-v53-3-12.css" />
+    <link rel="stylesheet" href="assets/css/homeroom-edit-v53-3-13.css" />
 </head>
 <body class="premium-ui">
 
@@ -1196,7 +1197,8 @@
                             <label class="full"><span>Hình thức xử lý / lưu ý</span><input id="homeroomRuleEffectPreview" type="text" value="—" readonly /></label>
                             <label class="full"><span>Nội dung</span><textarea id="homeroomStudentLogContent" rows="2" placeholder="Ví dụ: Đi muộn 12 phút; sử dụng điện thoại trong giờ; có việc tốt…"></textarea></label>
                             <label class="full"><span>Theo dõi / biện pháp</span><input id="homeroomStudentLogFollowUp" type="text" placeholder="Ví dụ: Trao đổi phụ huynh, nhắc bổ sung bài…" /></label>
-                            <div class="homeroom-form-actions"><button class="btn btn-primary btn-sm" type="submit">＋ Thêm ghi nhận</button></div>
+                            <div class="homeroom-edit-notice full" id="homeroomStudentLogEditNotice" hidden>✏️ Đang chỉnh sửa ghi nhận. Có thể sửa lại <strong>Nguồn ghi nhận</strong> để chuyển đúng giữa <strong>Lỗi trường</strong> và <strong>Lỗi lớp</strong>.</div>
+                            <div class="homeroom-form-actions"><button class="btn btn-outline btn-sm" id="homeroomStudentLogCancelEditBtn" type="button" hidden>Hủy chỉnh sửa</button><button class="btn btn-primary btn-sm" id="homeroomStudentLogSubmitBtn" type="submit">＋ Thêm ghi nhận</button></div>
                         </form>
                         <div class="homeroom-log-list" id="homeroomStudentLogList"><div class="homeroom-mini-empty">Chọn học sinh để xem lịch sử theo dõi.</div></div>
                     </section>

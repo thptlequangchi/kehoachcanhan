@@ -2260,6 +2260,14 @@ service cloud.firestore {
                     if (workspace) workspace.homeroom = state.homeroom;
                     currentVersion = 7;
                 }
+                // Schema 8 (v53.3.13): cho phép chỉnh sửa ghi nhận học sinh sau khi lưu,
+                // đồng thời lưu dấu thời gian/số lần chỉnh sửa và chuẩn hóa lại nguồn Lỗi trường/Lỗi lớp.
+                if (currentVersion < 8) {
+                    state.homeroom = normalizeHomeroomWorkspace(state.homeroom);
+                    const workspace = getActiveYearWorkspace();
+                    if (workspace) workspace.homeroom = state.homeroom;
+                    currentVersion = 8;
+                }
 
                 localStorage.setItem(storageKey, String(DATA_SCHEMA_VERSION));
                 console.info(`✅ Data migration ${state.selectedAcademicYear}: ${fromVersion} → ${DATA_SCHEMA_VERSION}${changed ? ' (có cập nhật dữ liệu)' : ''}`);

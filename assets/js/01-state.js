@@ -45,8 +45,8 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.3.12';
-        const DATA_SCHEMA_VERSION = 7;
+        const APP_VERSION = '53.3.13';
+        const DATA_SCHEMA_VERSION = 8;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
         const GEMINI_MODEL = 'gemini-3.5-flash';
@@ -69,7 +69,7 @@
         const SELECTED_ACADEMIC_YEAR_STORAGE = 'teacher_selected_academic_year';
         const RECOGNITION_MODES = ['auto', 'accurate', 'economy', 'offline'];
         const BACKUP_FORMAT = 'teacher-notebook-backup';
-        const BACKUP_VERSION = 8;
+        const BACKUP_VERSION = 9;
         const PRE_RESTORE_BACKUP_KEY = 'teacher_pre_restore_backup_v1';
         const PRE_CLOUD_SYNC_BACKUP_KEY = 'teacher_pre_cloud_sync_backup_v1';
         const SHARED_PLAN_HISTORY_STORAGE = 'teacher_shared_plan_history_v1';
@@ -1226,6 +1226,8 @@
                 resolved: Boolean(value.resolved),
                 resolvedAt: Boolean(value.resolved) ? cleanText(value.resolvedAt) : '',
                 createdAt: cleanText(value.createdAt),
+                editedAt: cleanText(value.editedAt),
+                editedCount: Number.isFinite(Number(value.editedCount)) ? Math.max(0, Math.floor(Number(value.editedCount))) : 0,
             };
         }
 
@@ -1319,7 +1321,7 @@
             const activeBook = books[selectedBookId] || null;
             const selectedStudentId = cleanText(source.selectedStudentId);
             return {
-                version: 8,
+                version: 9,
                 books,
                 selectedBookId: activeBook ? selectedBookId : '',
                 selectedClassName: cleanText(source.selectedClassName),
