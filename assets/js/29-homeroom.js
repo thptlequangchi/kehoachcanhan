@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.10 (school/class violation sources)
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.11 (school/class violation sources)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -2167,7 +2167,7 @@
                 disciplineEffect: rule?.discipline || '',
                 regulationSource: homeroomIsSchoolRule(rule)
                     ? 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026'
-                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.10' : ''),
+                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.11' : ''),
                 sourceRole: cleanText(homeroomById('homeroomStudentLogSource')?.value) || 'class_homeroom',
                 sourceScope: HOMEROOM_INCIDENT_SOURCE_META[cleanText(homeroomById('homeroomStudentLogSource')?.value)]?.scope || 'class',
                 regulationNote: rule?.note || '',
