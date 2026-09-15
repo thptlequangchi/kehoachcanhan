@@ -45,8 +45,8 @@
 
         // ---------- App & data versions ----------
         // APP_VERSION dùng cho hiển thị/chẩn đoán; DATA_SCHEMA_VERSION kiểm soát migration dữ liệu local.
-        const APP_VERSION = '53.3.8';
-        const DATA_SCHEMA_VERSION = 5;
+        const APP_VERSION = '53.3.9';
+        const DATA_SCHEMA_VERSION = 6;
         const DATA_SCHEMA_STORAGE_PREFIX = 'teacher_notebook_data_schema';
 
         const GEMINI_MODEL = 'gemini-3.5-flash';
@@ -1243,12 +1243,23 @@
                 assignments[key] = sid;
                 assignedStudents.add(sid);
             });
+            const rotationEveryWeeksRaw = Number.parseInt(source.rotationEveryWeeks, 10);
+            const rotationEveryWeeks = Number.isFinite(rotationEveryWeeksRaw) ? Math.min(4, Math.max(1, rotationEveryWeeksRaw)) : 2;
+            const phaseRaw = Number.parseInt(source.rotationPhaseOffset, 10);
+            const lastBlockRaw = Number.parseInt(source.lastAppliedRotationBlock, 10);
+            const lastWeekRaw = Number.parseInt(source.lastAppliedRotationWeek, 10);
             return {
-                version: 1,
+                version: 2,
                 columns,
                 rows,
                 seatsPerDesk,
                 assignments,
+                rotationEnabled: Boolean(source.rotationEnabled),
+                rotationEveryWeeks,
+                rotationPhaseOffset: Number.isFinite(phaseRaw) ? ((phaseRaw % columns) + columns) % columns : 0,
+                lastAppliedRotationBlock: Number.isFinite(lastBlockRaw) ? lastBlockRaw : -1,
+                lastAppliedRotationWeek: Number.isFinite(lastWeekRaw) ? Math.min(37, Math.max(0, lastWeekRaw)) : 0,
+                lastRotationAt: cleanText(source.lastRotationAt),
             };
         }
 
@@ -1306,7 +1317,7 @@
             const activeBook = books[selectedBookId] || null;
             const selectedStudentId = cleanText(source.selectedStudentId);
             return {
-                version: 7,
+                version: 8,
                 books,
                 selectedBookId: activeBook ? selectedBookId : '',
                 selectedClassName: cleanText(source.selectedClassName),

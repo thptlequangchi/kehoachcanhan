@@ -2245,6 +2245,13 @@ service cloud.firestore {
                     if (renumberStoredSchedulesFrom(1).length > 0) changed = true;
                     currentVersion = 5;
                 }
+                // Schema 6 (v53.3.9): chuẩn hóa sơ đồ chỗ ngồi GVCN và metadata luân phiên 4 tổ/4 dãy.
+                if (currentVersion < 6) {
+                    state.homeroom = normalizeHomeroomWorkspace(state.homeroom);
+                    const workspace = getActiveYearWorkspace();
+                    if (workspace) workspace.homeroom = state.homeroom;
+                    currentVersion = 6;
+                }
 
                 localStorage.setItem(storageKey, String(DATA_SCHEMA_VERSION));
                 console.info(`✅ Data migration ${state.selectedAcademicYear}: ${fromVersion} → ${DATA_SCHEMA_VERSION}${changed ? ' (có cập nhật dữ liệu)' : ''}`);

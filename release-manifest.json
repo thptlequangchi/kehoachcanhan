@@ -1,10 +1,10 @@
 {
   "application": "Sổ Tay Giáo Viên Pro",
-  "release": "53.3.8",
+  "release": "53.3.9",
   "channel": "stable",
   "releasedAt": "2026-09-15",
   "dataSchemaVersion": 6,
-  "backupVersion": 9,
+  "backupVersion": 7,
   "academicCalendar": {
     "mainWeeks": 37,
     "auxiliaryWeeks": 2,
@@ -50,7 +50,11 @@
     "homeroomSeatingAutoByGroup": true,
     "homeroomSeatingGenderAlternate": true,
     "homeroomSeatingAttentionBadges": true,
-    "homeroomClassroomBehaviorTracking": true
+    "homeroomClassroomBehaviorTracking": true,
+    "homeroomSeatingFourGroupsFourColumns": true,
+    "homeroomSeatingTwoWeekRotation": true,
+    "homeroomSeatingAutoRotationByAcademicWeek": true,
+    "homeroomSeatingPreserveDeskPositionOnRotation": true
   },
   "compatibility": {
     "preservesV52Data": true,

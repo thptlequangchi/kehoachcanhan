@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.8 (seating PRO + classroom behavior rules)
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.9 (4-group seating rotation every 2 weeks)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -1101,6 +1101,168 @@
             }).join('');
         }
 
+        function homeroomSeatingAcademicWeek(dateValue = homeroomTodayISO()) {
+            if (typeof getWeekDateInfo !== 'function') return null;
+            const iso = normalizeHomeroomDate(dateValue) || homeroomTodayISO();
+            const [y,m,d] = iso.split('-').map(Number);
+            const target = new Date(y, m - 1, d, 12, 0, 0, 0);
+            for (let week = 1; week <= 37; week += 1) {
+                const info = getWeekDateInfo(week, state.selectedAcademicYear);
+                if (!info?.start || !info?.end) continue;
+                const start = new Date(info.start); start.setHours(0,0,0,0);
+                const end = new Date(info.end); end.setHours(23,59,59,999);
+                if (target >= start && target <= end) return week;
+            }
+            return null;
+        }
+
+        function homeroomSeatingRotationMeta(book, weekValue = null) {
+            const plan = homeroomEnsureSeatingPlan(book);
+            const groups = [...(book?.groups || [])].slice(0, 4);
+            const currentWeek = Number.parseInt(weekValue, 10) || homeroomSeatingAcademicWeek() || 1;
+            const every = Math.max(1, Number.parseInt(plan?.rotationEveryWeeks, 10) || 2);
+            const block = Math.max(0, Math.floor((currentWeek - 1) / every));
+            const phase = ((block + (Number.parseInt(plan?.rotationPhaseOffset, 10) || 0)) % 4 + 4) % 4;
+            const blockStartWeek = block * every + 1;
+            const blockEndWeek = Math.min(37, blockStartWeek + every - 1);
+            const nextWeek = blockEndWeek < 37 ? blockEndWeek + 1 : null;
+            const groupToColumn = new Map();
+            const columnToGroup = new Map();
+            groups.forEach((group, index) => {
+                const column = ((index + phase) % 4) + 1;
+                groupToColumn.set(group.id, column);
+                columnToGroup.set(column, group);
+            });
+            const nextInfo = nextWeek && typeof getWeekDateInfo === 'function' ? getWeekDateInfo(nextWeek, state.selectedAcademicYear) : null;
+            return { plan, groups, currentWeek, every, block, phase, blockStartWeek, blockEndWeek, nextWeek, nextInfo, groupToColumn, columnToGroup };
+        }
+
+        function homeroomSeatingFreeKeysForColumn(plan, column, assignments) {
+            const keys = [];
+            for (let row = 1; row <= plan.rows; row += 1) {
+                for (let seat = 1; seat <= plan.seatsPerDesk; seat += 1) {
+                    const key = homeroomSeatKey(column, row, seat);
+                    if (!assignments[key]) keys.push(key);
+                }
+            }
+            return keys;
+        }
+
+        function homeroomApplyGroupRotation(book, { week = null, enable = true, persist = true, notify = false } = {}) {
+            if (!book) return { ok:false, reason:'no-book' };
+            const plan = homeroomEnsureSeatingPlan(book);
+            const meta = homeroomSeatingRotationMeta(book, week);
+            if (meta.groups.length < 4) {
+                if (notify) showToast('⚠️ Cần đủ 4 tổ để dùng luân phiên 4 dãy.', 'info');
+                return { ok:false, reason:'need-four-groups', meta };
+            }
+            if (enable) plan.rotationEnabled = true;
+            plan.rotationEveryWeeks = 2;
+            const oldAssignments = { ...(plan.assignments || {}) };
+            const assignments = {};
+            const deferred = [];
+            const placed = new Set();
+            const groupIds = new Set(meta.groups.map(group => group.id));
+
+            // Ưu tiên giữ nguyên số bàn + vị trí A/B, chỉ chuyển cả tổ sang dãy đích.
+            Object.entries(oldAssignments).forEach(([seatKey, studentId]) => {
+                const student = homeroomFindStudent(book, studentId);
+                if (!student) return;
+                const targetColumn = meta.groupToColumn.get(student.groupId);
+                const parsed = homeroomParseSeatKey(seatKey);
+                if (!targetColumn || !parsed) { deferred.push(student); return; }
+                const targetKey = homeroomSeatKey(targetColumn, parsed.row, parsed.seat);
+                if (!assignments[targetKey]) {
+                    assignments[targetKey] = student.id;
+                    placed.add(student.id);
+                } else deferred.push(student);
+            });
+
+            // Bổ sung HS chưa xếp hoặc bị trùng vị trí vào chỗ trống trong đúng dãy của tổ.
+            meta.groups.forEach(group => {
+                const candidates = (book.students || []).filter(student => student.groupId === group.id && !placed.has(student.id));
+                const free = homeroomSeatingFreeKeysForColumn(plan, meta.groupToColumn.get(group.id), assignments);
+                candidates.slice(0, free.length).forEach((student, index) => {
+                    assignments[free[index]] = student.id;
+                    placed.add(student.id);
+                });
+            });
+
+            // HS chưa xếp tổ / tổ ngoài 4 tổ / tổ quá 12 HS: tận dụng chỗ trống còn lại.
+            const leftovers = (book.students || []).filter(student => !placed.has(student.id));
+            const globalFree = homeroomSeatKeys(plan).filter(key => !assignments[key]);
+            leftovers.slice(0, globalFree.length).forEach((student, index) => {
+                assignments[globalFree[index]] = student.id;
+                placed.add(student.id);
+            });
+
+            plan.assignments = assignments;
+            plan.lastAppliedRotationBlock = meta.block;
+            plan.lastAppliedRotationWeek = meta.currentWeek;
+            plan.lastRotationAt = new Date().toISOString();
+            book.updatedAt = new Date().toISOString();
+            if (persist) homeroomSchedulePersist();
+            if (notify) {
+                const overflow = Math.max(0, (book.students || []).length - homeroomSeatKeys(plan).length);
+                const period = `tuần ${meta.blockStartWeek}–${meta.blockEndWeek}`;
+                showToast(overflow ? `⚠️ Đã đổi dãy theo ${period}; còn ${overflow} HS vượt 48 chỗ.` : `✅ Đã đổi dãy theo ${period}.`, overflow ? 'warning' : 'success');
+            }
+            return { ok:true, meta, assignments, unseated:(book.students || []).filter(student => !placed.has(student.id)), extraGroupStudents:(book.students || []).filter(student => !groupIds.has(student.groupId)) };
+        }
+
+        function homeroomMaybeAutoRotateSeating(book) {
+            if (!book) return false;
+            const plan = homeroomEnsureSeatingPlan(book);
+            if (!plan?.rotationEnabled) return false;
+            const week = homeroomSeatingAcademicWeek();
+            if (!week) return false;
+            const meta = homeroomSeatingRotationMeta(book, week);
+            if (meta.groups.length < 4 || plan.lastAppliedRotationBlock === meta.block) return false;
+            const result = homeroomApplyGroupRotation(book, { week, enable:true, persist:true, notify:false });
+            if (result.ok) {
+                showToast(`🔄 Sơ đồ đã tự đổi dãy cho tuần ${meta.blockStartWeek}–${meta.blockEndWeek}.`, 'info');
+                return true;
+            }
+            return false;
+        }
+
+        function homeroomApplyCurrentRotation() {
+            const book = homeroomActiveBook();
+            if (!book) return;
+            const result = homeroomApplyGroupRotation(book, { week:homeroomSeatingAcademicWeek() || 1, enable:true, persist:true, notify:true });
+            if (result.ok) renderHomeroom();
+        }
+
+        function homeroomAdvanceRotationNow() {
+            const book = homeroomActiveBook();
+            if (!book) return;
+            const plan = homeroomEnsureSeatingPlan(book);
+            plan.rotationPhaseOffset = ((Number.parseInt(plan.rotationPhaseOffset, 10) || 0) + 1) % 4;
+            const result = homeroomApplyGroupRotation(book, { week:homeroomSeatingAcademicWeek() || 1, enable:true, persist:true, notify:false });
+            if (result.ok) {
+                renderHomeroom();
+                showToast('➡️ Đã chuyển mỗi tổ sang dãy kế tiếp và giữ nguyên bàn/chỗ khi có thể.', 'success');
+            }
+        }
+
+        function homeroomToggleSeatingRotation(event) {
+            const book = homeroomActiveBook();
+            if (!book) return;
+            const plan = homeroomEnsureSeatingPlan(book);
+            const enabled = Boolean(event?.target?.checked);
+            plan.rotationEnabled = enabled;
+            plan.rotationEveryWeeks = 2;
+            if (enabled) {
+                const result = homeroomApplyGroupRotation(book, { week:homeroomSeatingAcademicWeek() || 1, enable:true, persist:true, notify:true });
+                if (!result.ok) plan.rotationEnabled = false;
+            } else {
+                book.updatedAt = new Date().toISOString();
+                homeroomSchedulePersist();
+                showToast('⏸️ Đã tắt tự động đổi dãy 2 tuần/lần. Sơ đồ hiện tại được giữ nguyên.', 'info');
+            }
+            renderHomeroom();
+        }
+
         function homeroomSeatStudentStatus(book, studentId) {
             if (!book || !studentId) return { className:'', html:'', title:'' };
             const metrics = homeroomStudentMetrics(book, studentId, homeroomGetSelectedSemester());
@@ -1127,18 +1289,35 @@
 
         function homeroomRenderSeating(book) {
             const summary = homeroomById('homeroomSeatingSummary');
+            const rotationInfo = homeroomById('homeroomSeatingRotationInfo');
             const chart = homeroomById('homeroomSeatingChart');
-            ['homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomPrintSeatingBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect'].forEach(id => {
+            ['homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomPrintSeatingBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect','homeroomSeatingRotationEnabled','homeroomApplyRotationBtn','homeroomAdvanceRotationBtn'].forEach(id => {
                 const el = homeroomById(id);
                 if (el) el.disabled = !book;
             });
             if (!summary || !chart) return;
             if (!book) {
                 summary.textContent = 'Chưa mở sổ chủ nhiệm.';
+                if (rotationInfo) rotationInfo.hidden = true;
                 chart.innerHTML = '<div class="homeroom-mini-empty">Mở sổ chủ nhiệm để tạo sơ đồ chỗ ngồi.</div>';
                 return;
             }
-            const plan = homeroomEnsureSeatingPlan(book);
+            let plan = homeroomEnsureSeatingPlan(book);
+            homeroomMaybeAutoRotateSeating(book);
+            plan = homeroomEnsureSeatingPlan(book);
+            const rotationToggle = homeroomById('homeroomSeatingRotationEnabled');
+            if (rotationToggle) rotationToggle.checked = Boolean(plan.rotationEnabled);
+            const rotationMeta = homeroomSeatingRotationMeta(book);
+            if (rotationInfo) {
+                const mapping = [1,2,3,4].map(column => {
+                    const group = rotationMeta.columnToGroup.get(column);
+                    return `<span><b>Dãy ${column}</b>${group ? ` · ${homeroomEscapeHtml(group.name || `Tổ ${column}`)}` : ' · Chưa có tổ'}</span>`;
+                }).join('');
+                const nextText = rotationMeta.nextInfo?.startText ? ` · Đổi tiếp từ ${homeroomEscapeHtml(rotationMeta.nextInfo.startText)}` : '';
+                const noWeek = homeroomSeatingAcademicWeek() ? '' : ' · Chưa thiết lập mốc Tuần 1 nên chưa thể tự đổi theo lịch.';
+                rotationInfo.hidden = false;
+                rotationInfo.innerHTML = `<div><strong>${plan.rotationEnabled ? '🔄 Luân phiên 2 tuần đang bật' : '⏸️ Luân phiên 2 tuần đang tắt'}</strong><small>Đợt hiện tại: tuần ${rotationMeta.blockStartWeek}–${rotationMeta.blockEndWeek}${nextText}${noWeek}</small></div><div class="homeroom-seating-rotation-map">${mapping}</div>`;
+            }
             const stats = homeroomSeatingStats(book);
             const selectedStudentId = homeroomEnsureState().selectedStudentId || '';
             const capacityWarning = book.students.length > stats.totalSeats ? ` · <strong>${book.students.length - stats.totalSeats}</strong> HS vượt sức chứa 48 chỗ` : '';
@@ -1150,7 +1329,7 @@
                     const seatKeys = [homeroomSeatKey(column, row, 1), homeroomSeatKey(column, row, 2)];
                     const isSelectedDesk = selectedStudentId && seatKeys.some(key => (plan.assignments || {})[key] === selectedStudentId);
                     desks.push(`<article class="homeroom-seating-desk ${isSelectedDesk ? 'is-selected' : ''}">
-                        <div class="homeroom-seating-desk-head"><strong>Dãy ${column} · Bàn ${row}</strong><span>${isSelectedDesk ? 'Đang chọn' : '2 chỗ'}</span></div>
+                        <div class="homeroom-seating-desk-head"><strong>Dãy ${column} · Bàn ${row}</strong><span>${homeroomEscapeHtml(rotationMeta.columnToGroup.get(column)?.name || (isSelectedDesk ? 'Đang chọn' : '2 chỗ'))}</span></div>
                         <div class="homeroom-seating-seatpair">${seatKeys.map((seatKey, index) => {
                             const studentId = (plan.assignments || {})[seatKey] || '';
                             const student = homeroomFindStudent(book, studentId);
@@ -1165,7 +1344,7 @@
             const unassignedHtml = stats.unassigned.length
                 ? `<div class="homeroom-seating-unassigned"><strong>Học sinh chưa xếp chỗ</strong><div class="homeroom-seating-chiplist">${stats.unassigned.map(student => `<span class="homeroom-seating-chip ${stats.overflow.some(item => item.id === student.id) ? 'overflow' : ''}">${homeroomEscapeHtml(student.name || 'Chưa nhập tên')}</span>`).join('')}</div></div>`
                 : '';
-            chart.innerHTML = `<div class="homeroom-seating-print-title">SƠ ĐỒ CHỖ NGỒI LỚP ${homeroomEscapeHtml(book.className || '')}</div><div class="homeroom-seating-front"><div class="homeroom-seating-board">BẢNG</div></div><div class="homeroom-seating-legend"><span>🪑 4 dãy bàn</span><span>📚 6 bàn / dãy</span><span>👥 2 chỗ / bàn</span><span>↕ Kéo để đổi chỗ hoặc chọn từ danh sách</span></div><div class="homeroom-seating-grid">${rows.join('')}</div>${unassignedHtml}`;
+            chart.innerHTML = `<div class="homeroom-seating-print-title">SƠ ĐỒ CHỖ NGỒI LỚP ${homeroomEscapeHtml(book.className || '')}</div><div class="homeroom-seating-front"><div class="homeroom-seating-board">BẢNG</div></div><div class="homeroom-seating-legend"><span>🪑 4 dãy = 4 tổ</span><span>🔄 Đổi dãy mỗi 2 tuần</span><span>📚 6 bàn / dãy</span><span>↕ Kéo để đổi chỗ hoặc chọn từ danh sách</span></div><div class="homeroom-seating-grid">${rows.join('')}</div>${unassignedHtml}`;
         }
 
         function homeroomInitializeSeating() {
@@ -1223,31 +1402,23 @@
             if (!book) return;
             const plan = homeroomEnsureSeatingPlan(book);
             const mode = cleanText(homeroomById('homeroomSeatingModeSelect')?.value) || 'roster';
+            if (mode === 'groups') {
+                const result = homeroomApplyGroupRotation(book, { week:homeroomSeatingAcademicWeek() || 1, enable:true, persist:true, notify:true });
+                if (result.ok) renderHomeroom();
+                return;
+            }
+            // Khi chọn cách xếp khác, giữ sơ đồ đó ổn định và tắt luân phiên theo tổ.
+            plan.rotationEnabled = false;
             const assignments = {};
             const students = homeroomOrderStudentsForSeating(book, mode);
-            if (mode === 'groups' && (book.groups || []).length) {
-                const byGroup = new Map((book.groups || []).map(group => [group.id, students.filter(student => student.groupId === group.id)]));
-                const ungrouped = students.filter(student => !byGroup.has(student.groupId));
-                (book.groups || []).slice(0, plan.columns).forEach((group, groupIndex) => {
-                    const column = groupIndex + 1;
-                    const seats = [];
-                    for (let row = 1; row <= plan.rows; row += 1) for (let seat = 1; seat <= plan.seatsPerDesk; seat += 1) seats.push(homeroomSeatKey(column, row, seat));
-                    (byGroup.get(group.id) || []).slice(0, seats.length).forEach((student, index) => { assignments[seats[index]] = student.id; });
-                });
-                const already = new Set(Object.values(assignments));
-                const leftovers = students.filter(student => !already.has(student.id)).concat(ungrouped.filter(student => !already.has(student.id)));
-                const freeKeys = homeroomSeatKeys(plan).filter(key => !assignments[key]);
-                [...new Map(leftovers.map(student => [student.id, student])).values()].slice(0, freeKeys.length).forEach((student, index) => { assignments[freeKeys[index]] = student.id; });
-            } else {
-                const seatKeys = homeroomSeatKeys(plan);
-                students.slice(0, seatKeys.length).forEach((student, index) => { assignments[seatKeys[index]] = student.id; });
-            }
+            const seatKeys = homeroomSeatKeys(plan);
+            students.slice(0, seatKeys.length).forEach((student, index) => { assignments[seatKeys[index]] = student.id; });
             plan.assignments = assignments;
             book.updatedAt = new Date().toISOString();
             homeroomSchedulePersist();
             renderHomeroom();
             const overflow = Math.max(0, (book.students || []).length - homeroomSeatKeys(plan).length);
-            const labels = { roster:'theo danh sách', groups:'theo tổ', gender:'xen kẽ Nam/Nữ' };
+            const labels = { roster:'theo danh sách', gender:'xen kẽ Nam/Nữ' };
             showToast(overflow ? `⚠️ Đã xếp ${labels[mode] || ''} cho 48 học sinh, còn ${overflow} em chưa có chỗ.` : `✅ Đã xếp chỗ ${labels[mode] || ''}`, overflow ? 'warning' : 'success');
         }
 
@@ -1300,6 +1471,9 @@
             if (!book) return;
             const plan = homeroomEnsureSeatingPlan(book);
             plan.assignments = {};
+            plan.rotationEnabled = false;
+            plan.lastAppliedRotationBlock = -1;
+            plan.lastAppliedRotationWeek = 0;
             book.updatedAt = new Date().toISOString();
             homeroomSchedulePersist();
             renderHomeroom();
@@ -1676,7 +1850,7 @@
 
         function homeroomRenderControls(book) {
             const disabled = !book;
-            ['homeroomAddStudentBtn','homeroomPasteRosterBtn','homeroomImportGradebookBtn','homeroomQuickLogBtn','homeroomExportExcelBtn','homeroomClearBookBtn','homeroomCreateFourGroupsBtn','homeroomAddGroupBtn','homeroomAutoAssignGroupsBtn','homeroomAddCustomOfficerBtn','homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomPrintSeatingBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect'].forEach(id => {
+            ['homeroomAddStudentBtn','homeroomPasteRosterBtn','homeroomImportGradebookBtn','homeroomQuickLogBtn','homeroomExportExcelBtn','homeroomClearBookBtn','homeroomCreateFourGroupsBtn','homeroomAddGroupBtn','homeroomAutoAssignGroupsBtn','homeroomAddCustomOfficerBtn','homeroomInitSeatingBtn','homeroomAutoSeatBtn','homeroomPrintSeatingBtn','homeroomClearSeatsBtn','homeroomSeatingModeSelect','homeroomSeatingRotationEnabled','homeroomApplyRotationBtn','homeroomAdvanceRotationBtn'].forEach(id => {
                 const button = homeroomById(id);
                 if (button) button.disabled = disabled;
             });
@@ -1954,7 +2128,7 @@
                 disciplineEffect: rule?.discipline || '',
                 regulationSource: homeroomIsSchoolRule(rule)
                     ? 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026'
-                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.8' : ''),
+                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.9' : ''),
                 regulationNote: rule?.note || '',
                 absenceException: absenceInfo?.exception || '',
                 absenceExceptionLabel: absenceInfo?.label || '',
@@ -2320,6 +2494,9 @@
             homeroomById('homeroomAddCustomOfficerBtn')?.addEventListener('click', homeroomAddCustomOfficer);
             homeroomById('homeroomInitSeatingBtn')?.addEventListener('click', homeroomInitializeSeating);
             homeroomById('homeroomAutoSeatBtn')?.addEventListener('click', homeroomAutoAssignSeats);
+            homeroomById('homeroomSeatingRotationEnabled')?.addEventListener('change', homeroomToggleSeatingRotation);
+            homeroomById('homeroomApplyRotationBtn')?.addEventListener('click', homeroomApplyCurrentRotation);
+            homeroomById('homeroomAdvanceRotationBtn')?.addEventListener('click', homeroomAdvanceRotationNow);
             homeroomById('homeroomPrintSeatingBtn')?.addEventListener('click', homeroomPrintSeating);
             homeroomById('homeroomClearSeatsBtn')?.addEventListener('click', homeroomClearSeatAssignments);
             homeroomById('homeroomSeatingSection')?.addEventListener('change', homeroomHandleSeatingChange);

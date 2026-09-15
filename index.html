@@ -1194,17 +1194,21 @@
                     <div class="homeroom-seating-head">
                         <div>
                             <h3>🪑 Sơ đồ chỗ ngồi</h3>
-                            <small>Mặc định: <strong>4 dãy bàn</strong>, xếp theo hàng dọc; mỗi dãy có <strong>6 bàn</strong>, mỗi bàn <strong>2 chỗ ngồi</strong> (tổng 48 chỗ). Có thể xếp nhanh theo danh sách rồi chỉnh lại thủ công từng chỗ.</small>
+                            <small><strong>4 dãy bàn tương ứng 4 tổ.</strong> Mỗi dãy có 6 bàn, mỗi bàn 2 chỗ. Chế độ luân phiên sẽ chuyển cả tổ sang dãy kế tiếp sau mỗi <strong>2 tuần học</strong>, vẫn giữ vị trí bàn/chỗ của từng em trong tổ khi có thể.</small>
                         </div>
                         <div class="homeroom-seating-actions">
-                            <label class="homeroom-seating-mode"><span>Cách xếp nhanh</span><select id="homeroomSeatingModeSelect"><option value="roster">Theo danh sách</option><option value="groups">Theo 4 tổ → 4 dãy</option><option value="gender">Xen kẽ Nam/Nữ</option></select></label>
+                            <label class="homeroom-seating-mode"><span>Cách xếp nhanh</span><select id="homeroomSeatingModeSelect"><option value="groups" selected>4 tổ → 4 dãy · luân phiên 2 tuần</option><option value="roster">Theo danh sách</option><option value="gender">Xen kẽ Nam/Nữ</option></select></label>
+                            <label class="homeroom-seating-rotation-toggle"><input id="homeroomSeatingRotationEnabled" type="checkbox" /><span>Tự đổi dãy mỗi 2 tuần</span></label>
                             <button class="btn btn-outline btn-sm" id="homeroomInitSeatingBtn" type="button">🧱 Mẫu 4 dãy × 6 bàn</button>
                             <button class="btn btn-primary btn-sm" id="homeroomAutoSeatBtn" type="button">⚡ Xếp nhanh</button>
+                            <button class="btn btn-outline btn-sm" id="homeroomApplyRotationBtn" type="button">🔄 Áp dụng tuần hiện tại</button>
+                            <button class="btn btn-outline btn-sm" id="homeroomAdvanceRotationBtn" type="button">➡️ Đổi dãy ngay</button>
                             <button class="btn btn-outline btn-sm" id="homeroomPrintSeatingBtn" type="button">🖨️ In A4</button>
                             <button class="btn btn-outline btn-sm" id="homeroomClearSeatsBtn" type="button">🗑️ Xóa xếp chỗ</button>
                         </div>
                     </div>
                     <div class="homeroom-seating-summary" id="homeroomSeatingSummary">Chưa mở sổ chủ nhiệm.</div>
+                    <div class="homeroom-seating-rotation-info" id="homeroomSeatingRotationInfo" hidden></div>
                     <div class="homeroom-seating-chart" id="homeroomSeatingChart"><div class="homeroom-mini-empty">Mở sổ chủ nhiệm để tạo sơ đồ chỗ ngồi.</div></div>
                 </section>
 
