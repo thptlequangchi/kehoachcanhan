@@ -1,0 +1,234 @@
+/* ============================================================================
+   SỔ TAY GIÁO VIÊN — UX EXCELLENCE v53.4
+   Lớp hoàn thiện trải nghiệm: điều hướng, khả dụng, tương phản, responsive.
+   Không thay đổi nghiệp vụ hay schema dữ liệu.
+   ============================================================================ */
+:root{
+  --ux-page-max:1600px;
+  --ux-control-h:42px;
+  --ux-touch:44px;
+  --ux-ink:#172033;
+  --ux-muted:#5f6f82;
+  --ux-line:#dbe3ed;
+  --ux-soft:#f7f9fc;
+  --ux-blue:#1d4ed8;
+  --ux-blue-deep:#173f70;
+  --ux-danger:#b42318;
+  --ux-shadow:0 12px 34px rgba(15,23,42,.075);
+  --ux-shadow-hover:0 16px 38px rgba(15,23,42,.11);
+}
+
+html{scroll-padding-top:78px}
+body.premium-ui{padding:clamp(10px,1.4vw,22px);color:var(--ux-ink)}
+.premium-ui .container{max-width:var(--ux-page-max);margin-inline:auto}
+.premium-ui ::selection{background:#dbeafe;color:#172554}
+
+/* Header: premium nhưng bớt chiếm chiều cao, ưu tiên không gian làm việc. */
+.premium-ui .app-header{min-height:92px;padding:18px 22px;border-radius:22px;margin-bottom:12px}
+.premium-ui .brand-mark{width:52px;height:52px;flex-basis:52px;border-radius:16px}
+.premium-ui .brand-mark span{font-size:24px}
+.premium-ui .brand-meta{margin-top:5px;gap:7px;flex-wrap:wrap}
+.premium-ui .brand-meta span{font-size:10.5px!important}
+.premium-ui .header-quick-actions{gap:8px;align-items:center}
+.premium-ui .header-context{min-width:175px;padding:8px 10px}
+.premium-ui .header-focus-trigger,
+.premium-ui .header-command-trigger,
+.premium-ui .header-reminder-trigger,
+.premium-ui .header-settings-btn{min-height:40px}
+
+/* Các thanh bối cảnh bớt nặng thị giác. */
+.premium-ui .account-bar{min-height:56px;margin-bottom:10px;padding:8px 11px;border-radius:15px}
+.premium-ui .settings-hub{margin-bottom:10px;border-radius:15px}
+.premium-ui .school-year-bar{margin-bottom:13px;padding:11px 13px;border-radius:16px}
+
+/* Điều hướng chính: rõ, gọn, dễ thao tác và cuộn ngang. */
+.premium-ui .tabs{
+  top:6px;
+  z-index:95;
+  gap:4px;
+  padding:5px;
+  margin-bottom:15px;
+  border-radius:15px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-inline:contain;
+  scroll-snap-type:x proximity;
+  scrollbar-width:none;
+}
+.premium-ui .tabs::-webkit-scrollbar{display:none}
+.premium-ui .tab-btn{
+  flex:0 0 auto;
+  min-height:43px;
+  min-width:122px;
+  padding:9px 13px;
+  border-radius:10px;
+  scroll-snap-align:center;
+  white-space:nowrap;
+}
+.premium-ui .tab-btn.active{box-shadow:0 7px 18px rgba(29,78,216,.22), inset 0 1px 0 rgba(255,255,255,.18)}
+.premium-ui .tab-btn:focus-visible{outline:3px solid rgba(59,130,246,.24);outline-offset:2px}
+
+/* Card system thống nhất, đọc nhanh hơn. */
+.premium-ui .card,
+.premium-ui .teacher-overview,
+.premium-ui .year-dashboard,
+.premium-ui .automation-center,
+.premium-ui .teacher-command-center{
+  box-shadow:var(--ux-shadow);
+}
+.premium-ui .card{padding:clamp(16px,1.8vw,24px);border-radius:19px;margin-bottom:15px}
+.premium-ui .card:hover{border-color:#d7e0eb}
+.premium-ui .card-header{margin-bottom:15px;gap:10px}
+.premium-ui .card-header h2{line-height:1.25}
+.premium-ui .card-header .sub{line-height:1.55;color:#65758a}
+
+/* Form controls: chiều cao, tương phản và focus đồng nhất. */
+.premium-ui :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),select,textarea){
+  color:#172033;
+  border-color:#cfd9e5;
+  background:#fff;
+}
+.premium-ui :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),select){min-height:var(--ux-control-h)}
+.premium-ui textarea{line-height:1.55}
+.premium-ui :where(input,select,textarea)::placeholder{color:#8a97a8;opacity:1}
+.premium-ui :where(input,select,textarea):disabled{background:#f1f5f9;color:#64748b;opacity:1;cursor:not-allowed}
+.premium-ui label>span,.premium-ui .form-label{color:#415168}
+
+/* Buttons: ưu tiên rõ ràng, không trắng-trên-trắng. */
+.premium-ui .btn{min-height:40px}
+.premium-ui .btn-sm{min-height:35px}
+.premium-ui .btn-outline{background:#fff;color:#334155;border-color:#cbd5e1}
+.premium-ui .btn-outline:hover{background:#f8fafc;color:#0f172a;border-color:#94a3b8}
+.premium-ui button[style*="color:#b91c1c"],
+.premium-ui button[style*="color: #b91c1c"]{color:var(--ux-danger)!important;background:#fff7f7!important;border-color:#f2b8b5!important}
+.premium-ui button[style*="color:#b91c1c"]:hover,
+.premium-ui button[style*="color: #b91c1c"]:hover{background:#fef2f2!important;border-color:#ef9a95!important}
+
+/* Tables: sticky header, hàng dễ dò, cuộn dễ nhận biết. */
+.premium-ui :where(.table-wrap,.gradebook-table-wrap,.homeroom-roster-wrap,.homeroom-monitoring-table-wrap,.homeroom-conduct-table-host,.homeroom-rules-table-wrap,.homeroom-competition-table-wrap){
+  scrollbar-gutter:stable;
+  overscroll-behavior:contain;
+  border-color:#dce4ee;
+}
+.premium-ui :where(.table-wrap,.gradebook-table-wrap,.homeroom-roster-wrap,.homeroom-monitoring-table-wrap,.homeroom-conduct-table-host) table thead th{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:#f5f8fc;
+  color:#334155;
+  box-shadow:0 1px 0 #dce4ee;
+}
+.premium-ui table tbody tr{transition:background-color .12s ease}
+.premium-ui table tbody tr:hover{background:#f8fbff}
+.premium-ui table td{color:#263548}
+
+/* Summary / details dễ nhận ra vùng bấm. */
+.premium-ui details>summary{cursor:pointer;user-select:none}
+.premium-ui details>summary:hover{background-color:rgba(248,250,252,.82)}
+
+/* Empty state nhất quán, không còn cảm giác “trắng trơn”. */
+.premium-ui :where(.homeroom-empty,.homeroom-mini-empty,.gradebook-empty,.empty-state){
+  color:#68788d;
+  background:linear-gradient(180deg,#fbfdff,#f8fafc);
+  border-color:#dbe4ee;
+}
+
+/* Thanh cuộn nhẹ, dễ nhìn với bảng lớn. */
+.premium-ui *{scrollbar-color:#b9c6d6 #eef2f7}
+.premium-ui *::-webkit-scrollbar{width:10px;height:10px}
+.premium-ui *::-webkit-scrollbar-track{background:#eef2f7;border-radius:999px}
+.premium-ui *::-webkit-scrollbar-thumb{background:#b9c6d6;border:2px solid #eef2f7;border-radius:999px}
+.premium-ui *::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+
+/* Nút quay đầu trang - được JS chèn khi khởi tạo. */
+.ux-back-to-top{
+  position:fixed;
+  right:clamp(14px,2vw,28px);
+  bottom:clamp(14px,2vw,26px);
+  z-index:140;
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:14px;
+  background:linear-gradient(145deg,#173f70,#245c96);
+  color:#fff;
+  box-shadow:0 12px 30px rgba(23,63,112,.28);
+  cursor:pointer;
+  opacity:0;
+  transform:translateY(12px) scale(.94);
+  pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.ux-back-to-top.is-visible{opacity:1;transform:none;pointer-events:auto}
+.ux-back-to-top:hover{box-shadow:0 16px 36px rgba(23,63,112,.35);transform:translateY(-2px)}
+.ux-back-to-top:focus-visible{outline:3px solid rgba(59,130,246,.28);outline-offset:3px}
+
+/* Nhãn UX khi bảng có thể cuộn ngang. */
+.ux-scrollable{position:relative}
+.ux-scrollable::after{
+  content:"⇆ Kéo ngang để xem thêm";
+  position:sticky;
+  left:12px;
+  bottom:8px;
+  display:inline-flex;
+  width:max-content;
+  margin:8px 0 0 10px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(15,23,42,.78);
+  color:#fff;
+  font-size:9px;
+  font-weight:800;
+  pointer-events:none;
+  opacity:.78;
+}
+.ux-scrollable.ux-scrolled-x::after{opacity:0}
+
+/* Trạng thái tab đang mở dễ phân biệt khi cuộn. */
+body.ux-has-scrolled .premium-ui .tabs,
+body.ux-has-scrolled .tabs{box-shadow:0 12px 30px rgba(15,23,42,.13)}
+
+/* Laptop: giảm khoảng trắng để không phải zoom nhỏ. */
+@media(max-width:1280px){
+  .premium-ui .app-header{padding:16px 18px}
+  .premium-ui .brand-meta span:nth-of-type(2){display:none}
+  .premium-ui .header-context{min-width:150px}
+  .premium-ui .card{padding:18px}
+}
+
+@media(max-width:900px){
+  body.premium-ui{padding:9px}
+  .premium-ui .app-header{border-radius:18px;padding:14px;gap:12px}
+  .premium-ui .header-quick-actions{width:100%;justify-content:flex-start;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .premium-ui .header-quick-actions::-webkit-scrollbar{display:none}
+  .premium-ui .header-context{min-width:150px}
+  .premium-ui .account-bar{align-items:flex-start}
+  .premium-ui .school-year-bar{gap:9px}
+  .premium-ui .teacher-overview,.premium-ui .year-dashboard,.premium-ui .automation-center,.premium-ui .teacher-command-center{border-radius:18px}
+  .premium-ui .tab-btn{min-width:114px;font-size:11px}
+}
+
+@media(max-width:640px){
+  .premium-ui .brand-kicker,.premium-ui .brand-meta{display:none}
+  .premium-ui .app-header{min-height:auto}
+  .premium-ui .brand-mark{width:44px;height:44px;flex-basis:44px}
+  .premium-ui .app-header .brand h1{font-size:20px}
+  .premium-ui .header-context{display:none}
+  .premium-ui .account-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:7px}
+  .premium-ui .account-actions .btn{width:100%}
+  .premium-ui .card{padding:14px;border-radius:16px}
+  .premium-ui .card-header{align-items:flex-start}
+  .premium-ui .tab-btn{min-height:44px;min-width:106px;padding:8px 10px}
+  .premium-ui .tab-btn .icon{font-size:15px}
+  .ux-back-to-top{right:12px;bottom:12px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  .premium-ui *, .ux-back-to-top{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+
+/* Anchor navigation không bị thanh tab sticky che mất tiêu đề. */
+.premium-ui :where(section[id],.card[id],.tab-content[id]){scroll-margin-top:78px}

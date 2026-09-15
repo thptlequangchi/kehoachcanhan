@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v53.3.14 STABLE — Service Worker */
-const APP_VERSION = '53.3.14';
+/* Sổ Tay Giáo Viên v53.4.0 UX EXCELLENCE — Service Worker */
+const APP_VERSION = '53.4.0';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -43,6 +43,7 @@ const APP_SHELL = [
     './assets/css/plan-revision-v51.css',
     './assets/css/contrast-v53-3-12.css',
     './assets/css/homeroom-edit-v53-3-13.css',
+    './assets/css/ux-excellence-v53-4.css',
     './assets/css/release-v52.css',
     './assets/css/release-v52-5.css',
     './assets/css/timetable-v52-1.css',
@@ -90,6 +91,7 @@ const APP_SHELL = [
     './assets/js/32-module-loader.js',
     './assets/js/33-browser-smoke.js',
     './assets/js/34-safety-snapshots.js',
+    './assets/js/37-ux-excellence.js',
     './assets/js/config.js'
 ];
 
@@ -126,7 +128,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('message', event => {
     if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
-    if (event.data?.type === 'WARM_OCR_CACHE') event.waitUntil(warmOcrRuntimeCache());
+    if (event.data?.type === 'WARM_OCR_CACHE') event.waitUntil(warmOptionalRuntimeCache());
 });
 
 async function networkFirst(request) {

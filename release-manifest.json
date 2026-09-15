@@ -1,6 +1,6 @@
 {
   "application": "Sổ Tay Giáo Viên Pro",
-  "release": "53.3.14",
+  "release": "53.4.0",
   "channel": "stable",
   "releasedAt": "2026-09-15",
   "dataSchemaVersion": 8,
@@ -66,7 +66,23 @@
     "homeroomSeatingExcelExport": true,
     "homeroomSeatingExportPositionList": true,
     "homeroomSeatingExportRotationCycle": true,
-    "offlineExcelExportWarmup": true
+    "offlineExcelExportWarmup": true,
+    "uxExcellenceLayer": true,
+    "persistentMainTab": true,
+    "tabDeepLinkHash": true,
+    "responsiveStickyNavigation": true,
+    "backToTopControl": true,
+    "horizontalTableScrollHints": true,
+    "accessibilityLabelAudit": true,
+    "reducedMotionSupport": true,
+    "responsiveLaptopDensity": true,
+    "ocrWarmupMessageFix": true,
+    "ocrTessdataCspFix": true,
+    "visibleVersionNoiseCleanup": true,
+    "buttonSubmitSafetyAudit": true,
+    "stickyTableHeaders": true,
+    "unifiedControlContrast": true,
+    "compactLaptopLayout": true
   },
   "compatibility": {
     "preservesV52Data": true,

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://generativelanguage.googleapis.com https://cdn.jsdelivr.net https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com; object-src 'none'; base-uri 'none'; form-action 'self';" />
+          content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://generativelanguage.googleapis.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com; object-src 'none'; base-uri 'none'; form-action 'self';" />
     <title>Sổ Tay Giáo Viên Pro — Premium Teacher Workspace</title>
     <meta name="theme-color" content="#0c2745" />
     <meta name="application-name" content="Sổ Tay Giáo Viên Pro" />
@@ -48,6 +48,7 @@
     <link rel="stylesheet" href="assets/css/plan-revision-v51.css" />
     <link rel="stylesheet" href="assets/css/contrast-v53-3-12.css" />
     <link rel="stylesheet" href="assets/css/homeroom-edit-v53-3-13.css" />
+    <link rel="stylesheet" href="assets/css/ux-excellence-v53-4.css" />
 </head>
 <body class="premium-ui">
 
@@ -61,7 +62,7 @@
                     <span class="brand-kicker">TEACHER WORKSPACE</span>
                     <h1>Sổ Tay Giáo Viên <em>PRO</em></h1>
                     <div class="brand-meta">
-                        <span>Sổ Tay Giáo Viên Pro 52 · Gọn · Nhanh · An toàn</span>
+                        <span>Sổ Tay Giáo Viên Pro · Gọn · Nhanh · An toàn</span>
                         <i aria-hidden="true"></i>
                         <span>39 tuần lịch · 37 tuần PPCT · Trợ lý công việc · Hồ sơ</span>
                     </div>
@@ -195,7 +196,7 @@
                                 <span>Giảm áp lực LocalStorage khi dữ liệu tích lũy nhiều năm; vẫn giữ bản an toàn của năm đang mở.</span>
                             </div>
                         </div>
-                        <span class="storage-pro-badge">Storage Pro v47</span>
+                        <span class="storage-pro-badge">Bộ nhớ Pro</span>
                     </div>
                     <div class="storage-pro-grid">
                         <div class="storage-pro-item"><span>Cơ chế</span><strong class="storage-pro-value" id="storageProEngine">Đang khởi tạo…</strong></div>
@@ -254,7 +255,7 @@
                         <span class="health-overall-badge" id="healthOverallStatus">Chưa kiểm tra</span>
                     </div>
                     <div class="health-summary-grid">
-                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">v50.7</strong></div>
+                        <div class="health-summary-item"><span>Ứng dụng</span><strong id="healthSummaryApp">Đang kiểm tra…</strong></div>
                         <div class="health-summary-item"><span>Dữ liệu</span><strong id="healthSummaryData">Đang tổng hợp…</strong></div>
                         <div class="health-summary-item"><span>Cloud</span><strong id="healthSummaryCloud">Đang kiểm tra…</strong></div>
                         <div class="health-summary-item"><span>Nhật ký</span><strong id="healthSummaryErrors">0 lỗi</strong></div>
@@ -291,7 +292,7 @@
                 </label>
                 <span class="model-badge" title="Mô hình Gemini ổn định đang sử dụng">Gemini 3.5 Flash</span>
                 <span class="status-dot" id="apiStatus" role="status" aria-label="API chưa được kiểm tra" title="API chưa được kiểm tra"></span>
-                <button class="btn btn-primary btn-sm" id="saveApiBtn">Kiểm tra &amp; dùng</button>
+                <button class="btn btn-primary btn-sm" id="saveApiBtn" type="button">Kiểm tra &amp; dùng</button>
                 <button class="btn btn-outline btn-sm" id="forgetApiBtn" type="button">Quên key</button>
                 <div class="api-note" id="apiKeyNote">Mỗi giáo viên dùng API key riêng trên thiết bị của mình; khi Gemini không dùng được, trang tự chuyển sang OCR.</div>
             </div>
@@ -544,28 +545,28 @@
 
         <!-- TABS -->
         <nav class="tabs" id="tabNav" role="tablist" aria-label="Các chức năng chính">
-            <button class="tab-btn active" data-tab="plan" role="tab" aria-selected="true" aria-controls="tab-plan">
+            <button type="button" class="tab-btn active" data-tab="plan" role="tab" aria-selected="true" aria-controls="tab-plan">
                 <span class="icon">📋</span> Kế Hoạch Trường
             </button>
-            <button class="tab-btn" data-tab="timetable" role="tab" aria-selected="false" aria-controls="tab-timetable">
+            <button type="button" class="tab-btn" data-tab="timetable" role="tab" aria-selected="false" aria-controls="tab-timetable">
                 <span class="icon">⏰</span> Thời Khóa Biểu
             </button>
-            <button class="tab-btn" data-tab="teaching" role="tab" aria-selected="false" aria-controls="tab-teaching">
+            <button type="button" class="tab-btn" data-tab="teaching" role="tab" aria-selected="false" aria-controls="tab-teaching">
                 <span class="icon">📖</span> Lịch Báo Giảng
             </button>
-            <button class="tab-btn" data-tab="gradebook" role="tab" aria-selected="false" aria-controls="tab-gradebook">
+            <button type="button" class="tab-btn" data-tab="gradebook" role="tab" aria-selected="false" aria-controls="tab-gradebook">
                 <span class="icon">📒</span> Sổ Điểm
             </button>
-            <button class="tab-btn" data-tab="homeroom" role="tab" aria-selected="false" aria-controls="tab-homeroom">
+            <button type="button" class="tab-btn" data-tab="homeroom" role="tab" aria-selected="false" aria-controls="tab-homeroom">
                 <span class="icon">🏫</span> Sổ Chủ Nhiệm
             </button>
-            <button class="tab-btn" data-tab="reports" role="tab" aria-selected="false" aria-controls="tab-reports">
+            <button type="button" class="tab-btn" data-tab="reports" role="tab" aria-selected="false" aria-controls="tab-reports">
                 <span class="icon">📑</span> Báo Cáo & Hồ Sơ
             </button>
-            <button class="tab-btn" data-tab="workspace" role="tab" aria-selected="false" aria-controls="tab-workspace">
+            <button type="button" class="tab-btn" data-tab="workspace" role="tab" aria-selected="false" aria-controls="tab-workspace">
                 <span class="icon">🗂️</span> Công Việc Pro
             </button>
-            <button class="tab-btn" data-tab="links" role="tab" aria-selected="false" aria-controls="tab-links">
+            <button type="button" class="tab-btn" data-tab="links" role="tab" aria-selected="false" aria-controls="tab-links">
                 <span class="icon">🔗</span> Liên Kết
             </button>
         </nav>
@@ -696,7 +697,7 @@
             <div class="card" id="ttTableCard">
                 <div class="card-header">
                     <h2>📊 Thời khóa biểu tuần</h2>
-                    <button class="btn btn-danger btn-sm" id="clearTtBtn">🗑️ Xóa tuần này</button>
+                    <button class="btn btn-danger btn-sm" id="clearTtBtn" type="button">🗑️ Xóa tuần này</button>
                 </div>
                 <div id="timetableDiffDisplay" class="timetable-diff-panel" hidden></div>
                 <div id="timetableDisplay">
@@ -857,7 +858,7 @@
                     <select id="scheduleWeekSelect">
                         <option value="">-- Chọn tuần --</option>
                     </select>
-                    <button class="btn btn-success" id="generateScheduleBtn">🚀 Tạo lịch báo giảng</button>
+                    <button class="btn btn-success" id="generateScheduleBtn" type="button">🚀 Tạo lịch báo giảng</button>
                     <span class="text-muted" style="font-size:13px;" id="scheduleInfo"></span>
                 </div>
                 <div id="curriculumMatchSummary" class="curriculum-match-summary">
@@ -987,7 +988,7 @@
                         <div><strong>📋 Dán danh sách học sinh</strong><small>Mỗi học sinh một dòng. Có thể dán trực tiếp cột Họ và tên từ Excel hoặc danh sách có STT.</small></div>
                         <button class="btn btn-outline btn-sm" id="gradebookClosePasteBtn" type="button">✕ Đóng</button>
                     </div>
-                    <textarea id="gradebookRosterTextarea" rows="8" placeholder="1	Nguyễn Văn An
+                    <textarea id="gradebookRosterTextarea" aria-label="Danh sách học sinh dán vào Sổ điểm" rows="8" placeholder="1	Nguyễn Văn An
 2	Trần Thị Bình
 3	Lê Minh Châu"></textarea>
                     <div class="gradebook-paste-actions">
@@ -998,7 +999,7 @@
 
                 <section class="gradebook-paste-panel" id="gradebookPasteScoresPanel" hidden aria-label="Dán bảng điểm từ Excel">
                     <div class="gradebook-paste-head"><div><strong>📥 Dán bảng điểm từ Excel</strong><small>Hỗ trợ: STT · Họ tên · TX1…TX5 · GK · CK · Ghi chú. Có thể có hoặc không có hàng tiêu đề.</small></div><button class="btn btn-outline btn-sm" id="gradebookCloseScoresPasteBtn" type="button">✕ Đóng</button></div>
-                    <textarea id="gradebookScoresTextarea" rows="9" placeholder="Họ và tên&#9;TX1&#9;TX2&#9;TX3&#9;Giữa kỳ&#9;Cuối kỳ&#10;Nguyễn Văn An&#9;8&#9;7.5&#9;9&#9;8&#9;8.5"></textarea>
+                    <textarea id="gradebookScoresTextarea" aria-label="Bảng điểm dán từ Excel" rows="9" placeholder="Họ và tên&#9;TX1&#9;TX2&#9;TX3&#9;Giữa kỳ&#9;Cuối kỳ&#10;Nguyễn Văn An&#9;8&#9;7.5&#9;9&#9;8&#9;8.5"></textarea>
                     <div class="gradebook-paste-actions"><span id="gradebookScoresPasteHint">Trùng tên sẽ cập nhật điểm; tên mới sẽ được thêm vào sổ.</span><button class="btn btn-primary btn-sm" id="gradebookApplyScoresBtn" type="button">Áp dụng bảng điểm</button></div>
                 </section>
 
@@ -1125,8 +1126,8 @@
                         <div class="homeroom-subsection-title"><strong>🎓 Ban cán sự lớp</strong><span>Mỗi chức vụ chọn một học sinh; cùng một học sinh có thể đảm nhiệm nhiều chức vụ.</span></div>
                         <div class="homeroom-officer-grid" id="homeroomOfficerGrid"></div>
                         <div class="homeroom-custom-officer-compose">
-                            <input id="homeroomCustomOfficerLabel" type="text" placeholder="Chức vụ khác, ví dụ: Trưởng ban truyền thông" />
-                            <select id="homeroomCustomOfficerStudent"><option value="">— Chọn học sinh —</option></select>
+                            <input id="homeroomCustomOfficerLabel" aria-label="Tên chức vụ tùy chỉnh" type="text" placeholder="Chức vụ khác, ví dụ: Trưởng ban truyền thông" />
+                            <select id="homeroomCustomOfficerStudent" aria-label="Học sinh giữ chức vụ tùy chỉnh"><option value="">— Chọn học sinh —</option></select>
                             <button class="btn btn-outline btn-sm" id="homeroomAddCustomOfficerBtn" type="button">＋ Thêm chức vụ</button>
                         </div>
                         <div class="homeroom-custom-officer-list" id="homeroomCustomOfficerList"></div>
@@ -1166,7 +1167,7 @@
                         <div><strong>📋 Dán danh sách học sinh</strong><small>Có thể chỉ dán Họ và tên; hoặc dán các cột: STT · Họ tên · Ngày sinh · Giới tính · Phụ huynh · SĐT PH · SĐT HS · Địa chỉ.</small></div>
                         <button class="btn btn-outline btn-sm" id="homeroomClosePasteBtn" type="button">✕ Đóng</button>
                     </div>
-                    <textarea id="homeroomRosterTextarea" rows="7" placeholder="1&#9;Nguyễn Văn An&#9;12/03/2009&#9;Nam&#9;Nguyễn Văn Bình&#9;0912345678&#10;2&#9;Trần Thị Minh&#9;25/07/2009&#9;Nữ"></textarea>
+                    <textarea id="homeroomRosterTextarea" aria-label="Danh sách học sinh dán vào Sổ chủ nhiệm" rows="7" placeholder="1&#9;Nguyễn Văn An&#9;12/03/2009&#9;Nam&#9;Nguyễn Văn Bình&#9;0912345678&#10;2&#9;Trần Thị Minh&#9;25/07/2009&#9;Nữ"></textarea>
                     <div class="homeroom-paste-actions"><span>Hệ thống tự bỏ học sinh trùng tên trong cùng sổ.</span><button class="btn btn-primary btn-sm" id="homeroomApplyRosterBtn" type="button">Thêm vào sổ</button></div>
                 </section>
 
@@ -1424,7 +1425,7 @@
                         <option value="low">Thấp</option>
                     </select>
                     <select id="workWeekFilter" aria-label="Lọc tuần liên kết"><option value="">Tất cả tuần</option></select>
-                    <input id="workSearchInput" type="search" placeholder="Tìm tiêu đề, lớp, môn, nội dung…" autocomplete="off" />
+                    <input id="workSearchInput" aria-label="Tìm công việc" type="search" placeholder="Tìm tiêu đề, lớp, môn, nội dung…" autocomplete="off" />
                 </div>
                 <div class="work-workspace-notice" id="workWorkspaceNotice" hidden></div>
                 <div class="work-active-filter" id="workActiveFilter" hidden></div>
@@ -1482,8 +1483,8 @@
                         <div><strong id="linksAddTitle">＋ Thêm liên kết của tôi</strong><small>Chỉ chấp nhận địa chỉ bắt đầu bằng http:// hoặc https://</small></div>
                     </div>
                     <form id="externalLinkForm" class="links-add-form" novalidate>
-                        <input id="externalLinkName" type="text" maxlength="100" placeholder="Tên liên kết" required />
-                        <input id="externalLinkUrl" type="url" maxlength="500" placeholder="https://..." required />
+                        <input id="externalLinkName" aria-label="Tên liên kết" type="text" maxlength="100" placeholder="Tên liên kết" required />
+                        <input id="externalLinkUrl" aria-label="Địa chỉ liên kết" type="url" maxlength="500" placeholder="https://..." required />
                         <select id="externalLinkCategory" aria-label="Nhóm liên kết">
                             <option value="Nhà trường">Nhà trường</option>
                             <option value="Chuyên môn">Chuyên môn</option>
@@ -1798,7 +1799,7 @@
                         <div class="app-form-field span-all">
                             <label>Tùy chọn</label>
                             <div class="work-form-options"><label><input id="workItemPinned" type="checkbox" /> Ghim lên đầu</label></div>
-                            <input id="workItemCompleted" type="checkbox" hidden />
+                            <input id="workItemCompleted" aria-label="Đánh dấu công việc đã hoàn thành" type="checkbox" hidden />
                             <span id="workItemCompletedLabel" hidden></span>
                             <div id="workItemDueDateField" hidden></div>
                         </div>
@@ -1866,7 +1867,7 @@
             </div>
             <div class="global-command-search-wrap">
                 <span class="global-command-search-icon" aria-hidden="true">⌕</span>
-                <input id="globalCommandInput" type="search" autocomplete="off" spellcheck="false"
+                <input id="globalCommandInput" type="search" aria-label="Tìm kiếm và chạy lệnh nhanh" autocomplete="off" spellcheck="false"
                        placeholder="Ví dụ: Tuần 6, 12A1, PPCT 35, vnEdu, sao lưu…"
                        aria-describedby="globalCommandMeta" aria-controls="globalCommandResults" />
                 <button class="global-command-clear" id="globalCommandClearBtn" type="button" aria-label="Xóa nội dung tìm kiếm" hidden>×</button>
@@ -1916,6 +1917,7 @@
     <script src="assets/js/32-module-loader.js"></script>
     <script src="assets/js/34-safety-snapshots.js"></script>
     <script src="assets/js/15-init.js"></script>
+    <script src="assets/js/37-ux-excellence.js"></script>
 
 </body>
 </html>

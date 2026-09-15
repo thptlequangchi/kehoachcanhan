@@ -1,7 +1,7 @@
 {
   "name": "Sổ Tay Giáo Viên Pro",
   "short_name": "Sổ Tay GV Pro",
-  "description": "Không gian làm việc giáo viên: kế hoạch trường, thời khóa biểu, PPCT, lịch báo giảng, tự động hóa và hồ sơ báo cáo.",
+  "description": "Không gian làm việc giáo viên: kế hoạch, thời khóa biểu, lịch báo giảng, sổ điểm, sổ chủ nhiệm, công việc, báo cáo và chế độ ngoại tuyến.",
   "lang": "vi",
   "start_url": "./",
   "scope": "./",
