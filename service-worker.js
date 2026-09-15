@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v53.3.11 STABLE — Service Worker */
-const APP_VERSION = '53.3.11';
+/* Sổ Tay Giáo Viên v53.3.12 STABLE — Service Worker */
+const APP_VERSION = '53.3.12';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -37,10 +37,9 @@ const APP_SHELL = [
     './assets/css/homeroom-v52-4.css',
     './assets/css/homeroom-v53-1.css',
     './assets/css/homeroom-v53-2.css',
-    './assets/css/homeroom-v53-3.css',
     './assets/css/homeroom-v53-4.css',
     './assets/css/plan-revision-v51.css',
-    './assets/css/contrast-v53-3-11.css',
+    './assets/css/contrast-v53-3-12.css',
     './assets/css/release-v52.css',
     './assets/css/release-v52-5.css',
     './assets/css/timetable-v52-1.css',
@@ -83,7 +82,6 @@ const APP_SHELL = [
     './assets/js/27-regression-tests.js',
     './assets/js/28-gradebook.js',
     './assets/js/29-homeroom.js',
-    './assets/js/36-homeroom-competition-v53-3.js',
     './assets/js/30-lazy-vendors.js',
     './assets/js/31-release-shell.js',
     './assets/js/32-module-loader.js',

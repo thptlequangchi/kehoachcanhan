@@ -1,0 +1,102 @@
+/* ==================================================================
+   SỔ TAY GIÁO VIÊN v53.3.12 — CONTRAST / LEGIBILITY FIX
+   Khắc phục chữ trắng trên nền trắng và tăng độ tương phản điều khiển.
+   ================================================================== */
+
+/* Nút viền trên giao diện sáng: CSS gốc dùng chữ trắng cho header tối,
+   nhưng bản Premium đổi nền thành trắng mà chưa đổi màu chữ. */
+.premium-ui .btn-outline,
+.premium-ui button.btn-outline,
+.premium-ui a.btn-outline {
+  background:#fff !important;
+  color:#334155 !important;
+  border-color:#cbd5e1 !important;
+  -webkit-text-fill-color:#334155 !important;
+}
+.premium-ui .btn-outline:hover,
+.premium-ui button.btn-outline:hover,
+.premium-ui a.btn-outline:hover {
+  background:#f8fafc !important;
+  color:#0f172a !important;
+  border-color:#94a3b8 !important;
+  -webkit-text-fill-color:#0f172a !important;
+}
+.premium-ui .btn-outline:focus-visible {
+  outline:3px solid rgba(37,99,235,.22);
+  outline-offset:2px;
+  border-color:#60a5fa !important;
+}
+.premium-ui .btn-outline:disabled,
+.premium-ui button.btn-outline:disabled {
+  background:#f8fafc !important;
+  color:#94a3b8 !important;
+  border-color:#e2e8f0 !important;
+  -webkit-text-fill-color:#94a3b8 !important;
+  opacity:1;
+}
+
+/* Giữ chữ sáng rõ trên các nút nền đậm. */
+.premium-ui .btn-primary:not(.header-settings-btn),
+.premium-ui .btn-success,
+.premium-ui .btn-danger {
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+}
+.premium-ui .btn-primary:not(.header-settings-btn):disabled,
+.premium-ui .btn-success:disabled,
+.premium-ui .btn-danger:disabled {
+  color:#e2e8f0 !important;
+  -webkit-text-fill-color:#e2e8f0 !important;
+}
+
+/* Điều khiển nhập liệu trên thẻ/nền sáng. */
+.premium-ui input:not([type=checkbox]):not([type=radio]),
+.premium-ui select,
+.premium-ui textarea {
+  color:#0f172a;
+}
+.premium-ui input::placeholder,
+.premium-ui textarea::placeholder {
+  color:#94a3b8;
+  opacity:1;
+}
+.premium-ui select option {
+  color:#0f172a;
+  background:#fff;
+}
+
+/* Riêng sơ đồ chỗ ngồi: bảo đảm mọi nút/nhãn dễ đọc ở nền rất sáng. */
+.homeroom-seating-actions .btn-outline {
+  color:#334155 !important;
+  -webkit-text-fill-color:#334155 !important;
+  background:#fff !important;
+  border-color:#cbd5e1 !important;
+}
+.homeroom-seating-actions .btn-outline:hover {
+  color:#0f172a !important;
+  -webkit-text-fill-color:#0f172a !important;
+  background:#eff6ff !important;
+  border-color:#93c5fd !important;
+}
+.homeroom-seating-actions .btn-primary {
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+}
+.homeroom-seating-mode>span { color:#475569 !important; }
+.homeroom-seating-mode select { color:#0f172a !important; background:#fff !important; }
+.homeroom-seating-rotation-toggle { color:#1e3a8a !important; }
+.homeroom-seating-summary,
+.homeroom-seating-rotation-info { color:#334155; }
+
+/* Nhãn phụ và nút hành động trong các panel sáng. */
+.premium-ui .homeroom-panel .text-muted,
+.premium-ui .homeroom-section-title small,
+.premium-ui .homeroom-panel-head .text-muted { color:#64748b !important; }
+
+/* Tránh icon/label bị mờ quá mức khi control đang dùng được. */
+.premium-ui button:not(:disabled),
+.premium-ui .btn:not(:disabled) { opacity:1; }
+
+@media (forced-colors: active) {
+  .premium-ui .btn-outline { border:1px solid ButtonText !important; }
+}

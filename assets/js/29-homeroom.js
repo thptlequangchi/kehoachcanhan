@@ -1,5 +1,5 @@
         // ================================================================
-        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.11 (school/class violation sources)
+        //  PERSONAL HOMEROOM NOTEBOOK — v53.3.12 (competition board removed)
         //  Hồ sơ lớp chủ nhiệm, chuyên cần/nề nếp, liên hệ PHHS và nhật ký lớp.
         //  Dữ liệu nằm trong personal year workspace như Sổ điểm cá nhân.
         // ================================================================
@@ -1925,7 +1925,6 @@
             homeroomRenderStudentLog(book);
             homeroomRenderClassJournal(book);
             homeroomRenderControls(book);
-            if (typeof homeroomRenderCompetitionBoard === 'function') homeroomRenderCompetitionBoard(book);
         }
 
         function homeroomOpenOrCreateBook() {
@@ -2167,7 +2166,7 @@
                 disciplineEffect: rule?.discipline || '',
                 regulationSource: homeroomIsSchoolRule(rule)
                     ? 'Dự thảo quy chế nền nếp 2026-2027 · 08/09/2026'
-                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN · v53.3.11' : ''),
+                    : (homeroomIsTeacherTrackingRule(rule) ? 'Điểm theo dõi nội bộ GVCN' : ''),
                 sourceRole: cleanText(homeroomById('homeroomStudentLogSource')?.value) || 'class_homeroom',
                 sourceScope: HOMEROOM_INCIDENT_SOURCE_META[cleanText(homeroomById('homeroomStudentLogSource')?.value)]?.scope || 'class',
                 regulationNote: rule?.note || '',
@@ -2229,7 +2228,7 @@
             if (!book) return;
             const rule = homeroomRuleById(homeroomById('homeroomClassConductRuleSelect')?.value);
             if (!rule || rule.scope !== 'class') {
-                showToast('⚠️ Hãy chọn một nội dung nề nếp/thi đua tập thể', 'info');
+                showToast('⚠️ Hãy chọn một nội dung nề nếp tập thể', 'info');
                 return;
             }
             const date = normalizeHomeroomDate(homeroomById('homeroomClassConductDate')?.value) || homeroomTodayISO();
@@ -2269,7 +2268,7 @@
             homeroomSchedulePersist();
             renderHomeroom();
             homeroomUpdateClassRulePreview();
-            showToast(`✅ Đã ghi thi đua lớp: ${homeroomFormatPoints(points)}`, 'success');
+            showToast(`✅ Đã ghi nề nếp lớp: ${homeroomFormatPoints(points)}`, 'success');
         }
 
         function homeroomToggleResolved(entryId) {
@@ -2364,7 +2363,7 @@
                     'Loại': homeroomEntryMeta(entry.type).label,
                     'TT quy chế': homeroomRuleById(entry.ruleId)?.no ?? '',
                     'Quy tắc': homeroomRuleById(entry.ruleId)?.label || '',
-                    'Điểm thi đua': entry.points || 0,
+                    'Điểm nề nếp lớp': entry.points || 0,
                     'Nội dung': entry.content,
                 }));
                 const thresholds = homeroomGetMonitoringThresholds(book);
@@ -2474,9 +2473,9 @@
                     ['Ngưỡng vi phạm', thresholds.violation],
                     ['Ghi nhận quy chế - học sinh', classConductMetrics.studentEntries],
                     ['Ghi nhận quy chế - tập thể', classConductMetrics.classEntries],
-                    ['Điểm trừ thi đua lớp', classConductMetrics.deductions],
-                    ['Điểm thưởng thi đua lớp', classConductMetrics.rewards],
-                    ['Điểm thi đua ròng từ ghi nhận', classConductMetrics.net],
+                    ['Điểm trừ nề nếp lớp', classConductMetrics.deductions],
+                    ['Điểm thưởng nề nếp lớp', classConductMetrics.rewards],
+                    ['Điểm nề nếp ròng từ ghi nhận', classConductMetrics.net],
                     ['Trao đổi phụ huynh', summary.parentContacts],
                     ['Khen thưởng', summary.commendations],
                 ];
@@ -2487,7 +2486,7 @@
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(individualRows), 'Theo dõi học sinh');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monitoringRows), 'Tần suất cần chú ý');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(conductRows), 'Gợi ý hạnh kiểm');
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classRows), 'Nhật ký & thi đua lớp');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classRows), 'Nhật ký & nề nếp lớp');
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(HOMEROOM_ALL_SCHOOL_RULES.map(rule => ({
                     'TT': rule.no ?? '',
                     'Phạm vi': rule.scope === 'student' ? 'Học sinh' : 'Lớp',
@@ -2498,12 +2497,6 @@
                     'Xử lý': homeroomSchoolRuleEffectLabel(rule),
                     'Ghi chú': rule.note || '',
                 }))), 'Quy chế nề nếp 26-27');
-                if (typeof homeroomCompetitionExportRows === 'function') {
-                    const competitionExport = homeroomCompetitionExportRows(book);
-                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(competitionExport.weekRows), 'Thi đua tuần');
-                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(competitionExport.monthRows), 'Thi đua tháng');
-                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(competitionExport.summaryRows), 'Thi đua HK & năm');
-                }
                 XLSX.writeFile(wb, `so-chu-nhiem-${homeroomSafeFilePart(book.className)}-${homeroomSafeFilePart(state.selectedAcademicYear)}.xlsx`);
                 showToast('✅ Đã xuất Sổ chủ nhiệm ra Excel', 'success');
             } catch (error) {
@@ -2653,6 +2646,5 @@
             if (homeroomById('homeroomClassLogDate')) homeroomById('homeroomClassLogDate').value = date;
             if (homeroomById('homeroomClassConductDate')) homeroomById('homeroomClassConductDate').value = date;
             homeroomUpdateClassRulePreview();
-            if (typeof initHomeroomCompetitionV533 === 'function') initHomeroomCompetitionV533();
             renderHomeroom();
         }
