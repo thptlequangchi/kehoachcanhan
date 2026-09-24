@@ -241,31 +241,69 @@
             if (message) showToast('✅ ' + message, 'success');
         }
 
+        // v53.4.1: Nhận dạng tín hiệu Kế hoạch trường theo từ/cụm từ tiếng Việt,
+        // không còn xóa toàn bộ dấu + khoảng trắng rồi dò chuỗi con.
+        // Cách cũ có thể hiểu nhầm "Hội nghị báo cáo..." thành "nghỉ bão"
+        // vì cả hai đều biến thành chuỗi có đoạn "nghibao".
         const PLAN_SYNC_SIGNAL_RULES = [
             {
                 level: 'high', label: 'Nghỉ / không học',
-                terms: ['nghihoc', 'hocsinhnghi', 'khonghoc', 'tamngunghoc', 'nghile', 'nghitet', 'nghibao', 'nghitoantruong'],
+                phrases: ['nghỉ học', 'học sinh nghỉ', 'không học', 'tạm ngừng học', 'nghỉ lễ', 'nghỉ tết', 'nghỉ bão', 'nghỉ toàn trường'],
+                // Chỉ dùng các cụm ASCII ít mơ hồ khi dữ liệu nguồn thực sự không có dấu.
+                asciiPhrases: ['nghi hoc', 'hoc sinh nghi', 'khong hoc', 'tam ngung hoc', 'nghi le', 'nghi tet', 'nghi toan truong'],
             },
             {
                 level: 'review', label: 'Thi / kiểm tra tập trung',
-                terms: ['thihocky', 'thitaptrung', 'kiemtrataptrung', 'khaosatchatluong'],
+                phrases: ['thi học kỳ', 'thi tập trung', 'kiểm tra tập trung', 'khảo sát chất lượng'],
+                asciiPhrases: ['thi hoc ky', 'thi tap trung', 'kiem tra tap trung', 'khao sat chat luong'],
             },
             {
                 level: 'review', label: 'Hoạt động chung',
-                terms: ['hoatdongtrainghiem', 'ngoaikhoa', 'sinhhoattapthe', 'lekhaigiang', 'lebeigiang', 'daingayhoi'],
+                phrases: ['hoạt động trải nghiệm', 'ngoại khóa', 'sinh hoạt tập thể', 'lễ khai giảng', 'lễ bế giảng', 'đại ngày hội'],
+                asciiPhrases: ['hoat dong trai nghiem', 'ngoai khoa', 'sinh hoat tap the', 'le khai giang', 'le be giang', 'dai ngay hoi'],
             },
             {
                 level: 'review', label: 'Lao động / tập trung học sinh',
-                terms: ['hocsinhlaodong', 'hsld', 'laodongtheokehoach', 'taptrunghocsinh', 'taphocsinh'],
+                phrases: ['học sinh lao động', 'hs lao động', 'lao động theo kế hoạch', 'tập trung học sinh', 'tập học sinh'],
+                asciiPhrases: ['hoc sinh lao dong', 'hs lao dong', 'lao dong theo ke hoach', 'tap trung hoc sinh', 'tap hoc sinh'],
             },
         ];
 
+        function normalizePlanSignalText(value, stripAccents = false) {
+            let text = normalizePlanCellText(value).toLowerCase().normalize('NFC');
+            if (stripAccents) {
+                text = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').normalize('NFC');
+            }
+            return text
+                .replace(/[^a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]+/gi, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function planSignalHasVietnameseMarks(value) {
+            const text = normalizePlanCellText(value).normalize('NFC');
+            return /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
+        }
+
+        function planSignalIncludesPhrase(text, phrase) {
+            if (!text || !phrase) return false;
+            return (` ${text} `).includes(` ${phrase} `);
+        }
+
         function detectPlanScheduleSignal(value) {
             const text = normalizePlanCellText(value);
-            const lookup = normalizeLookupText(text);
+            if (!text) return null;
+
+            // Nếu nguồn có dấu tiếng Việt, phải khớp nguyên nghĩa có dấu.
+            // Điều này phân biệt "nghỉ bão" với "nghị báo" trong "Hội nghị báo cáo...".
+            const hasVietnameseMarks = planSignalHasVietnameseMarks(text);
+            const lookup = normalizePlanSignalText(text, !hasVietnameseMarks);
             if (!lookup) return null;
+
             for (const rule of PLAN_SYNC_SIGNAL_RULES) {
-                if (rule.terms.some(term => lookup.includes(term))) {
+                const phrases = hasVietnameseMarks ? rule.phrases : (rule.asciiPhrases || []);
+                const normalizedPhrases = phrases.map(phrase => normalizePlanSignalText(phrase, !hasVietnameseMarks));
+                if (normalizedPhrases.some(phrase => planSignalIncludesPhrase(lookup, phrase))) {
                     return { ...rule, evidence: text };
                 }
             }

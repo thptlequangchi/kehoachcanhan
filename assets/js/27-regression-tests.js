@@ -69,7 +69,7 @@
 
     function coreQuickTests() {
         const tests = [];
-        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '53.4.0' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
+        tests.push(runSync('app-version','Phiên bản ứng dụng','Khởi động',() => APP_VERSION === '53.4.1' ? `APP_VERSION ${APP_VERSION}.` : {status:'fail',message:`APP_VERSION hiện là ${APP_VERSION}.`}));
         tests.push(runSync('init-complete','Quá trình khởi động','Khởi động',() => window.__teacherNotebookInitCompleted ? 'Init đã hoàn tất.' : {status:'warn',message:'Init chưa phát tín hiệu hoàn tất tại thời điểm kiểm thử.'}));
         tests.push(runSync('init-errors','Lỗi khi khởi động','Khởi động',() => {
             const errors = Array.isArray(window.__teacherNotebookInitErrors) ? window.__teacherNotebookInitErrors : [];
@@ -95,6 +95,15 @@
         tests.push(runSync('plan-normalizer','Chuẩn hóa Kế hoạch tuần','Nghiệp vụ',() => {
             const data=normalizePlanWeek({week:5,dateRange:'24/08/2026 - 30/08/2026',days:[{day:'Thứ 2',date:'24/08',morning:'Chào cờ'}]});
             return data?.week===5 && data.days?.[0]?.day==='Thứ 2' && data.days?.[0]?.morning==='Chào cờ' ? 'Fixture kế hoạch được chuẩn hóa đúng.' : {status:'fail',message:'Fixture kế hoạch không giữ đúng tuần/ngày/nội dung.'};
+        }));
+        tests.push(runSync('plan-signal-diacritic-guard','Không nhầm “Hội nghị báo cáo” thành “nghỉ bão”','Nghiệp vụ',() => {
+            if (typeof detectPlanScheduleSignal !== 'function') return {status:'fail',message:'Thiếu hàm detectPlanScheduleSignal.'};
+            const normalTeaching=detectPlanScheduleSignal('Dạy học theo TKB. Hội nghị báo cáo viên Tỉnh ủy tháng 9 tại P. Vũng Áng.');
+            const stormBreak=detectPlanScheduleSignal('Học sinh nghỉ bão, không tổ chức dạy học buổi sáng.');
+            const holidayBreak=detectPlanScheduleSignal('Học sinh nghỉ học theo kế hoạch.');
+            const asciiBreak=detectPlanScheduleSignal('Hoc sinh nghi hoc theo ke hoach.');
+            const ok=!normalTeaching && stormBreak?.level==='high' && holidayBreak?.level==='high' && asciiBreak?.level==='high';
+            return ok ? 'Phân biệt đúng “nghị báo” và “nghỉ bão”; vẫn nhận dạng được nghỉ học có dấu/không dấu.' : {status:'fail',message:'Bộ nhận dạng tín hiệu Kế hoạch trường còn nhầm ngữ nghĩa.'};
         }));
         tests.push(runSync('plan-revision-diff','So sánh lịch công tác điều chỉnh','Nghiệp vụ',() => {
             const before=normalizePlanWeek({week:5,days:[{day:'Thứ 2',morning:'Họp 7h'},{day:'Thứ 3',afternoon:''},{day:'Thứ 4',businessTrip:'Đi Sở'}]});

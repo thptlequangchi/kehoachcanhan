@@ -1,5 +1,5 @@
-/* Sổ Tay Giáo Viên v53.4.0 UX EXCELLENCE — Service Worker */
-const APP_VERSION = '53.4.0';
+/* Sổ Tay Giáo Viên v53.4.1 UX EXCELLENCE — Service Worker */
+const APP_VERSION = '53.4.1';
 const CACHE_PREFIX = 'teacher-notebook-app-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
